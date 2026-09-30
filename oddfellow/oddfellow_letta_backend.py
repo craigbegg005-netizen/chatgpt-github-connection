@@ -1,5 +1,5 @@
 """
-Oddfellow Letta backend  --  v0.20.1 (verified build)
+Oddfellow Letta backend  --  v0.20.2 (verified build)
 
 Purpose
 -------
@@ -30,6 +30,49 @@ Because of (1)-(3), the preferred configuration is to set ODDFELLOW_AGENT_ID to
 an existing agent and skip find-or-create entirely. Craig's decision on
 2026-09-29 was to reuse the Oddfellow agent itself:
     ODDFELLOW_AGENT_ID=agent-a9a8eb2c-2fed-4554-9998-aa4783c7efc4
+
+v0.20.2 -- the memory fix (verified 2026-09-30 00:11 UTC)
+--------------------------------------------------------
+v0.20.1 was correct but talking to an agent with amnesia. Diagnosis and fix:
+
+  a. `POST /v1/agents/{id}/messages` runs against the agent's DEFAULT
+     conversation. That conversation's system prompt is compiled once and then
+     cached, so it never picks up later memory or renames. That is why the agent
+     kept answering "I'm Bob" with no zero-spend rule.
+  b. Attaching memory blocks to the agent (PATCH /v1/agents/{id} with
+     block_ids) gives API-driven runs a real persona and doctrine -- but only
+     runs in a conversation whose prompt was compiled AFTER the attach.
+  c. `POST /v1/conversations/?agent_id=<id>` creates a fresh conversation, and
+     `POST /v1/conversations/{conversation_id}/messages` runs the agent there.
+     A fresh conversation picks the memory up immediately.
+
+Verified result after the fix: a fresh conversation answered
+    "I'm Oddfellow, and yes -- zero-spend-first is a standing rule: no paid
+     service, subscription, or billing without Craig's explicit authorization."
+
+So this backend now: pins the agent, reuses (or creates) a dedicated
+conversation, persists that conversation id in the agent's metadata so it
+survives restarts, and posts messages conversation-scoped.
+
+ASSUMPTION THIS BACKEND CANNOT VERIFY: it cannot confirm the agent's memory
+blocks are attached. `GET /v1/agents/{id}` reports `blocks: []` even immediately
+after a PATCH that returned two attached blocks -- the read endpoint is
+inconsistent with the write. Block attachment is therefore a one-time setup step
+(see SETUP below), not something this service can self-heal.
+
+NOTE ON THE RESPONSE FORMAT: `POST /v1/conversations/{id}/messages` returns
+Server-Sent Events (`data: {...}` lines, terminated by `data: [DONE]`), not a
+plain JSON object. This backend parses the stream.
+
+SETUP (one-time, manual, before first use)
+------------------------------------------
+  1. Ensure the agent has the persona + doctrine memory blocks attached:
+       curl -X PATCH "https://api.letta.com/v1/agents/$AGENT_ID" \
+         -H "Authorization: Bearer $LETTA_API_KEY" -H 'Content-Type: application/json' \
+         -d '{"block_ids":["<persona-block-id>","<doctrine-block-id>"]}'
+     The response echoes the attached blocks -- trust that, not a follow-up GET.
+  2. Deploy this service with the env vars below. It creates its own
+     conversation on first request.
 
 Zero-spend guard
 ----------------
@@ -146,7 +189,7 @@ elif not LETTA_MODEL.startswith("letta/") and not ALLOW_PAID_MODEL:
         "only with the owner's explicit approval."
     )
 
-app = FastAPI(title="Oddfellow Letta backend", version="0.20.1")
+app = FastAPI(title="Oddfellow Letta backend", version="0.20.2")
 
 if ALLOWED_ORIGIN:
     app.add_middleware(
@@ -212,6 +255,20 @@ async def letta(method: str, path: str, json_body: Optional[dict] = None, params
     if resp.status_code >= 400:
         raise LettaError(resp.status_code, body)
     return body
+
+
+async def letta_raw(method: str, path: str, json_body: Optional[dict] = None, params: Optional[dict] = None) -> Any:
+    """Call Letta and return the RAW body text (needed for SSE endpoints)."""
+    url = f"{LETTA_BASE_URL}{path}"
+    async with httpx.AsyncClient(timeout=HTTP_TIMEOUT) as client:
+        resp = await client.request(method, url, headers=_headers(), json=json_body, params=params)
+    if resp.status_code >= 400:
+        try:
+            body = resp.json()
+        except Exception:
+            body = resp.text[:500]
+        raise LettaError(resp.status_code, body)
+    return resp.text
 
 
 async def find_agent_by_id(agent_id: str) -> Optional[dict]:
@@ -316,6 +373,85 @@ async def resolve_agent() -> dict:
     return confirmed
 
 
+async def create_conversation(agent_id: str) -> str:
+    """
+    Create a fresh conversation for the agent.
+
+    Note the query-parameter form: POST /v1/conversations/?agent_id=<id>.
+    Passing agent_id in the JSON body is rejected with a ZodError
+    ("agent_id: Required"), verified 2026-09-30.
+    """
+    data = await letta("POST", "/v1/conversations/", params={"agent_id": agent_id}, json_body={})
+    conv_id = data.get("id") if isinstance(data, dict) else None
+    if not conv_id:
+        raise HTTPException(status_code=502, detail={"error": "conversation_create_failed", "letta": data})
+    return conv_id
+
+
+async def conversation_exists(conversation_id: str) -> bool:
+    try:
+        await letta("GET", f"/v1/conversations/{conversation_id}")
+        return True
+    except LettaError as exc:
+        if exc.status == 404:
+            return False
+        raise
+
+
+async def remember_conversation(agent_id: str, conversation_id: str, existing_metadata: Any) -> None:
+    """Persist the conversation id on the agent so it survives a restart."""
+    meta = dict(existing_metadata) if isinstance(existing_metadata, dict) else {}
+    meta["oddfellow_conversation_id"] = conversation_id
+    try:
+        await letta("PATCH", f"/v1/agents/{agent_id}", json_body={"metadata": meta})
+    except LettaError:
+        # Non-fatal: we can still serve this process; the id just will not persist.
+        pass
+
+
+async def resolve_conversation(agent: dict) -> str:
+    """
+    Return the dedicated conversation for this agent, creating one if needed.
+
+    Why a dedicated conversation: the agent's DEFAULT conversation has a cached
+    system prompt, so it never picks up memory changes or renames (verified
+    2026-09-30). A fresh conversation compiles the current memory immediately.
+    """
+    agent_id = agent.get("id")
+    meta = agent.get("metadata")
+    known = meta.get("oddfellow_conversation_id") if isinstance(meta, dict) else None
+
+    if known and await conversation_exists(known):
+        return known
+
+    conv_id = await create_conversation(agent_id)
+    await remember_conversation(agent_id, conv_id, meta)
+    return conv_id
+
+
+def parse_sse(body: str) -> list:
+    """
+    Parse a Server-Sent Events body from POST /v1/conversations/{id}/messages.
+
+    The endpoint streams `data: {json}` lines terminated by `data: [DONE]`.
+    """
+    import json as _json
+
+    events = []
+    for line in body.splitlines():
+        line = line.strip()
+        if not line.startswith("data:"):
+            continue
+        payload = line[len("data:"):].strip()
+        if payload == "[DONE]" or not payload:
+            continue
+        try:
+            events.append(_json.loads(payload))
+        except Exception:
+            continue
+    return events
+
+
 def agent_summary(agent: dict) -> dict:
     """Public, non-secret view of an agent."""
     llm = agent.get("llm_config") or {}
@@ -359,7 +495,7 @@ async def status(x_owner_token: Optional[str] = Header(default=None)) -> dict:
 
     result: dict = {
         "backend": "oddfellow_letta_backend",
-        "version": "0.20.1",
+        "version": "0.20.2",
         "letta_base_url": LETTA_BASE_URL,
         "model": LETTA_MODEL,
         "agent_pinned": bool(ODDFELLOW_AGENT_ID),
@@ -384,6 +520,20 @@ async def status(x_owner_token: Optional[str] = Header(default=None)) -> dict:
         result["agent_name"] = agent.get("name")
     except HTTPException as exc:
         result["agent_error"] = exc.detail
+        return result
+
+    # 3. Resolve (or create) the dedicated conversation used for messages.
+    try:
+        conv_id = await resolve_conversation(agent)
+        result["conversation_id"] = conv_id
+        result["conversation_ready"] = True
+    except HTTPException as exc:
+        result["conversation_error"] = exc.detail
+
+    # NOTE: this service cannot verify that memory blocks are attached.
+    # GET /v1/agents/{id} reports blocks: [] even right after a PATCH that
+    # returned two attached blocks. Do not read this field as proof of memory.
+    result["memory_blocks_verifiable"] = False
 
     return result
 
@@ -406,11 +556,12 @@ async def send_message(
 
     agent = await resolve_agent()
     agent_id = agent.get("id")
+    conversation_id = await resolve_conversation(agent)
 
     try:
-        data = await letta(
+        raw = await letta_raw(
             "POST",
-            f"/v1/agents/{agent_id}/messages",
+            f"/v1/conversations/{conversation_id}/messages",
             json_body={"input": payload.input},
         )
     except LettaError as exc:
@@ -419,14 +570,19 @@ async def send_message(
             detail={"error": "letta_message_failed", "status": exc.status, "detail": exc.detail},
         ) from exc
 
-    messages = data.get("messages") or []
+    events = parse_sse(raw) if isinstance(raw, str) else []
     reply = None
-    for msg in messages:
-        if msg.get("message_type") == "assistant_message":
-            reply = msg.get("content")
+    for ev in events:
+        if ev.get("message_type") == "assistant_message":
+            reply = ev.get("content")
 
-    usage = data.get("usage") or {}
-    stop = (data.get("stop_reason") or {}).get("stop_reason")
+    stop = None
+    usage = {}
+    for ev in events:
+        if ev.get("message_type") == "stop_reason":
+            stop = ev.get("stop_reason")
+        elif ev.get("message_type") == "usage_statistics":
+            usage = ev
 
     if reply is None:
         # Do not invent a reply. Report the failure honestly.
@@ -435,20 +591,36 @@ async def send_message(
             detail={
                 "error": "no_assistant_message",
                 "stop_reason": stop,
-                "usage": usage,
-                "message_count": len(messages),
+                "event_count": len(events),
+                "conversation_id": conversation_id,
             },
         )
 
     return {
         "reply": reply,
         "agent_id": agent_id,
+        "conversation_id": conversation_id,
         "stop_reason": stop,
         "usage": {
             "prompt_tokens": usage.get("prompt_tokens"),
             "completion_tokens": usage.get("completion_tokens"),
         },
     }
+
+
+@app.post("/api/letta/new-session")
+async def new_session(x_owner_token: Optional[str] = Header(default=None)) -> dict:
+    """
+    Start a fresh conversation.
+
+    Useful when memory was attached after this conversation was created: the
+    old conversation keeps its cached prompt, a new one picks up current memory.
+    """
+    require_owner(x_owner_token)
+    agent = await resolve_agent()
+    conv_id = await create_conversation(agent.get("id"))
+    await remember_conversation(agent.get("id"), conv_id, agent.get("metadata"))
+    return {"agent_id": agent.get("id"), "conversation_id": conv_id}
 
 
 @app.get("/api/letta/history")
@@ -460,10 +632,15 @@ async def history(
     require_owner(x_owner_token)
     agent = await resolve_agent()
     agent_id = agent.get("id")
+    conversation_id = await resolve_conversation(agent)
     limit = max(1, min(limit, 100))
 
     try:
-        data = await letta("GET", f"/v1/agents/{agent_id}/messages", params={"limit": limit})
+        data = await letta(
+            "GET",
+            f"/v1/agents/{agent_id}/messages",
+            params={"limit": limit, "conversation_id": conversation_id},
+        )
     except LettaError as exc:
         raise HTTPException(
             status_code=502,
@@ -482,4 +659,4 @@ async def history(
                     "date": msg.get("date"),
                 }
             )
-    return {"agent_id": agent_id, "messages": out}
+    return {"agent_id": agent_id, "conversation_id": conversation_id, "messages": out}
