@@ -18,6 +18,14 @@ Constraints, all taken from the operating protocol:
   service refuses to send messages rather than logging a complaint.
 * **not a public product.** This is not exposed as a commercial surface.
 
+**Single-instance only, by construction.** Approvals and the pause flag live in this
+process's memory, so this module must not be deployed to a runtime that runs many
+isolates — the Cloudflare Worker fallback being the obvious one. There, state is
+per-isolate: an approval created on one isolate would be invisible on another, and
+the pause switch would stop a fraction of requests while *appearing* to work. An
+emergency stop that stops some traffic is worse than one that is absent, because it
+is trusted. Moving this to a Worker means moving the state to durable storage first.
+
 The registry below is declarative on purpose. A status page that reads its own
 values from a live probe is a status page that can lie; these are claims with
 dates, and the date is part of the claim.

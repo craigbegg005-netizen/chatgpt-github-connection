@@ -1117,10 +1117,19 @@ def test_the_worker_serves_the_same_routes_as_the_backend(monkeypatch):
     }
     missing = sorted(p for p in backend_routes if p not in text)
 
-    # Known gap, dated 2026-09-30: the Command Center is owner-facing and the
-    # Worker is a JS mirror that has not been ported to it. Listed explicitly
-    # rather than excluded silently, so the gap stays visible and has to be closed
-    # before the Worker is relied on as a fallback.
+    # Deliberate exclusion, dated 2026-09-30, NOT a gap to close by porting.
+    #
+    # The Command Center holds approvals and the pause flag in memory. A Worker
+    # runs many isolates across many machines and its state is per-isolate -- the
+    # same reason its rate limiter is documented as approximate. Ported as-is, an
+    # approval created on one isolate would be invisible on another, and the pause
+    # switch would stop a fraction of requests while appearing to work. An
+    # emergency stop that stops some traffic is worse than one that is absent,
+    # because it is trusted.
+    #
+    # So the Command Center requires a single-instance host. The Worker remains a
+    # fallback for the API contract, not for the owner console. If the Worker ever
+    # needs it, the state has to move to durable storage first.
     known_gap = {p for p in missing if p.startswith("/api/command")}
     unexpected = sorted(set(missing) - known_gap)
     assert not unexpected, f"worker.js never mentions these backend routes: {unexpected}"

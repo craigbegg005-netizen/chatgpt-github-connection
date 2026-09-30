@@ -88,6 +88,16 @@ rather than glossed over.
 
 Two smaller differences, both deliberate:
 
+- **The Command Center is deliberately absent, and must not be ported here as-is.**
+  It holds approvals and the pause flag in memory. Because state is per-isolate
+  (see above), an approval created on one isolate would be invisible on another,
+  and the pause switch would stop a fraction of requests while *appearing* to work.
+  An emergency stop that stops some traffic is worse than one that is absent,
+  because it is trusted. The Command Center therefore requires a single-instance
+  host. This Worker remains a fallback for the **API contract**, not for the owner
+  console — and if it ever needs the console, the state has to move to durable
+  storage first. The route-parity test lists these paths as a dated exclusion for
+  the same reason.
 - The Worker **never creates an agent**. `ODDFELLOW_AGENT_ID` is required; if it
   is unset the Worker returns 503 rather than searching or creating. Agent
   creation stays in the Python backend, where the free-plan limit handling lives.
