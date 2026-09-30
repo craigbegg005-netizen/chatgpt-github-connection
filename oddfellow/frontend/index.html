@@ -265,7 +265,15 @@ function plan(text){
   if(/code|bug|api|python|javascript|deploy|server|database/.test(t))task='code';
   else if(/analy|compare|research|strategy|plan|why/.test(t))task='analysis';
   else if(/write|story|caption|creative|name|idea/.test(t))task='creative';
-  const risk=/send|publish|delete|spend|buy|password|credential|payment|deploy production/.test(t)?'elevated':'normal';
+  // Risk is about what the owner is ASKING FOR, not what the sentence mentions.
+  // The old test was a bare substring match, so "what is the zero-spend rule?"
+  // was flagged as elevated because it contains "spend". That was invisible
+  // while the flag only coloured a chip; it became a real problem the moment the
+  // flag started gating sends. Two fixes: questions are excluded, and the terms
+  // are actionable ones rather than topic words.
+  const asking=/^\s*(what|how|why|when|where|who|which|is|are|does|do|can|could|should|explain|tell me|describe|show me)\b/.test(t)||/\?\s*$/.test(t);
+  const risky=/\b(delete|remove|erase|publish|post to|send (an? )?(email|message|money|payment)|spend|buy|purchase|pay|transfer|deploy to production|production deploy|password|credential|api key|payment)\b/.test(t);
+  const risk=(risky&&!asking)?'elevated':'normal';
   return {task,risk};
 }
 function pick(task,excludeProviders=[]){
@@ -313,6 +321,24 @@ async function syntheticReply(text){
 }
 async function send(){
   const input=$('input');const text=input.value.trim();if(!text||state.busy)return;
+
+  // Approval gate. The planner has always classified risk and displayed it in
+  // the chip, which implies a consequence that did not exist -- a warning that
+  // gates nothing is decoration. A request the planner flags as elevated now
+  // needs an explicit confirmation before it is sent.
+  //
+  // This is a UX gate, NOT a security boundary: anything that talks to the API
+  // directly bypasses it. It is labelled as such rather than dressed up as
+  // enforcement, and the real gate belongs where the actions are -- with the
+  // agent's tools -- not in the page.
+  if(plan(text).risk==='elevated'){
+    const ok=confirm('Oddfellow\'s planner flagged this as elevated risk — it looks like it could change something outside this chat.\n\n'+text.slice(0,200)+'\n\nSend it anyway?');
+    if(!ok){
+      add('assistant','Not sent. You cancelled a request the planner flagged as elevated risk.','approval gate · nothing was sent');
+      return;
+    }
+  }
+
   state.busy=true;$('send').disabled=true;input.value='';add('user',text);
   try{
     const {out,meta}=backendConfigured()?await lettaReply(text):await syntheticReply(text);add('assistant',out,meta);
