@@ -2,8 +2,15 @@
   "name": "Oddfellow Synthetic v0.20",
   "short_name": "Oddfellow",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "any",
   "background_color": "#0b0d11",
   "theme_color": "#0b0d11",
-  "description": "Private synthetic AI operating layer with free-only model routing, persistent memory, verification, and voice."
+  "description": "Private synthetic AI operating layer with free-only model routing, persistent memory, verification, and voice.",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
 }

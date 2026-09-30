@@ -32,6 +32,33 @@ The owner token is entered by the owner and stored in that browser's
 `localStorage`. It is never in the page source, never in a repo, and never in a
 network request to any origin other than the configured backend.
 
+## v3 — installable (2026-09-30)
+
+The manifest declared **no icons at all**, so "Add to home screen" would have used
+a generic placeholder. Fixed:
+
+- `icons/make_icons.py` renders the orb mark to PNG reproducibly, so the
+  home-screen icon matches the in-app mark instead of being an unrelated asset
+  someone has to hunt for.
+- `icons/icon-192.png`, `icons/icon-512.png` (standard),
+  `icons/icon-maskable-512.png` (extra padding for Android's adaptive mask),
+  `icons/apple-touch-icon.png` (180px, for iOS).
+- `manifest.json` now declares them, plus `scope` and `orientation`.
+- `index.html` head gained `apple-touch-icon` and the iOS web-app meta tags.
+- `sw.js` now precaches the shell and icons, skips cross-origin requests (so it
+  can never cache API calls), and falls back to the cached shell offline.
+
+Verified in Chrome 2026-09-30: all five assets return 200; the manifest parses
+with `["192x192 any","512x512 any","512x512 maskable"]`; the service worker is
+active; the apple-touch-icon link resolves; and the app still connects to the
+backend afterwards (`Backend: Oddfellow`).
+
+Getting a detail wrong here is easy and invisible: the first attempt centred the
+gradient circle on the light source instead of on the orb, which shifted the whole
+mark up and to the left. Fixed by centring the orb on the canvas and offsetting
+the light *inside* it, with the stop scale set to the CSS `farthest-corner`
+distance (~0.955 x diameter) rather than the radius.
+
 ## v2 — fewer taps (2026-09-30)
 
 The backend URL is now **pre-filled** with `https://oddfellow-letta-poc.onrender.com`,
