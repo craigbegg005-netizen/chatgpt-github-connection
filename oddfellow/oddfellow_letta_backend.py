@@ -91,13 +91,20 @@ Environment variables (all set as Render secrets, never in source or the browser
   LETTA_BASE_URL             optional  -- default https://api.letta.com
   ODDFELLOW_ALLOW_PAID_MODEL optional  -- "true" to permit a non-letta/* model
   ODDFELLOW_RATE_PER_MIN     optional  -- default 20 requests/minute per client
+  ODDFELLOW_FRONTEND_DIR     optional  -- serve the front end from this service
+                                          too (one deploy, no CORS). Off by default.
 
-v0.20.4 -- CORS accepts a list
-------------------------------
+v0.20.4 -- CORS accepts a list, and one service can serve both
+--------------------------------------------------------------
 ALLOWED_ORIGIN now takes a comma-separated list of origins. Previously it was a
 single origin, and a mismatch surfaced in the browser as "Failed to fetch" --
 indistinguishable from a dead backend. /api/letta/status now echoes the allowed
 origins so the cause is visible without guessing.
+
+ODDFELLOW_FRONTEND_DIR optionally mounts the front end at "/" from the same
+service. Same origin means no CORS at all, and one deploy instead of two. It is
+off unless the variable names an existing directory, and it is mounted last so
+it cannot shadow /api or /healthz.
 
 v0.20.3 -- self-diagnosing health check
 ---------------------------------------
@@ -716,3 +723,23 @@ async def history(
                 }
             )
     return {"agent_id": agent_id, "conversation_id": conversation_id, "messages": out}
+
+
+# --------------------------------------------------------------------------- #
+# Optional: serve the front end from this same service
+# --------------------------------------------------------------------------- #
+# Off unless ODDFELLOW_FRONTEND_DIR names an existing directory. When it is on,
+# one deploy serves both the page and the API, which removes CORS entirely
+# (same origin) and halves what has to be deployed and kept in sync.
+#
+# Mounted LAST and at "/" so it can never shadow an /api route, and it never
+# touches /healthz: a static mount must not be able to make the health check
+# unreachable.
+
+FRONTEND_DIR = os.environ.get("ODDFELLOW_FRONTEND_DIR", "").strip()
+
+if FRONTEND_DIR and os.path.isdir(FRONTEND_DIR):
+    from fastapi.staticfiles import StaticFiles
+
+    app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
+

@@ -36,7 +36,7 @@ BASE_ENV = {
 ALL_ENV = [
     "LETTA_API_KEY", "ODDFELLOW_OWNER_TOKEN", "LETTA_MODEL", "ODDFELLOW_AGENT_ID",
     "ALLOWED_ORIGIN", "LETTA_BASE_URL", "ODDFELLOW_ALLOW_PAID_MODEL",
-    "ODDFELLOW_RATE_PER_MIN",
+    "ODDFELLOW_RATE_PER_MIN", "ODDFELLOW_FRONTEND_DIR",
 ]
 
 
@@ -546,4 +546,45 @@ def test_status_reports_allowed_origins_so_cors_is_diagnosable(fake):
     body = client.get("/api/letta/status", headers=auth()).json()
     assert "allowed_origins" in body
     assert isinstance(body["allowed_origins"], list)
+
+
+# --------------------------------------------------------------------------- #
+# Optional single-service mode (v0.20.4)
+# --------------------------------------------------------------------------- #
+
+def test_frontend_is_not_served_by_default(fake):
+    """Off unless asked for: this must not change the deployed behaviour."""
+    m, f, client = fake
+    assert client.get("/").status_code == 404
+
+
+def test_frontend_dir_that_does_not_exist_is_ignored(monkeypatch):
+    m = load_app(monkeypatch, ODDFELLOW_FRONTEND_DIR="/nonexistent/frontend/dir")
+    f = FakeLetta(m)
+    monkeypatch.setattr(m, "letta", f.letta)
+    monkeypatch.setattr(m, "letta_raw", f.letta_raw)
+    monkeypatch.setattr(m, "LettaError", LettaError)
+    client = TestClient(m.app, raise_server_exceptions=False)
+    assert client.get("/").status_code == 404
+
+
+def test_frontend_dir_serves_the_page_without_shadowing_the_api(monkeypatch, tmp_path):
+    (tmp_path / "index.html").write_text("<title>Oddfellow</title>", encoding="utf-8")
+    m = load_app(monkeypatch, ODDFELLOW_FRONTEND_DIR=str(tmp_path))
+    f = FakeLetta(m)
+    monkeypatch.setattr(m, "letta", f.letta)
+    monkeypatch.setattr(m, "letta_raw", f.letta_raw)
+    monkeypatch.setattr(m, "LettaError", LettaError)
+    client = TestClient(m.app, raise_server_exceptions=False)
+
+    # The page is served at the root...
+    root = client.get("/")
+    assert root.status_code == 200
+    assert "Oddfellow" in root.text
+
+    # ...and the API and health check are still reachable underneath it.
+    assert client.get("/healthz").status_code == 200
+    assert client.get("/api/letta/status", headers=auth()).status_code == 200
+    assert client.get("/api/letta/status").status_code == 401
+
 
