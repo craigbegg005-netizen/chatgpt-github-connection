@@ -50,11 +50,11 @@ details{margin:10px 16px;border:1px solid var(--line);border-radius:12px;backgro
       <div class="setting"><span>Local verification pass</span><input id="verify" type="checkbox" checked></div>
       <div class="setting"><span>Persistent private cloud history after sign-in</span><span id="cloudState">off</span></div>
       <div class="setting"><span>Letta backend URL</span><input id="beurl" type="url" placeholder="https://your-service.onrender.com" autocomplete="off"></div>
-      <div class="setting"><span>Owner token</span><input id="betoken" type="password" placeholder="ODDFELLOW_OWNER_TOKEN" autocomplete="off"></div>
+      <div class="setting"><span>Owner token</span><input id="betoken" type="password" placeholder="paste your ODDFELLOW_OWNER_TOKEN" autocomplete="off"></div>
       <div class="setting"><span>Letta memory + continuity</span><button class="tiny" id="betest">Test connection</button></div>
     </div>
   </details>
-  <div class="notice">Architecture: identity kernel → intent planner → route selection → memory → verifier → response/voice. When a Letta backend is configured, replies and memory come from the persistent Oddfellow agent; otherwise the free-only local router is used. Deep mode uses two free models from different providers and a third free model to synthesize them. If no verified free model is available, Oddfellow stops instead of using a paid route.</div>
+  <div class="notice">Architecture: identity kernel → intent planner → route selection → memory → verifier → response/voice. When a Letta backend is configured, replies and memory come from the persistent Oddfellow agent; otherwise the free-only local router is used. The backend URL is pre-filled &mdash; you only need to paste the owner token once. Deep mode uses two free models from different providers and a third free model to synthesize them. If no verified free model is available, Oddfellow stops instead of using a paid route.</div>
 </div>
 <main id="chat"></main>
 <div class="composer"><div class="inner">
@@ -68,9 +68,10 @@ const KEY='oddfellow.synthetic.v020.history';
 const CLOUD_KEY='oddfellow:synthetic:v020:history';
 const state={history:[],models:[],freeModels:[],signed:false,busy:false,recognition:null};
 const BKEY='oddfellow.backend.v020';
+const DEFAULT_BACKEND_URL='https://oddfellow-letta-poc.onrender.com';
 const backend={url:'',token:'',ready:false,session:null};
 
-function loadBackend(){try{const b=JSON.parse(localStorage.getItem(BKEY)||'{}');backend.url=b.url||'';backend.token=b.token||''}catch{}}
+function loadBackend(){try{const b=JSON.parse(localStorage.getItem(BKEY)||'{}');backend.url=b.url||DEFAULT_BACKEND_URL;backend.token=b.token||''}catch{backend.url=DEFAULT_BACKEND_URL}}
 function saveBackend(){try{localStorage.setItem(BKEY,JSON.stringify({url:backend.url,token:backend.token}))}catch{}}
 function backendConfigured(){return !!(backend.url&&backend.token)}
 
@@ -280,7 +281,12 @@ if($('beurl'))$('beurl').addEventListener('change',()=>{readBackendFields();back
 if($('betoken'))$('betoken').addEventListener('change',()=>{readBackendFields();backendStatus()});
 if($('betest'))$('betest').onclick=async()=>{
   readBackendFields();
-  if(!backendConfigured()){add('assistant','Set the backend URL and owner token first.','backend config');return}
+  if(!backendConfigured()){
+    add('assistant',(backend.url?'The backend URL is set. ':'No backend URL is set. ')+
+      'Paste your owner token above (the value of ODDFELLOW_OWNER_TOKEN on the service), then press Test connection again.',
+      'backend config');
+    if($('betoken'))$('betoken').focus();
+    return}
   const s=await backendStatus();
   if(s)add('assistant','Backend reachable. Agent: '+(s.agent_name||'(none)')+' · model '+(s.model||'?')+' · conversation '+(s.conversation_id||'(none)')+'\nMemory from the backend is a separate store from this browser history.','backend check');
   else add('assistant','Backend did not answer as configured. Nothing was changed.','backend check');

@@ -32,6 +32,19 @@ The owner token is entered by the owner and stored in that browser's
 `localStorage`. It is never in the page source, never in a repo, and never in a
 network request to any origin other than the configured backend.
 
+## v2 — fewer taps (2026-09-30)
+
+The backend URL is now **pre-filled** with `https://oddfellow-letta-poc.onrender.com`,
+so a first-time visitor only has to paste **one** thing: the owner token. The URL
+stays editable and a stored value always wins over the default.
+
+Pressing **Test connection** with no token now says exactly what is missing and
+focuses the token field, instead of a generic failure.
+
+Verified for a first-time visitor (`localStorage` cleared, reloaded): the URL
+field shows the default, the token field is empty, and the chip reads
+`Backend: off`.
+
 ## Verified 2026-09-30 (local, real Letta agent)
 
 Served on `127.0.0.1:8080`, backend on `127.0.0.1:8092`, driven in Chrome:
@@ -50,8 +63,13 @@ Served on `127.0.0.1:8080`, backend on `127.0.0.1:8092`, driven in Chrome:
 
 - Against the real deployed backend (it is not deployed yet)
 - On a phone
-- The Puter fallback path after this change (the code path is unchanged but was
-  not re-exercised)
+- The Puter fallback path was re-exercised 2026-09-30: with no backend
+  configured, the router chip read **"Router: 22 free routes"** — discovery ran
+  and found 22 free models. The fallback is alive.
+- The full message flow after the v2 change: reply returned and tagged
+  `letta · conv-c0d02720-... · 219 tok`. The agent also volunteered, unprompted,
+  that it had noticed the same question four times in a row — evidence that
+  conversation continuity is real, not cosmetic.
 
 ## Deploying
 
