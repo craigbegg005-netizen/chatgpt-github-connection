@@ -1,5 +1,5 @@
 """
-Oddfellow Letta backend  --  v0.20.5 (verified build)
+Oddfellow Letta backend  --  v0.20.6 (verified build)
 
 Purpose
 -------
@@ -117,6 +117,30 @@ absent from the service environment. From outside, the only signal was
 /healthz now also reports `checks_failed`: the NAMES of the env vars that failed
 validation, never their values. Env var names are not secrets, and this turns that
 class of fault into a one-look fix.
+
+v0.20.6 -- a transport failure is named, and reachability is its own question
+-----------------------------------------------------------------------------
+Two sessions of the same agent found this defect independently within minutes of
+each other, which is itself the finding: the failure was loud enough to be found
+twice and quiet enough that neither session could see the other working.
+
+Only HTTP status codes were wrapped, so a DNS failure, a refused connection, or a
+timeout raised httpx's own exception and nothing caught it. The caller got a bare
+`500 Internal Server Error` -- the same shape as every expensive failure in this
+project: an opaque error indistinguishable from any other opaque error.
+
+Transport failures now become the same error type as HTTP failures, and an
+app-level handler turns any uncaught Letta failure into a structured 502 with the
+cause. `/api/letta/status` additionally reports **`letta_reachable`**, because
+"the API said no" and "the API never answered" are different questions that need
+different fixes, and `letta_auth: false` alone cannot tell them apart.
+
+Verified by `fault_injection_check.py` -- a local stub that impersonates the Letta
+API and misbehaves on demand. 36 checks, no network, no spend. It is the only
+thing here that can prove a *failure* path, because a healthy provider does not
+fail on request. The offline suite cannot: it replaces letta()/letta_raw()
+wholesale, so the httpx layer -- and the error handling written for it -- is
+never executed. A test that replaces a layer is not testing that layer.
 
 v0.20.5 -- liveness separated from readiness
 --------------------------------------------
@@ -311,7 +335,7 @@ def audit(event: str, request: Optional[Request] = None, **fields: Any) -> None:
         "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "event": event,
         "service": "oddfellow_letta_backend",
-        "version": "0.20.5",
+        "version": "0.20.6",
     }
     if request is not None:
         record["request_id"] = getattr(request.state, "request_id", None)
@@ -330,7 +354,7 @@ def audit(event: str, request: Optional[Request] = None, **fields: Any) -> None:
         pass
 
 
-app = FastAPI(title="Oddfellow Letta backend", version="0.20.5")
+app = FastAPI(title="Oddfellow Letta backend", version="0.20.6")
 
 
 @app.middleware("http")
@@ -769,7 +793,7 @@ async def healthz() -> dict:
         "ok": healthy,
         "checks_failed": CONFIG_FAILED_KEYS,
         "service": "oddfellow_letta_backend",
-        "version": "0.20.5",
+        "version": "0.20.6",
     }
     # Fail closed: a service that cannot answer a single request must not report
     # 200 to a platform health check, or the platform will route traffic to it.
@@ -800,7 +824,7 @@ async def livez() -> dict:
         "ready": not CONFIG_ERRORS,
         "checks_failed": CONFIG_FAILED_KEYS,
         "service": "oddfellow_letta_backend",
-        "version": "0.20.5",
+        "version": "0.20.6",
     }
 
 
@@ -818,11 +842,15 @@ async def status(
 
     result: dict = {
         "backend": "oddfellow_letta_backend",
-        "version": "0.20.5",
+        "version": "0.20.6",
         "letta_base_url": LETTA_BASE_URL,
         "model": LETTA_MODEL,
         "agent_pinned": bool(ODDFELLOW_AGENT_ID),
         "letta_auth": False,
+        # "the API said no" and "the API never answered" need different fixes, so
+        # they must not look the same here. letta_auth is about the key;
+        # letta_reachable is about the network path to the provider.
+        "letta_reachable": None,
         "agent_found": False,
         "agent_id": None,
         # Not a secret: these are public URLs. Exposed so a browser "Failed to
@@ -834,8 +862,12 @@ async def status(
     try:
         await letta("GET", "/v1/models/", params={"limit": 1})
         result["letta_auth"] = True
+        result["letta_reachable"] = True
     except LettaError as exc:
         result["letta_error"] = {"status": exc.status, "detail": exc.detail}
+        # A transport failure is reported as a LettaError carrying this marker.
+        detail = exc.detail if isinstance(exc.detail, dict) else {}
+        result["letta_reachable"] = detail.get("error") != "letta_transport_error"
         return result
 
     # 2. Can we resolve the agent?

@@ -46,7 +46,7 @@ TIMEOUT = 60
 # The backend revision this harness expects to find. Bump it when the backend is
 # bumped: the whole point of reading /openapi.json is to answer "which build is
 # actually live?", and a check that only prints the answer cannot answer it.
-EXPECTED_VERSION = "0.20.5"
+EXPECTED_VERSION = "0.20.6"
 ALLOW_OLDER = False
 
 

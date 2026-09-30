@@ -1009,3 +1009,46 @@ def test_wrong_method_is_405_and_unknown_path_is_404(fake):
     m, f, client = fake
     assert client.delete("/api/letta/status", headers=auth()).status_code == 405
     assert client.get("/api/letta/nope", headers=auth()).status_code == 404
+
+
+# --------------------------------------------------------------------------- #
+# Reachability is a different question from authentication
+#
+# "The API said no" and "the API never answered" need different fixes, so
+# /api/letta/status reports them separately. letta_auth:false alone cannot tell
+# them apart, and telling them apart is the entire reason this field exists.
+# --------------------------------------------------------------------------- #
+
+def test_status_marks_an_unreachable_provider_as_not_reachable(monkeypatch):
+    m = load_app(monkeypatch)
+
+    async def boom(*a, **k):
+        raise m.LettaError(502, {"error": "letta_transport_error", "kind": "ConnectError"})
+
+    monkeypatch.setattr(m, "letta", boom)
+    body = TestClient(m.app, raise_server_exceptions=False).get(
+        "/api/letta/status", headers=auth()).json()
+    assert body["letta_reachable"] is False
+    assert body["letta_auth"] is False
+
+
+def test_status_marks_a_rejected_key_as_reachable(monkeypatch):
+    """A 401 proves the API answered. Reachable, just not authorised."""
+    m = load_app(monkeypatch)
+
+    async def rejected(*a, **k):
+        raise m.LettaError(401, {"error": "invalid api key"})
+
+    monkeypatch.setattr(m, "letta", rejected)
+    body = TestClient(m.app, raise_server_exceptions=False).get(
+        "/api/letta/status", headers=auth()).json()
+    assert body["letta_reachable"] is True
+    assert body["letta_auth"] is False
+    assert body["letta_error"]["status"] == 401
+
+
+def test_status_marks_a_working_provider_as_reachable(fake):
+    m, f, client = fake
+    body = client.get("/api/letta/status", headers=auth()).json()
+    assert body["letta_reachable"] is True
+    assert body["letta_auth"] is True
