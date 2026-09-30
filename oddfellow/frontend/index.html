@@ -145,7 +145,21 @@ async function backendCall(path,opts={}){
   let b=null;try{b=JSON.parse(t)}catch{b=t}
   if(!r.ok){
     const d=(b&&b.detail)||b;
-    const msg=(d&&d.error)?d.error:(typeof d==='string'?d:('HTTP '+r.status));
+    // The backend nests the useful part:
+    //   {"detail":{"error":"letta_api_error","status":502,
+    //              "detail":{"error":"letta_transport_error","kind":"ConnectError",
+    //                        "detail":"[Errno -2] Name or service not known"}}}
+    // Showing only the outer "letta_api_error" tells the owner nothing about
+    // what actually broke, which is the whole reason the backend stopped
+    // returning a bare 500. Dig out the cause.
+    let msg;
+    if(d&&typeof d==='object'){
+      const inner=d.detail;
+      const cause=(inner&&typeof inner==='object')?(inner.detail||inner.kind):inner;
+      msg=(d.error||('HTTP '+r.status))+(cause?(' — '+cause):'');
+    }else{
+      msg=(typeof d==='string'?d:('HTTP '+r.status));
+    }
     throw new Error('Backend: '+msg);
   }
   return b;
