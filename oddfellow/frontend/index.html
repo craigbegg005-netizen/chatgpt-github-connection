@@ -24,6 +24,16 @@ h1{font-size:18px;margin:0}.sub{font-size:12px;color:var(--muted);margin-top:2px
 button,select{background:#1b2330;color:#eef4fa;border:1px solid #344152;border-radius:11px;padding:10px 11px;font-weight:600}button:disabled{opacity:.45}.toolrow{display:flex;gap:7px;overflow-x:auto;padding:7px 0 0}.tiny{font-size:11px;padding:7px 9px;white-space:nowrap}.active{outline:1px solid #c7d4e4}
 details{margin:10px 16px;border:1px solid var(--line);border-radius:12px;background:#111720}summary{padding:10px 12px;cursor:pointer;font-size:13px;color:#c8d2de}.settings{padding:0 12px 12px;display:grid;gap:8px}
 .settings input[type=url],.settings input[type=password]{flex:1;min-width:0;background:#141a22;border:1px solid #303a48;border-radius:9px;color:#fff;padding:7px 9px;font:inherit;font-size:12px}.setting{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;color:#b3becb}.notice{font-size:11px;color:#8f9baa;padding:0 16px 8px}.danger{color:#ffcccb}
+@media (max-width:640px){
+  /* Tap targets. Measured on the real page: six controls rendered 28px tall and
+     the send button 37px, all well under the 44px minimum Apple and Material
+     both specify. On a phone that means mis-taps, which cost more than the
+     vertical space saved -- and the owner's stated preference is minimal
+     interaction, not minimal target size. */
+  button,.tiny{min-height:44px}
+  .tiny{padding:11px 12px;font-size:12px}
+  .toolrow{gap:9px}
+}
 </style>
 </head>
 <body>
