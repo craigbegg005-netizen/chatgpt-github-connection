@@ -1,0 +1,134 @@
+#!/usr/bin/env bash
+#
+# Bring up the Oddfellow live rehearsal: the v0.20.5 backend, served from this
+# sandbox and published through a Cloudflare quick tunnel so it can be reached
+# from a phone.
+#
+#   ./rehearsal.sh up      start the backend and the tunnel, print the URL
+#   ./rehearsal.sh status  is it up, and what does the harness say
+#   ./rehearsal.sh down    stop both
+#
+# THIS IS A REHEARSAL, NOT A DEPLOYMENT. It dies with the sandbox, it uses the
+# sandbox's platform-managed Letta key (which the owner cannot rotate), and
+# traffic passes through Cloudflare's tunnel edge, which terminates TLS. It
+# exists to prove the stack works and to let a human run the gates only a human
+# can run. The permanent paths are cloudflare/deploy.sh and the Render blueprint.
+#
+# The Letta key is read from the environment and never written to disk.
+set -euo pipefail
+
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PORT="${ODDFELLOW_REHEARSAL_PORT:-8130}"
+VENV="${ODDFELLOW_VENV:-/tmp/venv}"
+CLOUDFLARED="${CLOUDFLARED:-/tmp/cloudflared}"
+BACKEND_LOG=/tmp/oddfellow-rehearsal-backend.log
+TUNNEL_LOG=/tmp/oddfellow-rehearsal-tunnel.log
+MODE="${1:-}"
+
+say() { printf '\n\033[1m%s\033[0m\n' "$*"; }
+die() { printf '\nERROR: %s\n' "$*" >&2; exit 1; }
+
+# A background bash task is reaped when it times out, so anything long-running
+# must be detached from the shell that started it. This is how.
+
+up() {
+  [ -n "${LETTA_API_KEY:-}" ]         || die "LETTA_API_KEY is not set in the environment"
+  [ -n "${ODDFELLOW_OWNER_TOKEN:-}" ] || die "ODDFELLOW_OWNER_TOKEN is not set in the environment"
+
+  if [ ! -x "$VENV/bin/python" ]; then
+    say "Creating the venv at $VENV"
+    python3 -m venv "$VENV"
+    "$VENV/bin/pip" install -q -r "$HERE/requirements.txt" pytest
+  fi
+
+  if ! curl -fsS --max-time 3 "http://127.0.0.1:$PORT/livez" >/dev/null 2>&1; then
+    say "Starting the backend on 127.0.0.1:$PORT"
+    ( cd "$HERE" && ODDFELLOW_FRONTEND_DIR=frontend LETTA_MODEL=letta/auto \
+        LETTA_API_KEY="$LETTA_API_KEY" ODDFELLOW_OWNER_TOKEN="$ODDFELLOW_OWNER_TOKEN" \
+        ODDFELLOW_AGENT_ID="${ODDFELLOW_AGENT_ID:-agent-a9a8eb2c-2fed-4554-9998-aa4783c7efc4}" \
+        setsid nohup "$VENV/bin/python" -m uvicorn oddfellow_letta_backend:app \
+        --host 127.0.0.1 --port "$PORT" >"$BACKEND_LOG" 2>&1 </dev/null & disown )
+    for _ in $(seq 1 30); do
+      curl -fsS --max-time 3 "http://127.0.0.1:$PORT/livez" >/dev/null 2>&1 && break
+      sleep 1
+    done
+  else
+    say "Backend already up on 127.0.0.1:$PORT"
+  fi
+  curl -fsS --max-time 5 "http://127.0.0.1:$PORT/livez" >/dev/null 2>&1 \
+    || { tail -20 "$BACKEND_LOG" 2>/dev/null; die "the backend never answered"; }
+
+  if ! pgrep -f "cloudflared tunnel --url http://127.0.0.1:$PORT" >/dev/null 2>&1; then
+    [ -x "$CLOUDFLARED" ] || die "cloudflared not found at $CLOUDFLARED (fetch it from the Cloudflare releases page)"
+    say "Opening a Cloudflare quick tunnel"
+    ( cd "$(dirname "$CLOUDFLARED")" && setsid nohup "$CLOUDFLARED" tunnel \
+        --url "http://127.0.0.1:$PORT" --no-autoupdate >"$TUNNEL_LOG" 2>&1 </dev/null & disown )
+  else
+    say "Tunnel already running"
+  fi
+
+  local url=""
+  for _ in $(seq 1 30); do
+    url="$(grep -oE 'https://[a-z0-9-]+\.trycloudflare\.com' "$TUNNEL_LOG" 2>/dev/null | head -1 || true)"
+    [ -n "$url" ] && break
+    sleep 2
+  done
+  [ -n "$url" ] || { tail -20 "$TUNNEL_LOG" 2>/dev/null; die "no tunnel URL appeared"; }
+
+  say "Waiting for the public URL to answer"
+  for _ in $(seq 1 20); do
+    curl -fsS --max-time 10 "$url/livez" >/dev/null 2>&1 && break
+    sleep 2
+  done
+
+  say "REHEARSAL URL"
+  echo "$url"
+  echo
+  echo "Owner token: the value of ODDFELLOW_OWNER_TOKEN. Paste it into the page's"
+  echo "'Owner token' field. It is never printed here."
+}
+
+find_url() {
+  # A quick-tunnel URL cannot be recovered any other way, and an old log holds a
+  # URL that is now dead — so collect every candidate and return the first one
+  # that actually answers. Prefer the canonical log, but never trust a log line
+  # over a live response.
+  local f u
+  for f in "$TUNNEL_LOG" /tmp/tunnel3.log /tmp/tunnel2.log /tmp/tunnel.log; do
+    [ -f "$f" ] || continue
+    for u in $(grep -oE 'https://[a-z0-9-]+\.trycloudflare\.com' "$f" 2>/dev/null | sort -u); do
+      if curl -fsS --max-time 8 "$u/livez" >/dev/null 2>&1; then echo "$u"; return; fi
+    done
+  done
+}
+
+status() {
+  local url
+  url="$(find_url)"
+  pgrep -f "uvicorn oddfellow_letta_backend" >/dev/null && echo "backend: UP" || echo "backend: DOWN"
+  pgrep -f "cloudflared tunnel" >/dev/null && echo "tunnel:  UP" || echo "tunnel:  DOWN"
+  if [ -n "$url" ]; then
+    echo "url:     $url"
+    curl -s --max-time 20 "$url/livez" || true; echo
+    if [ -n "${ODDFELLOW_OWNER_TOKEN:-}" ]; then
+      "$VENV/bin/python" "$HERE/acceptance_check.py" "$url" --owner-token "$ODDFELLOW_OWNER_TOKEN" 2>&1 | tail -5
+    fi
+  else
+    echo "url:     (none recorded — run '$0 up')"
+  fi
+}
+
+down() {
+  say "Stopping the rehearsal"
+  for p in $(pgrep -f "cloudflared tunnel --url http://127.0.0.1:$PORT" 2>/dev/null || true); do kill "$p" 2>/dev/null || true; done
+  for p in $(pgrep -f "uvicorn oddfellow_letta_backend" 2>/dev/null || true); do kill "$p" 2>/dev/null || true; done
+  sleep 2
+  echo "stopped"
+}
+
+case "$MODE" in
+  up) up ;;
+  status) status ;;
+  down) down ;;
+  *) sed -n '2,20p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 2 ;;
+esac

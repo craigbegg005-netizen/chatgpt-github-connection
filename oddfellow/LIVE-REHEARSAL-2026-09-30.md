@@ -34,6 +34,31 @@ and, from the browser:
 
 Evidence: [`evidence/live-acceptance-2026-09-30.png`](evidence/live-acceptance-2026-09-30.png)
 
+## PWA installability — checked as the browser sees it, not inferred
+
+Gate 2 previously only proved the files *return 200*. That is weaker than
+"installable". Read back from the live page:
+
+```
+service worker   registered: true   active: true   state: "activated"
+manifest         name ✓  start_url "/" ✓  scope "/" ✓  display "standalone" ✓
+icons            192x192 ✓   512x512 ✓   maskable ✓
+```
+
+Every criterion Chrome checks for installability is met.
+
+## Re-running it
+
+```bash
+LETTA_API_KEY=... ODDFELLOW_OWNER_TOKEN=... ./rehearsal.sh up
+./rehearsal.sh status     # is it up, and what does the harness say
+./rehearsal.sh down
+```
+
+`status` validates candidate URLs against a live `/livez` rather than trusting a
+log line, because a quick-tunnel URL is unrecoverable any other way and an old
+log holds a URL that is now dead.
+
 ## Why this is a rehearsal and not a deployment
 
 1. **It is not persistent.** The tunnel and the backend run inside an ephemeral
