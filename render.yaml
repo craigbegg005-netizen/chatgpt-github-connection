@@ -23,6 +23,14 @@ services:
     name: oddfellow-letta-backend
     runtime: python
     plan: free
+    # ⚠️ Pin the branch explicitly. Without this, the branch is whatever was
+    # selected when the Blueprint was created, and that is not recoverable from
+    # this file. It matters: `main` is an index only -- it contains README.md and
+    # .gitignore and NO oddfellow/ directory -- so a service pointed at `main`
+    # cannot satisfy `rootDir: oddfellow` and its build fails with no obvious
+    # cause. Verified 2026-09-30 06:50 UTC: `git ls-tree origin/main` -> .gitignore,
+    # README.md.
+    branch: letta/combined-single-service-v0.20.4
     rootDir: oddfellow
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn oddfellow_letta_backend:app --host 0.0.0.0 --port $PORT
@@ -37,6 +45,12 @@ services:
     # `checks_failed` in its body. /healthz still fails closed and remains the
     # readiness gate for humans and for the acceptance harness.
     healthCheckPath: /livez
+    # ⚠️ autoDeploy: false means a git push will NEVER deploy this service. That
+    # is deliberate -- one AI deploys at a time, and a surprise deploy while
+    # another agent is mid-change is worse than a manual click. But it has a
+    # consequence worth stating plainly: pushing to the branch does NOT update
+    # what is running, and saving env vars is not by itself a deploy. Bringing
+    # this service up requires an explicit deploy in the Render dashboard.
     autoDeploy: false
     envVars:
       # Non-secret configuration, safe to commit.
