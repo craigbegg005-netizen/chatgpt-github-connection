@@ -971,3 +971,41 @@ def test_a_provider_failure_is_audited(monkeypatch, capsys):
         "/api/letta/message", headers=auth(), json={"input": "hello"})
     records = events(capsys, "letta_error")
     assert records and records[-1]["status"] == 502
+
+
+# --------------------------------------------------------------------------- #
+# Hostile input (fuzzed 2026-09-30: 12 malformed requests, no unhandled 500)
+# --------------------------------------------------------------------------- #
+
+@pytest.mark.parametrize("bad", [
+    {},                                   # no body
+    {"input": 123},                       # wrong type
+    {"input": ""},                        # too short
+    {"input": "a" * 9000},                # too long
+])
+def test_bad_message_input_is_a_422_not_a_500(fake, bad):
+    m, f, client = fake
+    r = client.post("/api/letta/message", headers=auth(), json=bad)
+    assert r.status_code == 422, "validation must fail cleanly, never as a 500"
+    assert "detail" in r.json()
+
+
+def test_invalid_json_is_a_422_not_a_500(fake):
+    m, f, client = fake
+    r = client.post("/api/letta/message", headers={**auth(), "Content-Type": "application/json"},
+                    content=b"{not json")
+    assert r.status_code == 422
+
+
+@pytest.mark.parametrize("limit,expected_ok", [("abc", False), ("-5", True), ("99999", True), ("0", True)])
+def test_history_limit_is_validated_or_clamped(fake, limit, expected_ok):
+    """A bad limit is a 422; an out-of-range one is clamped, never an error."""
+    m, f, client = fake
+    r = client.get("/api/letta/history?limit=%s" % limit, headers=auth())
+    assert (r.status_code == 200) is expected_ok
+
+
+def test_wrong_method_is_405_and_unknown_path_is_404(fake):
+    m, f, client = fake
+    assert client.delete("/api/letta/status", headers=auth()).status_code == 405
+    assert client.get("/api/letta/nope", headers=auth()).status_code == 404
