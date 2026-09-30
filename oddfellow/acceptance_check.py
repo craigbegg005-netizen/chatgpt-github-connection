@@ -13,6 +13,10 @@ and the actual response, so a human can overrule the verdict.
 Stdlib only -- no pip install, so it runs anywhere, including a phone-adjacent
 laptop with nothing set up.
 
+Gate 0 asserts the deployed build is at least EXPECTED_VERSION, because "which
+build is actually live?" has been the most expensive question in this project.
+Pass --allow-older to accept an older build deliberately.
+
 Gates:
   0  the service is up and is the build you think it is  (/livez, /healthz, OpenAPI)
   1  authenticated work: status, a real reply, a new session, history, agent summary
@@ -38,6 +42,21 @@ import urllib.error
 import urllib.request
 
 TIMEOUT = 60
+
+# The backend revision this harness expects to find. Bump it when the backend is
+# bumped: the whole point of reading /openapi.json is to answer "which build is
+# actually live?", and a check that only prints the answer cannot answer it.
+EXPECTED_VERSION = "0.20.5"
+ALLOW_OLDER = False
+
+
+def _version_tuple(text):
+    """'0.20.5' -> (0, 20, 5). Unparseable chunks count as 0 rather than raising."""
+    parts = []
+    for chunk in str(text).split("."):
+        digits = "".join(c for c in chunk if c.isdigit())
+        parts.append(int(digits) if digits else 0)
+    return tuple(parts) or (0,)
 
 
 class Result:
@@ -130,8 +149,18 @@ def gate0(base, r):
     status, body, secs = call(base + "/openapi.json")
     if status == 200 and isinstance(body, dict):
         routes = sorted(body.get("paths", {}).keys())
-        r.add(0, "openapi version", True, "%s | %s" % (body.get("info", {}).get("title"),
-                                                       body.get("info", {}).get("version")))
+        # This row used to be hard-coded True: it PRINTED the version but could
+        # never fail, so a stale deploy passed silently. "Which build is live?"
+        # has been the single most expensive question in this project, so it is
+        # now an assertion. Pass --allow-older to accept a build older than
+        # EXPECTED_VERSION deliberately.
+        info = body.get("info", {}) or {}
+        deployed = str(info.get("version") or "")
+        current = _version_tuple(deployed) >= _version_tuple(EXPECTED_VERSION)
+        r.add(0, "deployed build is current", current or ALLOW_OLDER,
+              "%s | version %s (expected at least %s)%s"
+              % (info.get("title"), deployed or "(none)", EXPECTED_VERSION,
+                 "" if current else "  <-- STALE BUILD: not the revision you think it is"))
         expected = {"/healthz", "/api/letta/status", "/api/letta/agent",
                     "/api/letta/message", "/api/letta/new-session", "/api/letta/history"}
         missing = sorted(expected - set(routes))
@@ -291,12 +320,20 @@ def main(argv):
     # starting with "-" is a misuse: fail with the usage text and exit 2, rather
     # than passing the flag through as a URL and dying on a urllib traceback
     # several frames deep, which reads like a bug in the service under test.
+    global ALLOW_OLDER
+    if "--allow-older" in argv:
+        ALLOW_OLDER = True
+
     if argv[1] == "--base-url":
         if len(argv) < 3:
             print("--base-url needs a value\n")
             print(__doc__)
             return 2
         base = argv[2].rstrip("/")
+    elif argv[1] == "--allow-older":
+        print("--allow-older needs a URL too\n")
+        print(__doc__)
+        return 2
     elif argv[1].startswith("-"):
         print("unrecognised option: %s\n" % argv[1])
         print(__doc__)
