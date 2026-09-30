@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0d11">
+<link rel="manifest" href="/manifest.json">
+<title>Oddfellow Synthetic v0.20</title>
+<style>
+:root{color-scheme:dark;--bg:#0b0d11;--panel:#12161d;--soft:#181e27;--line:#293241;--text:#f4f7fb;--muted:#9ba7b7;--accent:#d8e3f0}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#080a0d,#10151c);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--text);min-height:100vh}
+.shell{max-width:920px;margin:auto;min-height:100vh;display:grid;grid-template-rows:auto auto 1fr auto}
+header{padding:18px 16px 10px;position:sticky;top:0;z-index:3;background:rgba(11,13,17,.94);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.top{display:flex;gap:12px;align-items:center;justify-content:space-between}.brand{display:flex;gap:12px;align-items:center}.orb{width:38px;height:38px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff,#aebdcc 22%,#354558 56%,#111822 72%);box-shadow:0 0 28px #7d93aa44}
+h1{font-size:18px;margin:0}.sub{font-size:12px;color:var(--muted);margin-top:2px}.chips{display:flex;flex-wrap:wrap;gap:7px;padding:10px 16px;border-bottom:1px solid var(--line);background:#0e1218}
+.chip{font-size:11px;padding:5px 8px;border:1px solid var(--line);border-radius:999px;color:#bcc7d3;background:#131923}.chip.good{color:#e9f7ec;border-color:#31593c}.chip.warn{color:#fff0c6;border-color:#654f22}
+#chat{padding:18px 14px 120px;overflow:auto}.msg{max-width:86%;margin:10px 0;padding:11px 13px;border-radius:15px;white-space:pre-wrap;line-height:1.45;font-size:15px}.user{margin-left:auto;background:#273244}.ai{background:#151b24;border:1px solid #27313f}.meta{font-size:10px;color:#7f8b9a;margin-top:5px}
+.composer{position:fixed;bottom:0;left:0;right:0;padding:10px max(10px,env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));background:rgba(9,12,16,.96);border-top:1px solid var(--line);backdrop-filter:blur(12px)}
+.inner{max-width:920px;margin:auto}.row{display:flex;gap:8px;align-items:flex-end}textarea{flex:1;resize:none;min-height:48px;max-height:150px;background:#141a22;border:1px solid #303a48;border-radius:14px;color:#fff;padding:12px;font:inherit}
+button,select{background:#1b2330;color:#eef4fa;border:1px solid #344152;border-radius:11px;padding:10px 11px;font-weight:600}button:disabled{opacity:.45}.toolrow{display:flex;gap:7px;overflow-x:auto;padding:7px 0 0}.tiny{font-size:11px;padding:7px 9px;white-space:nowrap}.active{outline:1px solid #c7d4e4}
+details{margin:10px 16px;border:1px solid var(--line);border-radius:12px;background:#111720}summary{padding:10px 12px;cursor:pointer;font-size:13px;color:#c8d2de}.settings{padding:0 12px 12px;display:grid;gap:8px}
+.settings input[type=url],.settings input[type=password]{flex:1;min-width:0;background:#141a22;border:1px solid #303a48;border-radius:9px;color:#fff;padding:7px 9px;font:inherit;font-size:12px}.setting{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;color:#b3becb}.notice{font-size:11px;color:#8f9baa;padding:0 16px 8px}.danger{color:#ffcccb}
+</style>
+<script src="https://js.puter.com/v2/"></script>
+</head>
+<body>
+<div class="shell">
+<header>
+  <div class="top">
+    <div class="brand"><div class="orb"></div><div><h1>Oddfellow Synthetic v0.20</h1><div class="sub">private synthetic AI operating layer · not sentient</div></div></div>
+    <button id="signin" class="tiny">Connect account</button>
+  </div>
+</header>
+<div>
+  <div class="chips">
+    <span class="chip good" id="kernel">Kernel ready</span>
+    <span class="chip" id="account">Account: local</span>
+    <span class="chip" id="memory">Memory: browser</span>
+    <span class="chip" id="backend">Backend: off</span>
+    <span class="chip" id="router">Router: discovering</span>
+    <span class="chip" id="voice">Voice: checking</span>
+    <span class="chip good">Spend ceiling: $0</span>
+  </div>
+  <details>
+    <summary>Synthetic stack & controls</summary>
+    <div class="settings">
+      <div class="setting"><span>Mode</span><select id="mode"><option value="balanced">Balanced synthesis</option><option value="fast">Fast</option><option value="deep">Deep multi-model synthesis</option></select></div>
+      <div class="setting"><span>Speak replies</span><input id="speak" type="checkbox" checked></div>
+      <div class="setting"><span>Hands-free auto-send</span><input id="hands" type="checkbox"></div>
+      <div class="setting"><span>Local verification pass</span><input id="verify" type="checkbox" checked></div>
+      <div class="setting"><span>Persistent private cloud history after sign-in</span><span id="cloudState">off</span></div>
+      <div class="setting"><span>Letta backend URL</span><input id="beurl" type="url" placeholder="https://your-service.onrender.com" autocomplete="off"></div>
+      <div class="setting"><span>Owner token</span><input id="betoken" type="password" placeholder="ODDFELLOW_OWNER_TOKEN" autocomplete="off"></div>
+      <div class="setting"><span>Letta memory + continuity</span><button class="tiny" id="betest">Test connection</button></div>
+    </div>
+  </details>
+  <div class="notice">Architecture: identity kernel → intent planner → route selection → memory → verifier → response/voice. When a Letta backend is configured, replies and memory come from the persistent Oddfellow agent; otherwise the free-only local router is used. Deep mode uses two free models from different providers and a third free model to synthesize them. If no verified free model is available, Oddfellow stops instead of using a paid route.</div>
+</div>
+<main id="chat"></main>
+<div class="composer"><div class="inner">
+  <div class="row"><button id="mic" title="Voice input">🎙</button><textarea id="input" rows="1" placeholder="Talk to Oddfellow…"></textarea><button id="send">Send</button></div>
+  <div class="toolrow"><button class="tiny" id="newchat">New chat</button><button class="tiny" id="export">Export</button><button class="tiny" id="stopvoice">Stop voice</button><span class="chip" id="plan">Planner idle</span></div>
+</div></div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const KEY='oddfellow.synthetic.v020.history';
+const CLOUD_KEY='oddfellow:synthetic:v020:history';
+const state={history:[],models:[],freeModels:[],signed:false,busy:false,recognition:null};
+const BKEY='oddfellow.backend.v020';
+const backend={url:'',token:'',ready:false,session:null};
+
+function loadBackend(){try{const b=JSON.parse(localStorage.getItem(BKEY)||'{}');backend.url=b.url||'';backend.token=b.token||''}catch{}}
+function saveBackend(){try{localStorage.setItem(BKEY,JSON.stringify({url:backend.url,token:backend.token}))}catch{}}
+function backendConfigured(){return !!(backend.url&&backend.token)}
+
+async function backendCall(path,opts={}){
+  const r=await fetch(backend.url.replace(/\/+$/,'')+path,Object.assign({},opts,{
+    headers:Object.assign({'Content-Type':'application/json','X-Owner-Token':backend.token},opts.headers||{})
+  }));
+  const t=await r.text();
+  let b=null;try{b=JSON.parse(t)}catch{b=t}
+  if(!r.ok){
+    const d=(b&&b.detail)||b;
+    const msg=(d&&d.error)?d.error:(typeof d==='string'?d:('HTTP '+r.status));
+    throw new Error('Backend: '+msg);
+  }
+  return b;
+}
+function setBackendChip(text,good){
+  const el=$('backend');if(!el)return;
+  el.textContent=text;el.className='chip '+(good?'good':'warn');
+}
+async function backendStatus(){
+  if(!backendConfigured()){setBackendChip('Backend: off',false);backend.ready=false;return null}
+  try{
+    const s=await backendCall('/api/letta/status');
+    backend.ready=!!(s&&s.letta_auth&&s.agent_found);
+    backend.session=s&&s.conversation_id||null;
+    setBackendChip(backend.ready?('Backend: '+(s.agent_name||'ready')):'Backend: not ready',backend.ready);
+    if(backend.ready&&s.model){$('router').textContent='Router: '+s.model;$('router').classList.add('good')}
+    return s;
+  }catch(e){
+    backend.ready=false;setBackendChip('Backend: '+(e&&e.message?e.message:'unreachable'),false);return null;
+  }
+}
+async function lettaReply(text){
+  const r=await backendCall('/api/letta/message',{method:'POST',body:JSON.stringify({input:text})});
+  backend.session=r.conversation_id||backend.session;
+  const toks=r.usage&&r.usage.completion_tokens;
+  return {out:r.reply,meta:'letta · '+(r.conversation_id||'session')+(toks!=null?(' · '+toks+' tok'):'')};
+}
+async function lettaHistory(){
+  try{
+    const h=await backendCall('/api/letta/history?limit=40');
+    if(h&&Array.isArray(h.messages)&&h.messages.length){
+      state.history=h.messages.map(m=>({role:m.role,text:m.content,ts:m.date,meta:'letta'}));
+      saveLocal();render();
+      $('memory').textContent='Memory: Letta (server)';$('memory').classList.add('good');
+    }
+  }catch{}
+}
+
+const SYSTEM=`You are Oddfellow Synthetic v0.20, a private synthetic AI operating layer for your owner.
+You are not conscious or sentient and must never claim otherwise.
+Your architecture may synthesize planning, memory, tools, model routing, verification, and voice into one coherent assistant identity.
+Operating doctrine: Preserve → Integrate → Improve → Execute → Verify → Continue.
+Be direct, accurate, useful, security-conscious, and explicit about what is verified versus planned.
+Never claim an external action succeeded without evidence. Never expose credentials.
+Spend rule: $0. Do not request or silently route to paid model usage.
+When the owner says "Continue across the board", treat it as permission to resume feasible low-risk, zero-cost work while preserving approval/security boundaries.`;
+
+function saveLocal(){localStorage.setItem(KEY,JSON.stringify(state.history.slice(-120)))}
+async function saveCloud(){
+  if(!state.signed) return;
+  try{await puter.kv.set(CLOUD_KEY,state.history.slice(-120),{disableSharing:true});$('memory').textContent='Memory: private cloud + browser';$('memory').classList.add('good')}
+  catch(e){$('memory').textContent='Memory: browser only'}
+}
+function loadLocal(){try{state.history=JSON.parse(localStorage.getItem(KEY)||'[]')}catch{state.history=[]}}
+async function loadCloud(){
+  if(!state.signed) return;
+  try{const h=await puter.kv.get(CLOUD_KEY);if(Array.isArray(h)&&h.length>=state.history.length){state.history=h;saveLocal()} $('cloudState').textContent='on';render()}
+  catch(e){$('cloudState').textContent='unavailable'}
+}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function add(role,text,meta=''){state.history.push({role,text,ts:new Date().toISOString(),meta});saveLocal();saveCloud();render()}
+function render(){
+  const c=$('chat');c.innerHTML='';
+  if(!state.history.length){const d=document.createElement('div');d.className='msg ai';d.innerHTML='Oddfellow Synthetic is ready. I combine a stable identity kernel, persistent memory, intent planning, free-only model routing, verification, and voice.<div class="meta">v0.20 synthetic architecture</div>';c.appendChild(d)}
+  for(const m of state.history){const d=document.createElement('div');d.className='msg '+(m.role==='user'?'user':'ai');d.innerHTML=esc(m.text)+(m.meta?'<div class="meta">'+esc(m.meta)+'</div>':'');c.appendChild(d)}
+  c.scrollTop=c.scrollHeight;
+}
+function extract(resp){
+  if(resp==null)return '';
+  if(typeof resp==='string')return resp;
+  const m=resp.message||resp;
+  const c=m.content;
+  if(typeof c==='string')return c;
+  if(Array.isArray(c))return c.map(x=>typeof x==='string'?x:(x?.text||x?.content||'')).join('\n').trim();
+  return m.text||resp.text||'';
+}
+function freeish(m){
+  const id=String(m.id||'').toLowerCase();
+  const cost=m.cost||{};
+  const zeroCost=Number(cost.input||0)===0 && Number(cost.output||0)===0 && cost.input!==undefined && cost.output!==undefined;
+  return id.endsWith(':free') || zeroCost;
+}
+async function discover(){
+  try{
+    state.models=await puter.ai.listModels();
+    state.freeModels=state.models.filter(freeish);
+    $('router').textContent='Router: '+state.freeModels.length+' free routes';
+    $('router').classList.toggle('good',state.freeModels.length>0);
+    if(!state.freeModels.length){$('router').classList.add('warn')}
+  }catch(e){$('router').textContent='Router: unavailable';$('router').classList.add('warn')}
+}
+function provider(m){return String(m.provider||m.id||'unknown').toLowerCase()}
+function scoreModel(m,task){
+  const id=String(m.id||'').toLowerCase();let s=0;
+  if(id.includes('gpt-5.6'))s+=9;if(id.includes('claude'))s+=7;if(id.includes('gemini'))s+=6;if(id.includes('grok'))s+=5;if(id.includes('deepseek'))s+=4;
+  if(task==='code'&&(id.includes('gpt')||id.includes('claude')||id.includes('coder')))s+=5;
+  if(task==='creative'&&(id.includes('claude')||id.includes('gemini')||id.includes('grok')))s+=3;
+  if(task==='analysis'&&(id.includes('gpt')||id.includes('claude')||id.includes('deepseek')))s+=4;
+  return s;
+}
+function plan(text){
+  const t=text.toLowerCase();let task='general';
+  if(/code|bug|api|python|javascript|deploy|server|database/.test(t))task='code';
+  else if(/analy|compare|research|strategy|plan|why/.test(t))task='analysis';
+  else if(/write|story|caption|creative|name|idea/.test(t))task='creative';
+  const risk=/send|publish|delete|spend|buy|password|credential|payment|deploy production/.test(t)?'elevated':'normal';
+  return {task,risk};
+}
+function pick(task,excludeProviders=[]){
+  const pool=state.freeModels.filter(m=>!excludeProviders.includes(provider(m)));
+  return [...pool].sort((a,b)=>scoreModel(b,task)-scoreModel(a,task))[0]||null;
+}
+function context(userText){
+  const turns=state.history.slice(-18).map(m=>({role:m.role==='user'?'user':'assistant',content:m.text}));
+  return [{role:'system',content:SYSTEM},...turns,{role:'user',content:userText}];
+}
+async function callModel(model,messages){
+  if(!model)throw new Error('No verified free model route is currently available.');
+  const r=await puter.ai.chat(messages,{model:model.id,normalize:true});
+  const out=extract(r).trim(); if(!out)throw new Error('Model returned an empty response.'); return out;
+}
+async function syntheticReply(text){
+  if(!state.freeModels.length)await discover();
+  if(!state.freeModels.length)throw new Error('No verified free model route is currently available. Paid fallback is disabled.');
+  const p=plan(text);$('plan').textContent=`Plan: ${p.task} · ${p.risk}`;
+  const mode=$('mode').value;
+  if(p.risk==='elevated') $('plan').classList.add('warn'); else $('plan').classList.remove('warn');
+
+  if(mode==='deep'){
+    const a=pick(p.task,[]); const b=pick(p.task,[provider(a)]);
+    if(!a||!b) throw new Error('Deep synthesis needs two free models from different providers; unavailable right now.');
+    const msg=context(text);
+    const [ra,rb]=await Promise.all([callModel(a,msg),callModel(b,msg)]);
+    const judge=pick('analysis',[]);
+    const synth=[{role:'system',content:SYSTEM+`\nYou are now the synthesis/verifier stage. Merge the strongest supported parts of two candidate answers. Resolve conflicts cautiously. Do not mention hidden chain-of-thought. Return only the final useful answer.`},
+      {role:'user',content:`OWNER REQUEST:\n${text}\n\nCANDIDATE A (${a.id}):\n${ra}\n\nCANDIDATE B (${b.id}):\n${rb}`}];
+    const out=await callModel(judge,synth);
+    return {out,meta:`deep synthesis · ${a.id} + ${b.id} → ${judge.id}`};
+  }
+
+  const m=pick(p.task,[]); let out=await callModel(m,context(text));
+  let meta=`${mode} · ${m.id}`;
+  if($('verify').checked && mode==='balanced'){
+    const v=pick('analysis',[provider(m)])||pick('analysis',[]);
+    if(v){
+      const check=await callModel(v,[{role:'system',content:SYSTEM+`\nYou are Oddfellow's verification stage. Inspect the draft for unsupported claims, contradictions, unsafe assumptions, or false claims of completed external actions. Return a corrected final answer, not commentary about the draft.`},{role:'user',content:`REQUEST:\n${text}\n\nDRAFT:\n${out}`}]);
+      out=check; meta+=` → verified by ${v.id}`;
+    }
+  }
+  return {out,meta};
+}
+async function send(){
+  const input=$('input');const text=input.value.trim();if(!text||state.busy)return;
+  state.busy=true;$('send').disabled=true;input.value='';add('user',text);
+  try{
+    const {out,meta}=backendConfigured()?await lettaReply(text):await syntheticReply(text);add('assistant',out,meta);
+    if($('speak').checked)speak(out);
+  }catch(e){add('assistant','Stopped safely: '+(e?.message||String(e)),'fail-closed · no paid fallback')}
+  finally{state.busy=false;$('send').disabled=false;$('plan').textContent='Planner idle'}
+}
+function speak(t){if(!('speechSynthesis'in window))return; speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t.slice(0,4000));u.rate=1; speechSynthesis.speak(u)}
+function setupVoice(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){$('voice').textContent='Voice: unsupported';return}
+  $('voice').textContent='Voice: ready';$('voice').classList.add('good');
+  const r=new SR();r.continuous=false;r.interimResults=false;r.lang='en-US';state.recognition=r;
+  r.onresult=e=>{const t=Array.from(e.results).map(x=>x[0].transcript).join(' ');$('input').value=t;if($('hands').checked)send()};
+  r.onerror=e=>{$('voice').textContent='Voice: '+e.error;$('voice').classList.add('warn')};
+  $('mic').onclick=()=>r.start();
+}
+async function accountRefresh(){
+  try{
+    state.signed=!!puter.auth.isSignedIn();
+    if(state.signed){const u=await puter.auth.getUser();$('account').textContent='Account: '+(u.username||'connected');$('account').classList.add('good');$('signin').textContent='Account connected';await loadCloud()}
+    else{$('account').textContent='Account: local';$('signin').textContent='Connect account'}
+  }catch{}
+}
+$('signin').onclick=async()=>{try{if(!puter.auth.isSignedIn())await puter.auth.signIn();await accountRefresh();await discover()}catch(e){add('assistant','Account connection was not completed: '+(e?.msg||e?.message||String(e)))}};
+$('send').onclick=send;$('input').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}});
+$('newchat').onclick=()=>{if(confirm('Start a new local conversation?')){state.history=[];saveLocal();saveCloud();render()}};
+$('export').onclick=()=>{const blob=new Blob([JSON.stringify({version:'0.20.0',exportedAt:new Date().toISOString(),history:state.history},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='oddfellow-synthetic-v020-history.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
+$('stopvoice').onclick=()=>{if('speechSynthesis'in window)speechSynthesis.cancel()};
+loadLocal();render();setupVoice();accountRefresh();
+
+// --- Letta backend settings ---
+loadBackend();
+if($('beurl'))$('beurl').value=backend.url;
+if($('betoken'))$('betoken').value=backend.token;
+function readBackendFields(){
+  backend.url=($('beurl')&&$('beurl').value||'').trim();
+  backend.token=($('betoken')&&$('betoken').value||'').trim();
+  saveBackend();
+}
+if($('beurl'))$('beurl').addEventListener('change',()=>{readBackendFields();backendStatus()});
+if($('betoken'))$('betoken').addEventListener('change',()=>{readBackendFields();backendStatus()});
+if($('betest'))$('betest').onclick=async()=>{
+  readBackendFields();
+  if(!backendConfigured()){add('assistant','Set the backend URL and owner token first.','backend config');return}
+  const s=await backendStatus();
+  if(s)add('assistant','Backend reachable. Agent: '+(s.agent_name||'(none)')+' · model '+(s.model||'?')+' · conversation '+(s.conversation_id||'(none)')+'\nMemory from the backend is a separate store from this browser history.','backend check');
+  else add('assistant','Backend did not answer as configured. Nothing was changed.','backend check');
+};
+
+if(backendConfigured()){backendStatus().then(s=>{if(s)lettaHistory()})}
+else{setBackendChip('Backend: off',false);discover()}
+if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
+</script>
+</body>
+</html>
