@@ -464,3 +464,86 @@ def test_status_never_echoes_the_api_key(fake):
     raw = client.get("/api/letta/status", headers=auth()).text
     assert "test-key-not-real" not in raw
     assert OWNER_TOKEN not in raw
+
+
+# --------------------------------------------------------------------------- #
+# CORS (v0.20.4)
+# --------------------------------------------------------------------------- #
+
+def test_single_allowed_origin_still_works(monkeypatch):
+    """Backwards compatibility: one origin behaves exactly as it did before."""
+    m = load_app(monkeypatch, ALLOWED_ORIGIN="https://oddfellow.example.com")
+    assert m.ALLOWED_ORIGINS == ["https://oddfellow.example.com"]
+
+
+def test_allowed_origin_accepts_a_comma_separated_list(monkeypatch):
+    m = load_app(
+        monkeypatch,
+        ALLOWED_ORIGIN="https://oddfellow.example.com, http://localhost:8080",
+    )
+    assert m.ALLOWED_ORIGINS == [
+        "https://oddfellow.example.com",
+        "http://localhost:8080",
+    ]
+
+
+def test_allowed_origin_ignores_blanks_and_trailing_slashes(monkeypatch):
+    m = load_app(monkeypatch, ALLOWED_ORIGIN=" https://a.example.com/ ,, ,http://b.test ")
+    assert m.ALLOWED_ORIGINS == ["https://a.example.com", "http://b.test"]
+
+
+def test_no_allowed_origin_means_no_cors_middleware(monkeypatch):
+    """Unset must stay unset -- never silently allow every origin."""
+    m = load_app(monkeypatch, ALLOWED_ORIGIN=None)
+    assert m.ALLOWED_ORIGINS == []
+
+
+def test_preflight_succeeds_for_each_listed_origin(monkeypatch):
+    m = load_app(
+        monkeypatch,
+        ALLOWED_ORIGIN="https://oddfellow.example.com,http://localhost:8080",
+    )
+    f = FakeLetta(m)
+    monkeypatch.setattr(m, "letta", f.letta)
+    monkeypatch.setattr(m, "letta_raw", f.letta_raw)
+    monkeypatch.setattr(m, "LettaError", LettaError)
+    client = TestClient(m.app, raise_server_exceptions=False)
+
+    for origin in m.ALLOWED_ORIGINS:
+        r = client.options(
+            "/api/letta/status",
+            headers={
+                "Origin": origin,
+                "Access-Control-Request-Method": "GET",
+                "Access-Control-Request-Headers": "x-owner-token",
+            },
+        )
+        assert r.status_code == 200, origin
+        assert r.headers.get("access-control-allow-origin") == origin
+
+
+def test_preflight_rejects_an_unlisted_origin(monkeypatch):
+    m = load_app(monkeypatch, ALLOWED_ORIGIN="https://oddfellow.example.com")
+    f = FakeLetta(m)
+    monkeypatch.setattr(m, "letta", f.letta)
+    monkeypatch.setattr(m, "letta_raw", f.letta_raw)
+    monkeypatch.setattr(m, "LettaError", LettaError)
+    client = TestClient(m.app, raise_server_exceptions=False)
+
+    r = client.options(
+        "/api/letta/status",
+        headers={
+            "Origin": "https://evil.example.com",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+    assert r.headers.get("access-control-allow-origin") is None
+
+
+def test_status_reports_allowed_origins_so_cors_is_diagnosable(fake):
+    """A browser 'Failed to fetch' must be tellable apart from a dead backend."""
+    m, f, client = fake
+    body = client.get("/api/letta/status", headers=auth()).json()
+    assert "allowed_origins" in body
+    assert isinstance(body["allowed_origins"], list)
+

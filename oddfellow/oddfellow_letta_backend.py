@@ -1,5 +1,5 @@
 """
-Oddfellow Letta backend  --  v0.20.3 (verified build)
+Oddfellow Letta backend  --  v0.20.4 (verified build)
 
 Purpose
 -------
@@ -86,13 +86,21 @@ Environment variables (all set as Render secrets, never in source or the browser
   ODDFELLOW_OWNER_TOKEN      required  -- shared secret the front end must send
   LETTA_MODEL                required  -- e.g. letta/auto  (must be letta/* )
   ODDFELLOW_AGENT_ID         optional  -- pin an existing agent; skips find/create
-  ALLOWED_ORIGIN             optional  -- CORS origin, e.g. https://oddfellow-...onrender.com
+  ALLOWED_ORIGIN             optional  -- CORS origin(s), comma-separated,
+                                          e.g. https://oddfellow-...onrender.com
   LETTA_BASE_URL             optional  -- default https://api.letta.com
   ODDFELLOW_ALLOW_PAID_MODEL optional  -- "true" to permit a non-letta/* model
   ODDFELLOW_RATE_PER_MIN     optional  -- default 20 requests/minute per client
 
+v0.20.4 -- CORS accepts a list
+------------------------------
+ALLOWED_ORIGIN now takes a comma-separated list of origins. Previously it was a
+single origin, and a mismatch surfaced in the browser as "Failed to fetch" --
+indistinguishable from a dead backend. /api/letta/status now echoes the allowed
+origins so the cause is visible without guessing.
+
 v0.20.3 -- self-diagnosing health check
---------------------------------------
+---------------------------------------
 v0.20.2 shipped a /healthz that returned only {"ok": false}. On 2026-09-30 it was
 deployed to Render, served the correct v0.20.2 API surface, and still could not
 answer a single request -- because LETTA_API_KEY and/or ODDFELLOW_OWNER_TOKEN were
@@ -134,6 +142,14 @@ ODDFELLOW_OWNER_TOKEN = os.environ.get("ODDFELLOW_OWNER_TOKEN", "").strip()
 LETTA_MODEL = os.environ.get("LETTA_MODEL", "").strip()
 ODDFELLOW_AGENT_ID = os.environ.get("ODDFELLOW_AGENT_ID", "").strip()
 ALLOWED_ORIGIN = os.environ.get("ALLOWED_ORIGIN", "").strip()
+
+# v0.20.4: ALLOWED_ORIGIN accepts a comma-separated list.
+# A single-origin CORS config fails silently in the browser as "Failed to fetch",
+# which is indistinguishable from a dead backend. The front end may legitimately
+# be served from more than one origin (Render URL, custom domain, localhost while
+# testing), so allow a list. A single value behaves exactly as before.
+ALLOWED_ORIGINS = [o.strip().rstrip("/") for o in ALLOWED_ORIGIN.split(",") if o.strip()]
+
 ALLOW_PAID_MODEL = os.environ.get("ODDFELLOW_ALLOW_PAID_MODEL", "").lower() == "true"
 RATE_PER_MIN = int(os.environ.get("ODDFELLOW_RATE_PER_MIN", "20"))
 
@@ -208,12 +224,12 @@ elif not LETTA_MODEL.startswith("letta/") and not ALLOW_PAID_MODEL:
 CONFIG_ERRORS: list[str] = [detail for _, detail in CONFIG_PROBLEMS]
 CONFIG_FAILED_KEYS: list[str] = [key for key, _ in CONFIG_PROBLEMS]
 
-app = FastAPI(title="Oddfellow Letta backend", version="0.20.3")
+app = FastAPI(title="Oddfellow Letta backend", version="0.20.4")
 
-if ALLOWED_ORIGIN:
+if ALLOWED_ORIGINS:
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=[ALLOWED_ORIGIN],
+        allow_origins=ALLOWED_ORIGINS,
         allow_credentials=False,
         allow_methods=["GET", "POST", "OPTIONS"],
         allow_headers=["Content-Type", "X-Owner-Token"],
@@ -515,7 +531,7 @@ async def healthz() -> dict:
         "ok": healthy,
         "checks_failed": CONFIG_FAILED_KEYS,
         "service": "oddfellow_letta_backend",
-        "version": "0.20.3",
+        "version": "0.20.4",
     }
     # Fail closed: a service that cannot answer a single request must not report
     # 200 to a platform health check, or the platform will route traffic to it.
@@ -532,13 +548,16 @@ async def status(x_owner_token: Optional[str] = Header(default=None)) -> dict:
 
     result: dict = {
         "backend": "oddfellow_letta_backend",
-        "version": "0.20.3",
+        "version": "0.20.4",
         "letta_base_url": LETTA_BASE_URL,
         "model": LETTA_MODEL,
         "agent_pinned": bool(ODDFELLOW_AGENT_ID),
         "letta_auth": False,
         "agent_found": False,
         "agent_id": None,
+        # Not a secret: these are public URLs. Exposed so a browser "Failed to
+        # fetch" can be told apart from CORS rejection without guessing.
+        "allowed_origins": ALLOWED_ORIGINS,
     }
 
     # 1. Does the key authenticate?
