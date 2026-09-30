@@ -51,17 +51,35 @@ IMPLEMENTED > PLANNED > BLOCKED**. Nothing is upgraded without evidence.
 
 ## Deploying
 
-One click — creates a **new** service and leaves the existing ones untouched as
-rollback:
+**Two targets, same API, same acceptance harness.**
+
+### Cloudflare Workers — one command, no dashboard
+
+```bash
+cd oddfellow/cloudflare
+LETTA_API_KEY=... ODDFELLOW_OWNER_TOKEN=... ./deploy.sh deploy
+```
+
+Deploys, sets both secrets over stdin, waits for the new revision, and runs the
+acceptance harness against the live URL. `./deploy.sh verify` does the same thing
+locally with no Cloudflare account at all. Cloudflare is the only deploy target in
+Letta's integration catalog, which is why it exists.
+
+### Render — one click
 
 ```
 https://render.com/deploy?repo=https://github.com/craigbegg005-netizen/chatgpt-github-connection/tree/letta/combined-single-service-v0.20.4
 ```
 
+Creates a **new** service and leaves the existing ones untouched as rollback.
 Render prompts for `LETTA_API_KEY` and `ODDFELLOW_OWNER_TOKEN`; `LETTA_MODEL` is
-already set in `render.yaml`. The health check points at `/livez`, which is always
-200 while the process is up, so a deploy cannot fail over a missing secret —
-`/healthz` still fails closed with 503 and names what is missing.
+already set in `render.yaml`.
+
+Either way the health check points at **`/livez`**, which is always 200 while the
+process is up, so a deploy cannot fail over a missing secret. `/healthz` still
+fails closed with 503 and names what is missing. That split exists because a
+Render deploy was once reported as *failed* when the only real problem was that
+the secrets had not been entered yet.
 
 ## Verifying
 
