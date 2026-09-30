@@ -36,13 +36,25 @@ services:
         value: agent-a9a8eb2c-2fed-4554-9998-aa4783c7efc4
       - key: ODDFELLOW_RATE_PER_MIN
         value: "20"
+      # This service serves the page as well as the API. Same origin means CORS
+      # does not apply at all, so there is no origin to get wrong -- and the PWA
+      # is installed from the same origin that serves the API, which is what the
+      # phone needs. Path is relative to rootDir. Mounted last, so it cannot
+      # shadow /api or /healthz.
+      - key: ODDFELLOW_FRONTEND_DIR
+        value: frontend
+      # Kept so a *separate* front end service can still call this backend.
+      # These are public URLs, not secrets. From v0.20.4 the value is a
+      # comma-separated list. The allow-list previously named only
+      # oddfellow-synthetic-v020 -- the front end with NO backend wiring --
+      # while rejecting oddfellow-letta-ui-v020, the one that HAS it. That
+      # mismatch presents in the browser as "Failed to fetch", which is
+      # indistinguishable from a dead backend.
+      - key: ALLOWED_ORIGIN
+        value: https://oddfellow-letta-ui-v020.onrender.com,https://oddfellow-synthetic-v020.onrender.com
       # Secrets. `sync: false` means Render prompts for the value at deploy time
       # and keeps it out of this file and out of git. Never fill these in here.
       - key: LETTA_API_KEY
         sync: false
       - key: ODDFELLOW_OWNER_TOKEN
-        sync: false
-      # Set to your front end's origin, e.g.
-      # https://oddfellow-synthetic-v020.onrender.com
-      - key: ALLOWED_ORIGIN
         sync: false
