@@ -58,6 +58,26 @@ Fix (zero cost, no new infrastructure):
    unverifiable from the platform side.
 4. `tests/test_backend.py` extended from 26 to **29 tests**.
 
+## Acceptance harness
+
+`acceptance_check.py` runs the acceptance gates against a **deployed** backend and
+prints the raw request/response for every check, so its verdict can be overruled
+by a human. Stdlib only — no pip install.
+
+```bash
+python oddfellow/acceptance_check.py https://oddfellow-letta-poc.onrender.com
+ODDFELLOW_OWNER_TOKEN=... python oddfellow/acceptance_check.py <url>
+```
+
+Exit code 0 = all checks passed, 1 = at least one failed, 2 = misuse. It checks
+`/healthz`, the live OpenAPI version, the expected route set, the `MessageIn`
+schema, then (only if the service is actually healthy) authenticated status,
+a real message reply, conversation rotation, history, and the 401 paths.
+
+Run against the deployed service on 2026-09-30 00:51 UTC it correctly reported
+gate 0 FAILED: `healthz HTTP 200 {"ok": false}`, version 0.20.2, routes all
+present, `MessageIn` props `['input','mode']`.
+
 ## Automated test suite
 
 `tests/test_backend.py` — **29 tests, 29 passing, 0.6 s, no network, no API key.**
