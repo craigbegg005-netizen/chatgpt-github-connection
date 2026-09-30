@@ -454,6 +454,30 @@ class LettaError(RuntimeError):
         super().__init__(f"Letta API error {status}: {detail}")
 
 
+@app.exception_handler(LettaError)
+async def letta_error_handler(request: Request, exc: LettaError) -> JSONResponse:
+    """Any uncaught Letta failure becomes a structured response, never a bare 500.
+
+    Routes that want to *report* a Letta failure rather than fail on it (notably
+    /api/letta/status) catch LettaError themselves and are unaffected. This is the
+    backstop for everything else, so an unreachable provider can never present as
+    "Internal Server Error" with nothing in it -- which is how this defect
+    surfaced when a bad LETTA_BASE_URL was injected on 2026-09-30.
+    """
+    audit("letta_error", request, status=exc.status, detail=str(exc.detail)[:200])
+    return JSONResponse(
+        status_code=502 if exc.status >= 500 else exc.status,
+        content={
+            "detail": {
+                "error": "letta_api_error",
+                "status": exc.status,
+                "detail": exc.detail,
+            }
+        },
+        headers={"X-Request-ID": getattr(request.state, "request_id", "")},
+    )
+
+
 def _headers() -> Dict[str, str]:
     return {
         "Authorization": f"Bearer {LETTA_API_KEY}",
@@ -462,10 +486,37 @@ def _headers() -> Dict[str, str]:
     }
 
 
+def _transport_error(exc: Exception, path: str) -> "LettaError":
+    """Turn a transport failure into the same error type as an HTTP failure.
+
+    Why this exists: the client used to wrap only HTTP status codes. A DNS
+    failure, a refused connection, or a timeout raised httpx's own exception,
+    which nothing caught, so the caller got an opaque 500 "Internal Server Error"
+    with no indication that the *provider* was unreachable rather than the
+    backend being broken. Found by injecting a bad LETTA_BASE_URL on 2026-09-30.
+
+    A provider that cannot be reached is a 502, not a 500: the backend is fine,
+    the thing it depends on is not. That distinction is the whole point.
+    """
+    return LettaError(
+        502,
+        {
+            "error": "letta_transport_error",
+            "kind": type(exc).__name__,
+            "detail": str(exc)[:300],
+            "path": path,
+            "base_url": LETTA_BASE_URL,
+        },
+    )
+
+
 async def letta(method: str, path: str, json_body: Optional[dict] = None, params: Optional[dict] = None) -> Any:
     url = f"{LETTA_BASE_URL}{path}"
-    async with httpx.AsyncClient(timeout=HTTP_TIMEOUT) as client:
-        resp = await client.request(method, url, headers=_headers(), json=json_body, params=params)
+    try:
+        async with httpx.AsyncClient(timeout=HTTP_TIMEOUT) as client:
+            resp = await client.request(method, url, headers=_headers(), json=json_body, params=params)
+    except httpx.HTTPError as exc:
+        raise _transport_error(exc, path) from exc
     try:
         body = resp.json()
     except Exception:
@@ -478,8 +529,11 @@ async def letta(method: str, path: str, json_body: Optional[dict] = None, params
 async def letta_raw(method: str, path: str, json_body: Optional[dict] = None, params: Optional[dict] = None) -> Any:
     """Call Letta and return the RAW body text (needed for SSE endpoints)."""
     url = f"{LETTA_BASE_URL}{path}"
-    async with httpx.AsyncClient(timeout=HTTP_TIMEOUT) as client:
-        resp = await client.request(method, url, headers=_headers(), json=json_body, params=params)
+    try:
+        async with httpx.AsyncClient(timeout=HTTP_TIMEOUT) as client:
+            resp = await client.request(method, url, headers=_headers(), json=json_body, params=params)
+    except httpx.HTTPError as exc:
+        raise _transport_error(exc, path) from exc
     if resp.status_code >= 400:
         try:
             body = resp.json()

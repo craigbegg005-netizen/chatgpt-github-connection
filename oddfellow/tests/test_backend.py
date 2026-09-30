@@ -872,3 +872,102 @@ def test_livez_is_not_shadowed_by_the_frontend_mount(monkeypatch, tmp_path):
     assert client.get("/").status_code == 200
     assert client.get("/livez").json()["live"] is True
     assert client.get("/healthz").status_code == 200
+
+
+# --------------------------------------------------------------------------- #
+# Provider failure (found by injecting a bad LETTA_BASE_URL, 2026-09-30)
+# --------------------------------------------------------------------------- #
+# The client used to wrap only HTTP status codes. A DNS failure, a refused
+# connection, or a timeout raised httpx's own exception, which nothing caught, so
+# the caller got an opaque 500 "Internal Server Error" with no indication that the
+# provider was unreachable rather than the backend being broken. A provider that
+# cannot be reached is a 502: the backend is fine, its dependency is not.
+
+def test_a_transport_failure_becomes_a_letta_error(monkeypatch):
+    m = load_app(monkeypatch)
+    import httpx
+
+    class BoomClient:
+        def __init__(self, *a, **k): pass
+        async def __aenter__(self): return self
+        async def __aexit__(self, *a): return False
+        async def request(self, *a, **k):
+            raise httpx.ConnectError("[Errno -2] Name or service not known")
+
+    monkeypatch.setattr(m.httpx, "AsyncClient", BoomClient)
+    caught = None
+    try:
+        asyncio.run(m.letta("GET", "/v1/models/"))
+    except m.LettaError as exc:
+        caught = exc
+    assert caught is not None, "a transport failure must not escape as a raw httpx error"
+    assert caught.status == 502
+    assert caught.detail["error"] == "letta_transport_error"
+    assert caught.detail["kind"] == "ConnectError"
+    assert caught.detail["path"] == "/v1/models/"
+
+
+def test_a_transport_failure_in_the_raw_client_is_also_wrapped(monkeypatch):
+    m = load_app(monkeypatch)
+    import httpx
+
+    class BoomClient:
+        def __init__(self, *a, **k): pass
+        async def __aenter__(self): return self
+        async def __aexit__(self, *a): return False
+        async def request(self, *a, **k):
+            raise httpx.ConnectTimeout("timed out")
+
+    monkeypatch.setattr(m.httpx, "AsyncClient", BoomClient)
+    caught = None
+    try:
+        asyncio.run(m.letta_raw("POST", "/v1/conversations/x/messages", {}))
+    except m.LettaError as exc:
+        caught = exc
+    assert caught is not None and caught.status == 502
+    assert caught.detail["kind"] == "ConnectTimeout"
+
+
+def test_an_unreachable_provider_is_a_structured_502_not_a_bare_500(monkeypatch):
+    m = load_app(monkeypatch)
+
+    async def boom(*a, **k):
+        raise m.LettaError(502, {"error": "letta_transport_error", "kind": "ConnectError"})
+
+    monkeypatch.setattr(m, "letta", boom)
+    client = TestClient(m.app, raise_server_exceptions=False)
+    r = client.post("/api/letta/message", headers=auth(), json={"input": "hello"})
+    assert r.status_code == 502, "an unreachable provider must not present as a 500"
+    body = r.json()
+    assert body["detail"]["error"] == "letta_api_error"
+    assert body["detail"]["detail"]["kind"] == "ConnectError"
+    assert "reply" not in body, "a failed provider must never produce an invented reply"
+
+
+def test_status_reports_an_unreachable_provider_without_failing(monkeypatch):
+    """Status is the diagnostic endpoint: it reports the fault, it does not raise."""
+    m = load_app(monkeypatch)
+
+    async def boom(*a, **k):
+        raise m.LettaError(502, {"error": "letta_transport_error", "kind": "ConnectError"})
+
+    monkeypatch.setattr(m, "letta", boom)
+    r = TestClient(m.app, raise_server_exceptions=False).get("/api/letta/status", headers=auth())
+    assert r.status_code == 200
+    body = r.json()
+    assert body["letta_auth"] is False and body["agent_found"] is False
+    assert body["letta_error"]["status"] == 502
+    assert body["letta_error"]["detail"]["kind"] == "ConnectError"
+
+
+def test_a_provider_failure_is_audited(monkeypatch, capsys):
+    m = load_app(monkeypatch)
+
+    async def boom(*a, **k):
+        raise m.LettaError(502, {"error": "letta_transport_error", "kind": "ConnectError"})
+
+    monkeypatch.setattr(m, "letta", boom)
+    TestClient(m.app, raise_server_exceptions=False).post(
+        "/api/letta/message", headers=auth(), json={"input": "hello"})
+    records = events(capsys, "letta_error")
+    assert records and records[-1]["status"] == 502
