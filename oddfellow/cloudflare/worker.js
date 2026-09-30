@@ -1,5 +1,5 @@
 /**
- * Oddfellow backend — Cloudflare Worker edition.  v0.20.5
+ * Oddfellow backend — Cloudflare Worker edition.  v0.20.6
  *
  * WHY THIS EXISTS
  * ---------------
@@ -43,7 +43,7 @@
  * difference and is written down rather than glossed over.
  */
 
-const VERSION = "0.20.5";
+const VERSION = "0.20.6";
 const SERVICE = "oddfellow_letta_backend";
 const AGENT_NAME = "Oddfellow";
 const LETTA_BASE_URL = "https://api.letta.com";
@@ -279,15 +279,27 @@ function requireOwner(env, token, request) {
 // --------------------------------------------------------------------------- //
 
 async function letta(env, method, path, body) {
-  const res = await fetch(LETTA_BASE_URL + path, {
-    method,
-    headers: {
-      authorization: `Bearer ${env.LETTA_API_KEY}`,
-      "content-type": "application/json",
-      accept: "application/json",
-    },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
+  let res;
+  try {
+    res = await fetch(LETTA_BASE_URL + path, {
+      method,
+      headers: {
+        authorization: `Bearer ${env.LETTA_API_KEY}`,
+        "content-type": "application/json",
+        accept: "application/json",
+      },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+  } catch (e) {
+    // A network-level failure is not an HTTP status. `fetch` rejects with a bare
+    // TypeError, which would otherwise surface as an opaque 500 with no status
+    // and no detail -- "the API never answered" and "the API said no" need
+    // different fixes, so they must not look the same.
+    const err = new Error(`Letta API unreachable: ${e.message}`);
+    err.status = 502;
+    err.detail = { error: "letta_transport_error", message: String(e.message) };
+    throw err;
+  }
   const text = await res.text();
   let parsed;
   try { parsed = JSON.parse(text); } catch { parsed = text.slice(0, 500); }
@@ -301,15 +313,23 @@ async function letta(env, method, path, body) {
 }
 
 async function lettaRaw(env, method, path, body) {
-  const res = await fetch(LETTA_BASE_URL + path, {
-    method,
-    headers: {
-      authorization: `Bearer ${env.LETTA_API_KEY}`,
-      "content-type": "application/json",
-      accept: "text/event-stream",
-    },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
+  let res;
+  try {
+    res = await fetch(LETTA_BASE_URL + path, {
+      method,
+      headers: {
+        authorization: `Bearer ${env.LETTA_API_KEY}`,
+        "content-type": "application/json",
+        accept: "text/event-stream",
+      },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+  } catch (e) {
+    const err = new Error(`Letta API unreachable: ${e.message}`);
+    err.status = 502;
+    err.detail = { error: "letta_transport_error", message: String(e.message) };
+    throw err;
+  }
   const text = await res.text();
   if (!res.ok) {
     let parsed;
@@ -471,6 +491,10 @@ async function handleStatus(env, request, token) {
     model: env.LETTA_MODEL,
     agent_pinned: Boolean(env.ODDFELLOW_AGENT_ID),
     letta_auth: false,
+    // "the API said no" and "the API never answered" need different fixes, so
+    // they must not look the same here. letta_auth is about the key;
+    // letta_reachable is about the network path to the provider.
+    letta_reachable: null,
     agent_found: false,
     agent_id: null,
     allowed_origins: allowedOrigins(env),
@@ -479,8 +503,11 @@ async function handleStatus(env, request, token) {
   try {
     await letta(env, "GET", "/v1/models/?limit=1");
     result.letta_auth = true;
+    result.letta_reachable = true;
   } catch (e) {
     result.letta_error = { status: e.status, detail: e.detail };
+    const detail = e.detail && typeof e.detail === "object" ? e.detail : {};
+    result.letta_reachable = detail.error !== "letta_transport_error";
     return json(result, 200, env, request);
   }
 
