@@ -40,6 +40,32 @@ ensure_dirs() {
   mkdir -p "$STATE_DIR/bin" "$STATE_DIR/logs" "$(dirname "$VENV")"
 }
 
+# Fetch cloudflared if it is missing.
+#
+# Why this is automatic: state moved to $STATE_DIR precisely so the rehearsal
+# survives a sandbox cycle, but the binary is not part of the repo, so a cycle
+# still left `up` dying with "fetch it from the Cloudflare releases page" --
+# a manual step that defeats the point of the move. It is a public download
+# with no account and no cost, so there is no reason to make a human do it.
+#
+# Verified by deleting the binary and running `up`: it is fetched, and the
+# rehearsal comes up. The download is atomic (temp file + mv) so an interrupted
+# fetch cannot leave a truncated binary that looks executable.
+ensure_cloudflared() {
+  [ -x "$CLOUDFLARED" ] && return 0
+  local url="https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64"
+  say "cloudflared missing -- fetching it to $CLOUDFLARED"
+  local tmp="$CLOUDFLARED.download.$$"
+  if ! curl -fsSL --max-time 180 -o "$tmp" "$url"; then
+    rm -f "$tmp"
+    die "could not download cloudflared from $url (no network?)"
+  fi
+  chmod +x "$tmp"
+  mv -f "$tmp" "$CLOUDFLARED"
+  "$CLOUDFLARED" --version >/dev/null 2>&1 \
+    || die "the downloaded cloudflared at $CLOUDFLARED does not run"
+}
+
 # A background bash task is reaped when it times out, so anything long-running
 # must be detached from the shell that started it. This is how.
 #
@@ -133,7 +159,7 @@ up() {
   [ -f "$TUNNEL_LOG" ] && before="$(wc -c <"$TUNNEL_LOG")"
 
   if [ -z "$(tunnel_pids)" ]; then
-    [ -x "$CLOUDFLARED" ] || die "cloudflared not found at $CLOUDFLARED (fetch it from the Cloudflare releases page)"
+    ensure_cloudflared
     say "Opening a Cloudflare quick tunnel"
     ( cd "$(dirname "$CLOUDFLARED")" && exec setsid --fork "$CLOUDFLARED" tunnel \
         --url "http://127.0.0.1:$PORT" --no-autoupdate ) >>"$TUNNEL_LOG" 2>&1 </dev/null &

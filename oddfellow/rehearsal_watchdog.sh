@@ -76,7 +76,25 @@ start_backend() {
 }
 
 start_tunnel() {
-  [ -x "$CLOUDFLARED" ] || { log "cloudflared missing at $CLOUDFLARED"; return 1; }
+  # Fetch it rather than giving up. The binary lives in $STATE_DIR so it survives
+  # a sandbox cycle, but it is not in the repo -- so a cycle can still take it,
+  # and the old behaviour was to log "cloudflared missing" and return 1, which
+  # left the tunnel down permanently while the watchdog looked healthy. A
+  # watchdog that cannot repair the thing it watches is worse than none.
+  if [ ! -x "$CLOUDFLARED" ]; then
+    log "cloudflared missing at $CLOUDFLARED -- fetching"
+    local tmp="$CLOUDFLARED.download.$$"
+    mkdir -p "$(dirname "$CLOUDFLARED")"
+    if curl -fsSL --max-time 180 -o "$tmp" \
+        "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64"; then
+      chmod +x "$tmp" && mv -f "$tmp" "$CLOUDFLARED"
+      log "cloudflared fetched"
+    else
+      rm -f "$tmp"
+      log "cloudflared download FAILED -- tunnel cannot start"
+      return 1
+    fi
+  fi
   ( cd "$(dirname "$CLOUDFLARED")" && exec setsid --fork "$CLOUDFLARED" tunnel \
       --url "http://127.0.0.1:$PORT" --no-autoupdate ) >>"$TUNNEL_LOG" 2>&1 </dev/null &
   disown
