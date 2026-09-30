@@ -15,14 +15,19 @@ set -uo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PORT="${ODDFELLOW_REHEARSAL_PORT:-8130}"
-VENV="${ODDFELLOW_VENV:-/tmp/venv}"
-CLOUDFLARED="${CLOUDFLARED:-/tmp/cloudflared}"
-BACKEND_LOG=/tmp/oddfellow-rehearsal-backend.log
-TUNNEL_LOG=/tmp/oddfellow-rehearsal-tunnel.log
-URLFILE=/tmp/oddfellow-rehearsal-url.txt
-WATCHDOG_LOG=/tmp/oddfellow-watchdog.log
-PIDFILE=/tmp/oddfellow-watchdog.pid
+# State lives under /root, not /tmp: the sandbox has been observed to cycle and
+# clear /tmp, which wiped the venv, the cloudflared binary and the tunnel log.
+STATE_DIR="${ODDFELLOW_STATE_DIR:-/root/.oddfellow}"
+VENV="${ODDFELLOW_VENV:-$STATE_DIR/venv}"
+CLOUDFLARED="${CLOUDFLARED:-$STATE_DIR/bin/cloudflared}"
+BACKEND_LOG="$STATE_DIR/logs/backend.log"
+TUNNEL_LOG="$STATE_DIR/logs/tunnel.log"
+URLFILE="$STATE_DIR/url.txt"
+WATCHDOG_LOG="$STATE_DIR/logs/watchdog.log"
+PIDFILE="$STATE_DIR/watchdog.pid"
 INTERVAL="${ODDFELLOW_WATCHDOG_INTERVAL:-30}"
+
+mkdir -p "$STATE_DIR/logs" "$(dirname "$VENV")"
 
 log() { printf '%s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" >>"$WATCHDOG_LOG"; }
 
@@ -84,7 +89,7 @@ start_tunnel() {
 # each dead candidate costs a full curl timeout.
 live_url() {
   local f u
-  for f in "$TUNNEL_LOG" /tmp/tunnel3.log /tmp/tunnel2.log /tmp/tunnel.log; do
+  for f in "$TUNNEL_LOG" /tmp/oddfellow-rehearsal-tunnel.log /tmp/tunnel3.log /tmp/tunnel2.log /tmp/tunnel.log; do
     [ -f "$f" ] || continue
     for u in $(grep -oE 'https://[a-z0-9-]+\.trycloudflare\.com' "$f" 2>/dev/null \
         | awk '!seen[$0]++' | tail -6 \

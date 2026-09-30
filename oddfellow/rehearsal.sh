@@ -22,15 +22,23 @@ set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PORT="${ODDFELLOW_REHEARSAL_PORT:-8130}"
-VENV="${ODDFELLOW_VENV:-/tmp/venv}"
-CLOUDFLARED="${CLOUDFLARED:-/tmp/cloudflared}"
-BACKEND_LOG=/tmp/oddfellow-rehearsal-backend.log
-TUNNEL_LOG=/tmp/oddfellow-rehearsal-tunnel.log
-WATCHDOG_PIDFILE=/tmp/oddfellow-watchdog.pid
+# State lives under /root, not /tmp: the sandbox has been observed to cycle and
+# clear /tmp, which wiped the venv, the cloudflared binary and the tunnel log —
+# forcing a full reinstall and losing the URL history. /root survives.
+STATE_DIR="${ODDFELLOW_STATE_DIR:-/root/.oddfellow}"
+VENV="${ODDFELLOW_VENV:-$STATE_DIR/venv}"
+CLOUDFLARED="${CLOUDFLARED:-$STATE_DIR/bin/cloudflared}"
+BACKEND_LOG="$STATE_DIR/logs/backend.log"
+TUNNEL_LOG="$STATE_DIR/logs/tunnel.log"
+WATCHDOG_PIDFILE="$STATE_DIR/watchdog.pid"
 MODE="${1:-}"
 
 say() { printf '\n\033[1m%s\033[0m\n' "$*"; }
 die() { printf '\nERROR: %s\n' "$*" >&2; exit 1; }
+
+ensure_dirs() {
+  mkdir -p "$STATE_DIR/bin" "$STATE_DIR/logs" "$(dirname "$VENV")"
+}
 
 # A background bash task is reaped when it times out, so anything long-running
 # must be detached from the shell that started it. This is how.
@@ -90,6 +98,7 @@ watchdog_pid() {
 up() {
   [ -n "${LETTA_API_KEY:-}" ]         || die "LETTA_API_KEY is not set in the environment"
   [ -n "${ODDFELLOW_OWNER_TOKEN:-}" ] || die "ODDFELLOW_OWNER_TOKEN is not set in the environment"
+  ensure_dirs
 
   if [ ! -x "$VENV/bin/python" ]; then
     say "Creating the venv at $VENV"
@@ -169,7 +178,7 @@ find_url() {
   # Newest-first matters for speed: the live tunnel is almost always the most
   # recent one, and each dead candidate costs a full curl timeout.
   local f u
-  for f in "$TUNNEL_LOG" /tmp/tunnel3.log /tmp/tunnel2.log /tmp/tunnel.log; do
+  for f in "$TUNNEL_LOG" /tmp/oddfellow-rehearsal-tunnel.log /tmp/tunnel3.log /tmp/tunnel2.log /tmp/tunnel.log; do
     [ -f "$f" ] || continue
     for u in $(grep -oE 'https://[a-z0-9-]+\.trycloudflare\.com' "$f" 2>/dev/null \
         | awk '!seen[$0]++' | tail -6 \
@@ -182,19 +191,24 @@ find_url() {
 
 status() {
   local url
-  url="$(find_url)"
+  # `|| true` matters: find_url returns non-zero when nothing answers, and under
+  # `set -e` an unguarded command substitution would abort the script with no
+  # output at all -- i.e. it would fail silently in exactly the situation the
+  # status report exists for.
+  url="$(find_url || true)"
   [ -n "$(backend_pids)" ] && echo "backend: UP" || echo "backend: DOWN"
   [ -n "$(tunnel_pids)" ]  && echo "tunnel:  UP" || echo "tunnel:  DOWN"
   [ -n "$(watchdog_pid || true)" ] && echo "watchdog: UP" || echo "watchdog: DOWN"
   if [ -n "$url" ]; then
     echo "url:     $url"
     curl -s --max-time 20 "$url/livez" || true; echo
-    if [ -n "${ODDFELLOW_OWNER_TOKEN:-}" ]; then
+    if [ -n "${ODDFELLOW_OWNER_TOKEN:-}" ] && [ -x "$VENV/bin/python" ]; then
       "$VENV/bin/python" "$HERE/acceptance_check.py" "$url" --owner-token "$ODDFELLOW_OWNER_TOKEN" 2>&1 | tail -5
     fi
   else
-    echo "url:     (none recorded — run '$0 up')"
+    echo "url:     (none answering — run '$0 up')"
   fi
+  return 0
 }
 
 keepalive() {
