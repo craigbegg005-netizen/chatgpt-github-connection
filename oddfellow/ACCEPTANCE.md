@@ -16,14 +16,36 @@ starting:
 
 | Thing | Value on 2026-09-30 | How to read it |
 |---|---|---|
-| Backend version | `0.20.2` deployed | `curl -s .../openapi.json` → `info.version` |
-| Front end | `oddfellow-synthetic-v020` — **no backend fields** | open it; does Settings show "Letta backend URL"? |
-| Front end with backend wiring | branch `letta/frontend-letta-backend` — **not deployed** | `git show origin/letta/frontend-letta-backend:frontend/index.html` |
+| Backend version | `0.20.2` deployed on `oddfellow-letta-poc` | `curl -s .../openapi.json` → `info.version` |
+| Front end **with** backend wiring | `oddfellow-letta-ui-v020` — **deployed**, at commit `40f9168` | open it; Settings shows "Letta backend URL" |
+| Front end **without** backend wiring | `oddfellow-synthetic-v020` — deployed, Puter only | 15721 B page, no `X-Owner-Token` in source |
+| Launch candidate | branch `letta/combined-single-service-v0.20.4` — **not deployed** | one origin serves page + API |
 
-**GATE 1 cannot be run at all against the deployed front end.** The live
-`oddfellow-synthetic-v020` page has no backend URL field and no owner-token
-field; it calls Puter directly. GATE 1 requires the `frontend-letta-backend`
-build. Deploying it is a prerequisite, not a step.
+**Corrected 2026-09-30 01:35 UTC.** An earlier version of this table said GATE 1
+"cannot be run at all against the deployed front end" and named
+`oddfellow-synthetic-v020` as the only deployed front end. That is no longer true:
+`oddfellow-letta-ui-v020` is deployed **with** the backend fields, so **GATE 1 is
+runnable today** against it. Established by fetching both pages and diffing them,
+not by assumption.
+
+**🔴 GATE 1 will nevertheless fail on CORS with the current backend configuration,
+and the failure looks exactly like an outage.** The live allow-list names
+`oddfellow-synthetic-v020` — the page with *no* wiring — and rejects
+`oddfellow-letta-ui-v020`, the page with wiring. Probed directly:
+
+```
+Origin: https://oddfellow-synthetic-v020.onrender.com  -> access-control-allow-origin: ...synthetic-v020...
+Origin: https://oddfellow-letta-ui-v020.onrender.com   -> (no access-control-allow-origin header)
+```
+
+A correct-looking `Failed to fetch` here is CORS, not a dead backend. Two fixes:
+set `ALLOWED_ORIGIN` to both origins comma-separated (v0.20.4+), or deploy the
+single-service branch, where same-origin means CORS does not apply at all.
+
+**🔴 GATE 2 cannot pass against the deployed front end.** Commit `40f9168` ships no
+icon files and its manifest declares no `icons` array, so `/icons/icon-192.png`
+returns **404** and the PWA cannot be installed. `91b411c` fixes it and is included
+in the single-service branch.
 
 **GATE 0's expected output depends on the backend version.** `checks_failed` was
 added in v0.20.3 and the deploy is v0.20.2, so on the live service you will see
