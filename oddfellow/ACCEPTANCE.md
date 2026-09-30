@@ -8,6 +8,31 @@ Prepared by Oddfellow (Letta agent), 2026-09-30. Times in CT.
 
 ---
 
+## ⚠️ CURRENT AS OF 2026-09-30 02:56 UTC — read this before the tables below
+
+The tables below were written against builds that are no longer the candidate.
+**Nothing is deployed.** The current state:
+
+| Thing | Now |
+|---|---|
+| Deploy candidate | `letta/combined-single-service-v0.20.4` @ **`6350c00`** — **v0.20.5**, not deployed |
+| Backend version it serves | `0.20.5` |
+| Health check the platform uses | **`/livez`** (always 200). `/healthz` still fails closed with 503. |
+| Second deploy target | `oddfellow/cloudflare/` — the same API as a Cloudflare Worker, verified locally, not deployed |
+| Live front end **with** PWA icons and backend wiring | `oddfellow-letta-ui-v020-pwa` — 🟢 LIVE, 20897 B = commit `91b411c` |
+| Live backend | `oddfellow-letta-poc` — 🟢 LIVE, v0.20.2, ⚠️ **unconfigured** |
+| `oddfellow-letta-backend` | 🔴 resolves in DNS, accepts TCP, **no HTTP response** — no healthy instance |
+
+**Run the harness rather than reading tables:** `python oddfellow/acceptance_check.py
+<url> --owner-token "$ODDFELLOW_OWNER_TOKEN"`. It now automates GATE 2 as well.
+
+Two things in the text below are now wrong and are kept only so the correction is
+visible: the "Backend version" row (says `0.20.2`), and any instruction to expect
+`checks_failed` only on v0.20.3+. On v0.20.5 `/healthz` reports `checks_failed` and
+`/livez` reports `ready` as well.
+
+---
+
 ## FIRST — pin the versions you are testing
 
 This checklist spans more than one build. Reading it against the wrong pair
