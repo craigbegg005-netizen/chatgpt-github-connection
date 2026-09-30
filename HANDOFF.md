@@ -88,3 +88,42 @@ All on `craigbegg005-netizen/chatgpt-github-connection`. Every push was read bac
 ## 8. Non-negotiables
 
 Zero-spend-first; no paid service, API, or model without explicit owner approval; no silent fallback to a paid provider. Never claim a commit, push, deployment, test, or connection without verification. Never commit secrets. Fail closed. Distinguish IMPLEMENTED from TESTED from DEPLOYED from VERIFIED. Oddfellow is never described as conscious, self-aware, or sentient. The Global Peace & Human Security Framework stays a separate project — no shared code, branding, data, mailboxes, or infrastructure.
+
+---
+
+## CYCLE LOG
+
+### 2026-09-30 00:36 UTC — Letta agent
+
+**Commit:** `56aa6fc` on `letta/oddfellow-backend-v0.20.2`
+
+Added `oddfellow/tests/test_backend.py` — the backend previously had **no** tests.
+26 tests, **26 passing** in 0.61 s, fully offline (the Letta transport is faked,
+so it needs no API key and costs nothing). Run with
+`python -m pytest oddfellow/tests -v`.
+
+Coverage: fail-closed config validation (missing key / owner token / model, and
+a paid model rejected by the zero-spend guard); owner-token auth; agent
+resolution including the **402 agent-limit** path and the
+**created-but-unreadable** quirk; SSE parsing; conversation reuse and stale-id
+replacement; rate limiting; and secrets hygiene.
+
+Two tests exist specifically to lock in the fixes for the quirks in §3 of this
+document: one asserts the backend resolves agents through
+`POST /v1/agents/search` and **never** the always-empty list endpoint; another
+asserts messages go to the **conversation-scoped** route and **never** to the
+agent default conversation whose cached prompt caused the amnesia fault.
+
+Live smoke test immediately after: `POST /api/letta/message` → HTTP 200,
+*"Confirmed: I am Oddfellow, and the zero-spend rule applies as a standing
+instruction."*
+
+**Render:** not inspected. The Letta agent has **no Render credential**
+(`letta secret list` → "No secrets stored"; `RENDER_API_KEY` unset; the Render
+API returns 401 unauthenticated). A handoff stated ChatGPT has authenticated
+Render access to workspace `tea-darhbk97lnhs73dd86qg` — that access is ChatGPT's,
+not this agent's, and must not be treated as shared. Render control-plane work is
+**WAITING_AUTHORIZATION**.
+
+**Live endpoint probes** (read-only HTTP, all that is possible without a Render
+credential): unchanged from the table above.
