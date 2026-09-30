@@ -46,7 +46,14 @@
 const VERSION = "0.20.6";
 const SERVICE = "oddfellow_letta_backend";
 const AGENT_NAME = "Oddfellow";
-const LETTA_BASE_URL = "https://api.letta.com";
+const DEFAULT_LETTA_BASE_URL = "https://api.letta.com";
+
+// Read from the environment rather than hard-coded, for the same reason the
+// Python backend does: a fault that cannot be injected cannot be proven fixed.
+// The transport-error path below was only testable once this was settable.
+function lettaBase(env) {
+  return String((env && env.LETTA_BASE_URL) || DEFAULT_LETTA_BASE_URL).replace(/\/+$/, "");
+}
 const MAX_BODY_BYTES = 64 * 1024;
 const DEFAULT_RATE_PER_MIN = 20;
 
@@ -278,10 +285,25 @@ function requireOwner(env, token, request) {
 // Letta client
 // --------------------------------------------------------------------------- //
 
+/**
+ * Wrap a Letta failure in the same shape the Python backend returns, so the two
+ * implementations really are one API rather than two similar ones:
+ *   {"detail":{"error":"letta_api_error","status":502,"detail":{...}}}
+ * The front end understands both, but a divergence between the two backends is a
+ * divergence, and "the same API" is the whole claim.
+ */
+function lettaFailure(e) {
+  return {
+    error: "letta_api_error",
+    status: e.status || 502,
+    detail: e.detail || String(e.message),
+  };
+}
+
 async function letta(env, method, path, body) {
   let res;
   try {
-    res = await fetch(LETTA_BASE_URL + path, {
+    res = await fetch(lettaBase(env) + path, {
       method,
       headers: {
         authorization: `Bearer ${env.LETTA_API_KEY}`,
@@ -297,7 +319,14 @@ async function letta(env, method, path, body) {
     // different fixes, so they must not look the same.
     const err = new Error(`Letta API unreachable: ${e.message}`);
     err.status = 502;
-    err.detail = { error: "letta_transport_error", message: String(e.message) };
+    err.detail = {
+      error: "letta_transport_error",
+      kind: (e && e.name) || "Error",
+      message: String(e.message),
+      detail: String(e.message).slice(0, 300),
+      path,
+      base_url: lettaBase(env),
+    };
     throw err;
   }
   const text = await res.text();
@@ -315,7 +344,7 @@ async function letta(env, method, path, body) {
 async function lettaRaw(env, method, path, body) {
   let res;
   try {
-    res = await fetch(LETTA_BASE_URL + path, {
+    res = await fetch(lettaBase(env) + path, {
       method,
       headers: {
         authorization: `Bearer ${env.LETTA_API_KEY}`,
@@ -327,7 +356,14 @@ async function lettaRaw(env, method, path, body) {
   } catch (e) {
     const err = new Error(`Letta API unreachable: ${e.message}`);
     err.status = 502;
-    err.detail = { error: "letta_transport_error", message: String(e.message) };
+    err.detail = {
+      error: "letta_transport_error",
+      kind: (e && e.name) || "Error",
+      message: String(e.message),
+      detail: String(e.message).slice(0, 300),
+      path,
+      base_url: lettaBase(env),
+    };
     throw err;
   }
   const text = await res.text();
@@ -487,7 +523,7 @@ async function handleStatus(env, request, token) {
     backend: SERVICE,
     version: VERSION,
     runtime: "cloudflare-worker",
-    letta_base_url: LETTA_BASE_URL,
+    letta_base_url: lettaBase(env),
     model: env.LETTA_MODEL,
     agent_pinned: Boolean(env.ODDFELLOW_AGENT_ID),
     letta_auth: false,
@@ -541,7 +577,7 @@ async function handleAgent(env, request, token) {
   try {
     return json({ agent: agentSummary(await resolveAgent(env)) }, 200, env, request);
   } catch (e) {
-    return fail(e.status || 502, e.detail || String(e.message), env, request);
+    return fail(e.status || 502, lettaFailure(e), env, request);
   }
 }
 
@@ -564,7 +600,7 @@ async function handleMessage(env, request, token, payload) {
     conversationId = await resolveConversation(env, agent);
     raw = await lettaRaw(env, "POST", `/v1/conversations/${conversationId}/messages`, { input: payload.input });
   } catch (e) {
-    if (e.status) return fail(e.status, e.detail || String(e.message), env, request);
+    if (e.status) return fail(e.status, lettaFailure(e), env, request);
     return fail(502, { error: "letta_message_failed", detail: String(e.message) }, env, request);
   }
 
@@ -622,7 +658,7 @@ async function handleNewSession(env, request, token) {
     audit("session_created", { agent_id: agent.id, conversation_id: convId });
     return json({ agent_id: agent.id, conversation_id: convId }, 200, env, request);
   } catch (e) {
-    return fail(e.status || 502, e.detail || String(e.message), env, request);
+    return fail(e.status || 502, lettaFailure(e), env, request);
   }
 }
 
@@ -656,7 +692,7 @@ async function handleHistory(env, request, token, limitParam) {
     }
     return json({ agent_id: agent.id, conversation_id: conversationId, messages: out }, 200, env, request);
   } catch (e) {
-    return fail(e.status || 502, e.detail || String(e.message), env, request);
+    return fail(e.status || 502, lettaFailure(e), env, request);
   }
 }
 
