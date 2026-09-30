@@ -71,6 +71,25 @@ class Result:
         return [r for r in self.rows if not r["ok"]]
 
 
+RATE_LIMIT_RETRIES = 2
+
+
+def _retry_after_seconds(exc, default=20.0, cap=70.0):
+    """Seconds to wait before retrying a 429.
+
+    Honour Retry-After when the server sends a plain number of seconds; fall back
+    to a default otherwise (the header may be an HTTP-date, which is not worth
+    parsing here). Capped so a hostile or mistaken value cannot stall the run.
+    """
+    raw = exc.headers.get("Retry-After") if getattr(exc, "headers", None) else None
+    if raw:
+        try:
+            return max(0.0, min(float(raw), cap))
+        except (TypeError, ValueError):
+            pass
+    return default
+
+
 def call(url, method="GET", body=None, token=None, timeout=TIMEOUT):
     """Return (status, parsed_or_text, seconds). Never raises on HTTP errors."""
     data = json.dumps(body).encode() if body is not None else None
@@ -81,15 +100,32 @@ def call(url, method="GET", body=None, token=None, timeout=TIMEOUT):
     if token:
         req.add_header("X-Owner-Token", token)
     started = time.time()
-    try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            raw = resp.read().decode("utf-8", "replace")
-            status = resp.status
-    except urllib.error.HTTPError as exc:
-        raw = exc.read().decode("utf-8", "replace")
-        status = exc.code
-    except Exception as exc:  # network, DNS, timeout
-        return None, "transport error: %s" % exc, time.time() - started
+    attempt = 0
+    while True:
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                raw = resp.read().decode("utf-8", "replace")
+                status = resp.status
+            break
+        except urllib.error.HTTPError as exc:
+            # A hosting platform can rate-limit the harness -- Render's free tier
+            # allows 20 requests/minute, which tripped this harness before. That
+            # is a property of the platform, not of the build under test, so
+            # backing off is correct and reporting a failure here would be a
+            # false negative. Only 429 is retried: it is unambiguous, whereas a
+            # 503 is also this backend's legitimate fail-closed answer.
+            if exc.code == 429 and attempt < RATE_LIMIT_RETRIES:
+                wait = _retry_after_seconds(exc)
+                attempt += 1
+                print("  [ .. ] HTTP 429 from %s - backing off %.0fs (attempt %d/%d)"
+                      % (url, wait, attempt, RATE_LIMIT_RETRIES), flush=True)
+                time.sleep(wait)
+                continue
+            raw = exc.read().decode("utf-8", "replace")
+            status = exc.code
+            break
+        except Exception as exc:  # network, DNS, timeout
+            return None, "transport error: %s" % exc, time.time() - started
     try:
         return status, json.loads(raw), time.time() - started
     except Exception:
