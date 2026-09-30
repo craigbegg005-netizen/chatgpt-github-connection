@@ -22,7 +22,7 @@ Nothing here touches api.letta.com and nothing costs anything: the stub is a
 local http.server and the "API key" is a literal dummy.
 
 Usage:
-    python fault_injection_check.py            # uses /tmp/venv if present
+    python fault_injection_check.py            # finds the rehearsal venv itself
     python fault_injection_check.py --verbose
 
 Stdlib only, like acceptance_check.py.
@@ -43,7 +43,29 @@ import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VENV_PY = os.environ.get("ODDFELLOW_VENV", "/tmp/venv") + "/bin/python"
+
+
+def _venv_python():
+    """Resolve the rehearsal interpreter the same way rehearsal.sh does.
+
+    Rehearsal state moved from /tmp/venv to /root/.oddfellow/venv so it survives
+    a sandbox cycle; the old path is kept last so an existing checkout still
+    works. Probing for the first path that exists beats hard-coding one, which
+    is how this harness broke when the venv moved.
+    """
+    candidates = []
+    if os.environ.get("ODDFELLOW_VENV"):
+        candidates.append(os.environ["ODDFELLOW_VENV"])
+    state = os.environ.get("ODDFELLOW_STATE_DIR", "/root/.oddfellow")
+    candidates += [os.path.join(state, "venv"), "/root/.oddfellow/venv", "/tmp/venv"]
+    for base in candidates:
+        candidate = os.path.join(base, "bin", "python")
+        if os.path.exists(candidate):
+            return candidate
+    return os.path.join(candidates[0], "bin", "python")
+
+
+VENV_PY = _venv_python()
 
 # A dummy that is shaped like a key so the leak assertion is meaningful.
 DUMMY_KEY = "sk-letmein-this-is-not-a-real-key-0000000000000000"
