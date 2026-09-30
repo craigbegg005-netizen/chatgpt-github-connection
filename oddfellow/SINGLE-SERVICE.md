@@ -56,6 +56,23 @@ fail-closed behaviour working.
 
 ## Deploying it
 
+> **Supply the secrets at creation time, not afterwards.** Verified locally: with
+> the secrets absent, `/healthz` returns **HTTP 503** and names what is missing —
+> by name only, never by value:
+>
+> ```
+> /healthz -> HTTP 503
+> {"ok":false,"checks_failed":["LETTA_API_KEY","ODDFELLOW_OWNER_TOKEN","LETTA_MODEL"],
+>  "service":"oddfellow_letta_backend","version":"0.20.4"}
+> ```
+>
+> That is the fail-closed behaviour doing its job — a service that cannot answer a
+> single request must not report healthy. But Render's `healthCheckPath` expects
+> **200**, so a Blueprint deploy that skips the prompts will be marked unhealthy and
+> will not come up. `LETTA_MODEL` is set literally in `render.yaml`, so only the two
+> secrets need entering. This is the single most likely way for an otherwise correct
+> deploy to fail confusingly.
+
 Render → New → Blueprint → this repo → branch `letta/combined-single-service-v0.20.4`.
 Supply `LETTA_API_KEY` and `ODDFELLOW_OWNER_TOKEN` when prompted (`sync: false`, so
 Render asks and never writes them into the file). Then:
