@@ -1,0 +1,36 @@
+# Oddfellow backend on Cloudflare Workers.
+#
+# This is the SAME API as ../oddfellow_letta_backend.py, on a runtime this agent
+# can deploy without needing anyone else's account access. See worker.js for the
+# full rationale and the one documented behavioural difference (the rate limiter
+# is per-isolate rather than per-process).
+#
+#   npx wrangler dev            # local, no account needed
+#   npx wrangler deploy         # needs a Cloudflare account
+#
+# Secrets are NOT in this file. Set them once with:
+#   npx wrangler secret put LETTA_API_KEY
+#   npx wrangler secret put ODDFELLOW_OWNER_TOKEN
+
+name = "oddfellow-letta-backend"
+main = "worker.js"
+compatibility_date = "2026-09-30"
+workers_dev = true
+
+# The front end is served from the same Worker, so page, API and PWA share one
+# origin and CORS does not apply at all. Static assets are served directly by
+# Cloudflare; anything that is not a file (every /api route, /livez, /healthz)
+# falls through to the Worker.
+[assets]
+directory = "../frontend"
+binding = "ASSETS"
+
+# Non-secret configuration. Everything here is a public value.
+[vars]
+LETTA_MODEL = "letta/auto"
+ODDFELLOW_AGENT_ID = "agent-a9a8eb2c-2fed-4554-9998-aa4783c7efc4"
+ODDFELLOW_RATE_PER_MIN = "20"
+# Public URLs, not secrets. Comma-separated. Kept so a *separate* front end
+# service can still call this backend; unnecessary when the front end is served
+# from this same Worker.
+ALLOWED_ORIGIN = "https://oddfellow-letta-ui-v020-pwa.onrender.com,https://oddfellow-letta-ui-v020.onrender.com,https://oddfellow-synthetic-v020.onrender.com"

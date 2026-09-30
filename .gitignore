@@ -1,8 +1,6 @@
 __pycache__/
-*.py[cod]
+*.pyc
 .pytest_cache/
-.venv/
-venv/
-.env
-.env.*
-*.log
+.dev.vars
+.wrangler/
+node_modules/
