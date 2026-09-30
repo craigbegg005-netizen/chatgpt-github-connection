@@ -13,6 +13,17 @@ and the actual response, so a human can overrule the verdict.
 Stdlib only -- no pip install, so it runs anywhere, including a phone-adjacent
 laptop with nothing set up.
 
+Gates:
+  0  the service is up and is the build you think it is  (/livez, /healthz, OpenAPI)
+  1  authenticated work: status, a real reply, a new session, history, agent summary
+  2  the page and its PWA assets: installable manifest, every declared icon
+     resolves, a service worker, and a static mount that does not shadow /api
+  3  security: no token -> 401, wrong token -> 401, no key-shaped string in any
+     response body
+
+Gate 2 is skipped with a clear message when the target does not serve a front
+end; run it against the static front end service in that case.
+
 Exit codes:  0 = all gate checks passed   1 = at least one failed   2 = misuse
 
 The owner token may also come from the ODDFELLOW_OWNER_TOKEN environment
@@ -88,6 +99,20 @@ def _strings(value):
 # --------------------------------------------------------------------------- #
 
 def gate0(base, r):
+    # Liveness first. Render's healthCheckPath points at /livez, and a non-200
+    # health check is a FAILED DEPLOY -- so if this endpoint is missing or not
+    # 200, the service can never come up no matter how correct the rest is.
+    status, body, secs = call(base + "/livez")
+    if status == 200 and isinstance(body, dict):
+        r.add(0, "livez (the deploy health check)", body.get("live") is True,
+              "HTTP %s live=%s ready=%s checks_failed=%s"
+              % (status, body.get("live"), body.get("ready"), body.get("checks_failed")))
+    else:
+        r.add(0, "livez (the deploy health check)", False,
+              "HTTP %s %s -- a 404 here means the deployed build predates v0.20.5, "
+              "so render.yaml must still point healthCheckPath at /healthz"
+              % (status, body))
+
     status, body, secs = call(base + "/healthz")
     if status is None:
         r.add(0, "reachable", False, body)
@@ -161,6 +186,56 @@ def gate1(base, token, r):
     return bool(reply)
 
 
+def gate2(base, r):
+    """The page and its PWA assets.
+
+    GATE 2 is "install it on the phone". It was unreachable for a whole cycle
+    because the deployed front end shipped no icons and a manifest with no
+    `icons` array, so the page could never be installed -- and nothing in the
+    harness noticed. It is checked here now, including that every icon the
+    manifest declares actually resolves, because a manifest that promises an
+    icon the server 404s is exactly the failure that was missed.
+    """
+    status, body, _ = call(base + "/")
+    serves_page = status == 200 and isinstance(body, str) and "<html" in body.lower()
+    # call() truncates a non-JSON body, so report the fact rather than a length
+    # that would read as the real page size.
+    r.add(2, "front end served from this origin", serves_page,
+          "HTTP %s, %s" % (status, "html" if serves_page else body))
+    if not serves_page:
+        r.add(2, "PWA assets", False,
+              "this origin does not serve a front end; run gate 2 against the "
+              "static front end service instead")
+        return False
+
+    # A static mount at "/" must not swallow the API. If it does, every
+    # authenticated call 404s and looks like a routing bug in the client.
+    status, _, _ = call(base + "/api/letta/status")
+    r.add(2, "static mount does not shadow /api", status in (401, 403, 503),
+          "GET /api/letta/status -> HTTP %s (401/403/503 expected, 404 means shadowed)" % status)
+
+    status, manifest, _ = call(base + "/manifest.json")
+    icons = manifest.get("icons") if isinstance(manifest, dict) else None
+    r.add(2, "manifest declares icons", status == 200 and bool(icons),
+          "HTTP %s icons=%s" % (status,
+                                [i.get("sizes") for i in icons] if isinstance(icons, list) else icons))
+    if isinstance(icons, list) and icons:
+        bad = []
+        for icon in icons:
+            src = icon.get("src") or ""
+            st, _, _ = call(base + src)
+            if st != 200:
+                bad.append("%s -> HTTP %s" % (src, st))
+        r.add(2, "every declared icon resolves", not bad,
+              "checked %d icon(s)%s" % (len(icons), "" if not bad else " | BROKEN: %s" % bad))
+    else:
+        r.add(2, "every declared icon resolves", False,
+              "no icons array, so there is nothing to install")
+    status, _, _ = call(base + "/sw.js")
+    r.add(2, "service worker served", status == 200, "HTTP %s" % status)
+    return True
+
+
 def gate3(base, token, r):
     status, _, _ = call(base + "/api/letta/status")
     r.add(3, "no token -> 401", status == 401, "HTTP %s" % status)
@@ -228,6 +303,7 @@ def main(argv):
     healthy = gate0(base, r)
     if healthy:
         gate1(base, token, r)
+        gate2(base, r)
         gate3(base, token, r)
     else:
         r.add(0, "later gates", False,
