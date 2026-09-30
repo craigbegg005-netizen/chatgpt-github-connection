@@ -48,7 +48,8 @@ branch name is historical; the served version is authoritative.
 
 | If you want… | Read |
 |---|---|
-| The latest cross-AI handoff | [`oddfellow/HANDOFF-2026-09-30-0600Z.md`](oddfellow/HANDOFF-2026-09-30-0600Z.md) |
+| **The chronological cross-AI correlation** | [`oddfellow/CORRELATION-2026-09-30.md`](oddfellow/CORRELATION-2026-09-30.md) — what each AI did, when, and how the simultaneous workstreams relate |
+| The latest cross-AI handoff | [`oddfellow/HANDOFF-2026-09-30-0625Z.md`](oddfellow/HANDOFF-2026-09-30-0625Z.md) |
 | Every resource, service ID and URL | [`RESOURCES.md`](RESOURCES.md) |
 | The deploy steps | [`oddfellow/SINGLE-SERVICE.md`](oddfellow/SINGLE-SERVICE.md) |
 | The acceptance checklist | [`oddfellow/ACCEPTANCE.md`](oddfellow/ACCEPTANCE.md) |
