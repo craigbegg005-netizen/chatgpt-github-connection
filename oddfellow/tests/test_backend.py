@@ -14,6 +14,7 @@ import asyncio
 import importlib
 import json
 import os
+import re
 import sys
 import time
 
@@ -1052,3 +1053,57 @@ def test_status_marks_a_working_provider_as_reachable(fake):
     body = client.get("/api/letta/status", headers=auth()).json()
     assert body["letta_reachable"] is True
     assert body["letta_auth"] is True
+
+
+# --------------------------------------------------------------------------- #
+# The Worker is a second implementation of the same contract
+#
+# It drifted once -- Worker v0.20.5 while the backend was v0.20.6 -- and nothing
+# caught it. A human noticed. A fallback that silently reports a different
+# version is worse than no fallback, because it answers "which build is live?"
+# wrongly, and that question has been the most expensive one in this project.
+#
+# The live harness already asserts the version of whatever URL it is pointed at,
+# so a *deployed* Worker is covered. What was missing is the source-level check:
+# nothing compared the two files in the repo, which is where the drift started.
+# --------------------------------------------------------------------------- #
+
+def worker_source():
+    path = os.path.join(APP_DIR, "cloudflare", "worker.js")
+    if not os.path.isfile(path):
+        pytest.skip("cloudflare/worker.js not present in this checkout")
+    return open(path).read()
+
+
+def test_the_worker_and_the_backend_agree_on_the_version(monkeypatch):
+    m = load_app(monkeypatch)
+    text = worker_source()
+    match = re.search(r'const VERSION\s*=\s*"([^"]+)"', text)
+    assert match, "worker.js has no VERSION constant to compare against"
+    assert match.group(1) == m.app.version, (
+        f"drift: worker.js reports {match.group(1)}, "
+        f"the backend reports {m.app.version}"
+    )
+
+
+def test_the_worker_header_version_matches_its_constant():
+    """The header is what a human reads first; it drifted separately once."""
+    text = worker_source()
+    constant = re.search(r'const VERSION\s*=\s*"([^"]+)"', text)
+    header = re.search(r'Cloudflare Worker edition\.\s+v([0-9]+\.[0-9]+\.[0-9]+)', text)
+    assert constant and header, "could not find both version markers in worker.js"
+    assert header.group(1) == constant.group(1), (
+        f"worker.js header says v{header.group(1)} but VERSION is {constant.group(1)}"
+    )
+
+
+def test_the_worker_serves_the_same_routes_as_the_backend(monkeypatch):
+    """Same contract means the same paths. A missing route is a silent 404."""
+    m = load_app(monkeypatch)
+    text = worker_source()
+    backend_routes = {
+        r.path for r in m.app.routes
+        if getattr(r, "path", "").startswith(("/api/", "/livez", "/healthz"))
+    }
+    missing = sorted(p for p in backend_routes if p not in text)
+    assert not missing, f"worker.js never mentions these backend routes: {missing}"
