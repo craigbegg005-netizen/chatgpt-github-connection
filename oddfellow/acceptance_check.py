@@ -8,6 +8,7 @@ and the actual response, so a human can overrule the verdict.
 
     python oddfellow/acceptance_check.py https://oddfellow-letta-poc.onrender.com
     python oddfellow/acceptance_check.py <url> --owner-token "$ODDFELLOW_OWNER_TOKEN"
+    python oddfellow/acceptance_check.py --base-url <url> --owner-token "$ODDFELLOW_OWNER_TOKEN"
 
 Stdlib only -- no pip install, so it runs anywhere, including a phone-adjacent
 laptop with nothing set up.
@@ -191,7 +192,26 @@ def main(argv):
     if len(argv) < 2 or argv[1] in ("-h", "--help"):
         print(__doc__)
         return 2
-    base = argv[1].rstrip("/")
+    # Accept the URL positionally (documented) or as --base-url. Anything else
+    # starting with "-" is a misuse: fail with the usage text and exit 2, rather
+    # than passing the flag through as a URL and dying on a urllib traceback
+    # several frames deep, which reads like a bug in the service under test.
+    if argv[1] == "--base-url":
+        if len(argv) < 3:
+            print("--base-url needs a value\n")
+            print(__doc__)
+            return 2
+        base = argv[2].rstrip("/")
+    elif argv[1].startswith("-"):
+        print("unrecognised option: %s\n" % argv[1])
+        print(__doc__)
+        return 2
+    else:
+        base = argv[1].rstrip("/")
+    if not base.startswith(("http://", "https://")):
+        print("base URL must start with http:// or https:// (got %r)\n" % base)
+        print(__doc__)
+        return 2
     token = None
     if "--owner-token" in argv:
         token = argv[argv.index("--owner-token") + 1]
