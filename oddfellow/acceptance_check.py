@@ -65,6 +65,25 @@ def call(url, method="GET", body=None, token=None, timeout=TIMEOUT):
         return status, raw[:400], time.time() - started
 
 
+def _strings(value):
+    """Yield every string inside a parsed JSON value, at any depth.
+
+    call() returns a parsed object, so a leak scan that only handles `str`
+    inspects nothing on a real endpoint.
+    """
+    if isinstance(value, str):
+        yield value
+    elif isinstance(value, dict):
+        for key, item in value.items():
+            yield str(key)
+            for text in _strings(item):
+                yield text
+    elif isinstance(value, (list, tuple)):
+        for item in value:
+            for text in _strings(item):
+                yield text
+
+
 # --------------------------------------------------------------------------- #
 
 def gate0(base, r):
@@ -146,14 +165,26 @@ def gate3(base, token, r):
     r.add(3, "no token -> 401", status == 401, "HTTP %s" % status)
     status, _, _ = call(base + "/api/letta/status", token="definitely-not-the-token")
     r.add(3, "wrong token -> 401", status == 401, "HTTP %s" % status)
-    status, body, _ = call(base + "/api/letta/status", token=token or "x")
-    leaked = []
-    if os.environ.get("LETTA_API_KEY"):
-        # We cannot compare against the *service's* key, but the response must not
-        # contain anything key-shaped.
-        leaked = [w for w in ("sk-", "Bearer") if isinstance(body, str) and w in body]
-    r.add(3, "no key-shaped string in responses", not leaked,
-          "scanned for sk-/Bearer -> %s" % (leaked or "none found"))
+    # Scan every endpoint we can reach, and scan the *parsed* body recursively.
+    #
+    # An earlier version of this check could never fail: it tested
+    # `isinstance(body, str)`, but call() JSON-parses every JSON response, so
+    # `body` was a dict for every real endpoint and the scan always reported
+    # "none found". It also looked at a single endpoint. That is the worst kind
+    # of check -- it returns green on exactly the property gate 3 exists to
+    # prove. It now fails loudly if it manages to scan nothing at all.
+    shapes = ("sk-", "Bearer")
+    hits, scanned = [], 0
+    for path in ("/api/letta/status", "/api/letta/agent", "/api/letta/history?limit=5"):
+        _, body, _ = call(base + path, token=token or "x")
+        for text in _strings(body):
+            scanned += 1
+            for w in shapes:
+                if w in text:
+                    hits.append("%s in %s" % (w, path))
+    r.add(3, "no key-shaped string in responses", not hits and scanned > 0,
+          "scanned %d string(s) across 3 endpoints for %s -> %s"
+          % (scanned, "/".join(shapes), hits or "none found"))
 
 
 def main(argv):

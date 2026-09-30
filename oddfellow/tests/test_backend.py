@@ -14,6 +14,7 @@ import asyncio
 import importlib
 import os
 import sys
+import time
 
 import pytest
 from fastapi.testclient import TestClient
@@ -586,5 +587,79 @@ def test_frontend_dir_serves_the_page_without_shadowing_the_api(monkeypatch, tmp
     assert client.get("/healthz").status_code == 200
     assert client.get("/api/letta/status", headers=auth()).status_code == 200
     assert client.get("/api/letta/status").status_code == 401
+
+
+# --------------------------------------------------------------------------- #
+# Regressions from the 2026-09-30 GATE 3 security review
+# --------------------------------------------------------------------------- #
+
+class _StubRequest:
+    """Just enough Request for client_key()."""
+
+    def __init__(self, host):
+        self.client = type("C", (), {"host": host})()
+
+
+def test_oversized_body_is_rejected_before_it_is_parsed(monkeypatch):
+    """Over the limit -> 413, even with no token at all.
+
+    FastAPI parses the body before the route function runs, so require_owner()
+    cannot protect the parser. An unauthenticated caller could previously make
+    the service buffer and JSON-parse an arbitrarily large body and get a 422
+    back for the trouble.
+    """
+    m = load_app(monkeypatch)
+    client = TestClient(m.app, raise_server_exceptions=False)
+    resp = client.post("/api/letta/message", json={"input": "x" * (m.MAX_BODY_BYTES + 1)})
+    assert resp.status_code == 413
+    assert resp.json()["max_bytes"] == m.MAX_BODY_BYTES
+
+
+def test_body_within_the_limit_still_reaches_auth(monkeypatch):
+    m = load_app(monkeypatch)
+    client = TestClient(m.app, raise_server_exceptions=False)
+    assert client.post("/api/letta/message", json={"input": "hi"}).status_code == 401
+
+
+def test_rate_limit_covers_the_read_routes(monkeypatch):
+    """The limiter used to guard only /api/letta/message."""
+    m = load_app(monkeypatch, ODDFELLOW_RATE_PER_MIN="3")
+    f = FakeLetta(m)
+    monkeypatch.setattr(m, "letta", f.letta)
+    monkeypatch.setattr(m, "letta_raw", f.letta_raw)
+    monkeypatch.setattr(m, "LettaError", LettaError)
+    client = TestClient(m.app, raise_server_exceptions=False)
+    codes = [client.get("/api/letta/status", headers=auth()).status_code for _ in range(5)]
+    assert codes[:3] == [200, 200, 200]
+    assert codes[3:] == [429, 429]
+
+
+def test_healthz_is_never_rate_limited(monkeypatch):
+    """A platform health check must not be throttled into a false failure."""
+    m = load_app(monkeypatch, ODDFELLOW_RATE_PER_MIN="2")
+    client = TestClient(m.app, raise_server_exceptions=False)
+    assert [client.get("/healthz").status_code for _ in range(6)] == [200] * 6
+
+
+def test_rate_limit_key_never_contains_the_token(monkeypatch):
+    """The limiter keys on a digest, so the token cannot leak through it."""
+    m = load_app(monkeypatch)
+    key = m.client_key(_StubRequest("1.2.3.4"), OWNER_TOKEN)
+    assert OWNER_TOKEN not in key
+    assert key.startswith("tok:")
+    # With no token it falls back to the peer address rather than crashing.
+    assert m.client_key(_StubRequest("1.2.3.4"), None) == "host:1.2.3.4"
+
+
+def test_rate_limit_map_does_not_grow_without_bound(monkeypatch):
+    """Empty windows are swept, so the map cannot grow for the process lifetime."""
+    m = load_app(monkeypatch)
+    m._hits.clear()
+    m.rate_limit("tok:aaaa")
+    assert "tok:aaaa" in m._hits
+    m._last_sweep = 0.0          # force the next call to sweep
+    m._hits["tok:aaaa"].append(time.time() - 3600.0)
+    m.rate_limit("tok:bbbb")
+    assert "tok:aaaa" not in m._hits
 
 

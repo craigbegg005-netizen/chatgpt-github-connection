@@ -127,6 +127,7 @@ Deploy (Render, free plan)
 
 from __future__ import annotations
 
+import hashlib
 import hmac
 import os
 import time
@@ -243,14 +244,61 @@ if ALLOWED_ORIGINS:
     )
 
 # --------------------------------------------------------------------------- #
+# Request body limit
+# --------------------------------------------------------------------------- #
+# FastAPI resolves and parses the body *before* the route function runs, so
+# require_owner() cannot protect the parser: an unauthenticated caller could make
+# the service buffer and JSON-parse an arbitrarily large body. Reject on the
+# declared length before any of that happens.
+#
+# This relies on Content-Length. A chunked request that declares no length is not
+# covered -- put a hard limit at the proxy as well if that matters.
+
+MAX_BODY_BYTES = int(os.environ.get("ODDFELLOW_MAX_BODY_BYTES", str(64 * 1024)))
+
+
+@app.middleware("http")
+async def limit_body_size(request: Request, call_next):
+    declared = request.headers.get("content-length")
+    if declared and declared.isdigit() and int(declared) > MAX_BODY_BYTES:
+        return JSONResponse(
+            status_code=413,
+            content={"detail": "Request body too large.", "max_bytes": MAX_BODY_BYTES},
+        )
+    return await call_next(request)
+
+
+# --------------------------------------------------------------------------- #
 # Rate limiting (in-process; Render free plan runs a single instance)
 # --------------------------------------------------------------------------- #
 
 _hits: Dict[str, Deque[float]] = defaultdict(deque)
+_last_sweep = 0.0
+
+
+def client_key(request: Request, token: Optional[str]) -> str:
+    """Identify the caller for rate-limiting purposes.
+
+    The owner token is what actually authorises work against the Letta account,
+    so when it is present it is the meaningful key: an IP-based key is trivially
+    bypassed by rotating addresses, and behind a proxy every caller can collapse
+    into one bucket. Only a short digest is retained -- never the token itself.
+    """
+    if token:
+        return "tok:" + hashlib.sha256(token.encode("utf-8", "replace")).hexdigest()[:16]
+    host = request.client.host if request.client else "unknown"
+    return "host:" + host
 
 
 def rate_limit(client: str) -> None:
+    global _last_sweep
     now = time.time()
+    if now - _last_sweep > 300.0:
+        # Without this the map keeps one entry per caller for the life of the
+        # process, even after every window in it has emptied.
+        _last_sweep = now
+        for key in [k for k, v in _hits.items() if not v or now - v[-1] > 60.0]:
+            _hits.pop(key, None)
     window = _hits[client]
     while window and now - window[0] > 60.0:
         window.popleft()
@@ -546,12 +594,16 @@ async def healthz() -> dict:
 
 
 @app.get("/api/letta/status")
-async def status(x_owner_token: Optional[str] = Header(default=None)) -> dict:
+async def status(
+    request: Request,
+    x_owner_token: Optional[str] = Header(default=None),
+) -> dict:
     """
     Auth + connectivity + agent resolution check.
     This is the endpoint to hit first after a deploy.
     """
     require_owner(x_owner_token)
+    rate_limit(client_key(request, x_owner_token))
 
     result: dict = {
         "backend": "oddfellow_letta_backend",
@@ -602,8 +654,12 @@ async def status(x_owner_token: Optional[str] = Header(default=None)) -> dict:
 
 
 @app.get("/api/letta/agent")
-async def get_agent(x_owner_token: Optional[str] = Header(default=None)) -> dict:
+async def get_agent(
+    request: Request,
+    x_owner_token: Optional[str] = Header(default=None),
+) -> dict:
     require_owner(x_owner_token)
+    rate_limit(client_key(request, x_owner_token))
     agent = await resolve_agent()
     return {"agent": agent_summary(agent)}
 
@@ -615,7 +671,7 @@ async def send_message(
     x_owner_token: Optional[str] = Header(default=None),
 ) -> dict:
     require_owner(x_owner_token)
-    rate_limit(request.client.host if request.client else "unknown")
+    rate_limit(client_key(request, x_owner_token))
 
     agent = await resolve_agent()
     agent_id = agent.get("id")
@@ -672,7 +728,10 @@ async def send_message(
 
 
 @app.post("/api/letta/new-session")
-async def new_session(x_owner_token: Optional[str] = Header(default=None)) -> dict:
+async def new_session(
+    request: Request,
+    x_owner_token: Optional[str] = Header(default=None),
+) -> dict:
     """
     Start a fresh conversation.
 
@@ -680,6 +739,7 @@ async def new_session(x_owner_token: Optional[str] = Header(default=None)) -> di
     old conversation keeps its cached prompt, a new one picks up current memory.
     """
     require_owner(x_owner_token)
+    rate_limit(client_key(request, x_owner_token))
     agent = await resolve_agent()
     conv_id = await create_conversation(agent.get("id"))
     await remember_conversation(agent.get("id"), conv_id, agent.get("metadata"))
@@ -688,11 +748,13 @@ async def new_session(x_owner_token: Optional[str] = Header(default=None)) -> di
 
 @app.get("/api/letta/history")
 async def history(
+    request: Request,
     limit: int = 20,
     x_owner_token: Optional[str] = Header(default=None),
 ) -> dict:
     """Recent conversation for cloud-history reload. Read-only."""
     require_owner(x_owner_token)
+    rate_limit(client_key(request, x_owner_token))
     agent = await resolve_agent()
     agent_id = agent.get("id")
     conversation_id = await resolve_conversation(agent)

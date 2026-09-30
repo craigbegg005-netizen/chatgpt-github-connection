@@ -51,7 +51,7 @@ details{margin:10px 16px;border:1px solid var(--line);border-radius:12px;backgro
       <div class="setting"><span>Mode</span><select id="mode"><option value="balanced">Balanced synthesis</option><option value="fast">Fast</option><option value="deep">Deep multi-model synthesis</option></select></div>
       <div class="setting"><span>Speak replies</span><input id="speak" type="checkbox" checked></div>
       <div class="setting"><span>Hands-free auto-send</span><input id="hands" type="checkbox"></div>
-      <div class="setting"><span>Local verification pass</span><input id="verify" type="checkbox" checked></div>
+      <div class="setting"><span>Second model review pass</span><input id="verify" type="checkbox" checked></div>
       <div class="setting"><span>Persistent private cloud history after sign-in</span><span id="cloudState">off</span></div>
       <div class="setting"><span>Letta backend URL</span><input id="beurl" type="url" placeholder="https://your-service.onrender.com" autocomplete="off"></div>
       <div class="setting"><span>Owner token</span><input id="betoken" type="password" placeholder="paste your ODDFELLOW_OWNER_TOKEN" autocomplete="off"></div>
@@ -234,7 +234,7 @@ async function syntheticReply(text){
     const v=pick('analysis',[provider(m)])||pick('analysis',[]);
     if(v){
       const check=await callModel(v,[{role:'system',content:SYSTEM+`\nYou are Oddfellow's verification stage. Inspect the draft for unsupported claims, contradictions, unsafe assumptions, or false claims of completed external actions. Return a corrected final answer, not commentary about the draft.`},{role:'user',content:`REQUEST:\n${text}\n\nDRAFT:\n${out}`}]);
-      out=check; meta+=` → verified by ${v.id}`;
+      out=check; meta+=` → reviewed by ${v.id}`;
     }
   }
   return {out,meta};
