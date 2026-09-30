@@ -25,8 +25,20 @@ status code, and response shape is the one the Python backend serves, and the
 
 ## Deploying
 
+One command does the deploy, sets both secrets, waits for the new revision, and
+runs the acceptance harness against the live URL:
+
 ```bash
 cd oddfellow/cloudflare
+LETTA_API_KEY=... ODDFELLOW_OWNER_TOKEN=... ./deploy.sh deploy
+```
+
+Secrets are read from the environment and piped to `wrangler secret put` over
+stdin, so they never appear in argv, shell history, or a process listing.
+
+The individual steps, if you would rather run them yourself:
+
+```bash
 npx wrangler deploy
 npx wrangler secret put LETTA_API_KEY
 npx wrangler secret put ODDFELLOW_OWNER_TOKEN
@@ -44,13 +56,17 @@ deploy time, so the order does not matter.
 python ../acceptance_check.py https://<worker-url> --owner-token "$ODDFELLOW_OWNER_TOKEN"
 ```
 
-Local, with no Cloudflare account at all:
+Local, with no Cloudflare account at all — this starts the Worker, waits for it,
+runs the harness, and cleans up after itself:
 
 ```bash
 printf 'LETTA_API_KEY=...\nODDFELLOW_OWNER_TOKEN=...\n' > .dev.vars   # gitignored
-npx wrangler dev
-python ../acceptance_check.py http://127.0.0.1:8787 --owner-token "$ODDFELLOW_OWNER_TOKEN"
+./deploy.sh verify
 ```
+
+Gate 1 needs a **working** Letta key. With a placeholder in `.dev.vars`, gate 1
+is expected to fail — and it must fail by reporting the real 401 from
+`api.letta.com`, never by inventing a reply. Gates 0, 2 and 3 must all pass.
 
 ## Status of this component
 

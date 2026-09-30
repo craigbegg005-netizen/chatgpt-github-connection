@@ -1,0 +1,112 @@
+#!/usr/bin/env bash
+#
+# Deploy the Oddfellow backend to Cloudflare Workers, set its secrets, and prove
+# it works — in one command.
+#
+#   ./deploy.sh verify              local only, no Cloudflare account needed
+#   ./deploy.sh deploy              deploy, set secrets, then verify the live URL
+#
+# Secrets are read from the environment, never from arguments, so they do not end
+# up in shell history or a process listing:
+#
+#   LETTA_API_KEY=... ODDFELLOW_OWNER_TOKEN=... ./deploy.sh deploy
+#
+# Exit codes: 0 = every gate passed, 1 = something failed, 2 = misuse.
+set -euo pipefail
+
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+HARNESS="$HERE/../acceptance_check.py"
+MODE="${1:-}"
+
+say()  { printf '\n\033[1m%s\033[0m\n' "$*"; }
+die()  { printf '\nERROR: %s\n' "$*" >&2; exit 1; }
+
+[ -n "$MODE" ] || { sed -n '2,16p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 2; }
+[ "$MODE" = verify ] || [ "$MODE" = deploy ] || die "unknown mode '$MODE' (expected verify or deploy)"
+
+command -v node >/dev/null || die "node is required"
+command -v python3 >/dev/null || die "python3 is required"
+[ -f "$HARNESS" ] || die "acceptance harness not found at $HARNESS"
+
+# --------------------------------------------------------------------------- #
+# Local verification: start wrangler dev, run the real harness against it.
+# --------------------------------------------------------------------------- #
+verify_local() {
+  say "Starting a local Worker"
+  [ -f "$HERE/.dev.vars" ] || die ".dev.vars is missing. Create it with:
+  LETTA_API_KEY=<a key, invalid is fine for a smoke test>
+  ODDFELLOW_OWNER_TOKEN=<any value>"
+
+  local port=8799 log
+  log="$(mktemp)"
+  # setsid puts the dev server in its own process group, so the whole tree
+  # (npx -> sh -> node) can be killed as one. Killing only the wrapper leaves the
+  # node child running and holding the port — which is what happened the first
+  # time this was tested, twice.
+  ( cd "$HERE" && exec setsid npx --yes wrangler@latest dev --port "$port" --ip 127.0.0.1 >"$log" 2>&1 ) &
+  local pid=$!
+  # Kill on ANY exit path, including SIGTERM from an outer `timeout`.
+  # shellcheck disable=SC2064
+  cleanup() { kill -- -"$pid" 2>/dev/null || kill "$pid" 2>/dev/null || true; wait "$pid" 2>/dev/null || true; }
+  trap cleanup RETURN EXIT INT TERM
+
+  say "Waiting for it to answer /livez"
+  local i
+  for i in $(seq 1 60); do
+    if curl -fsS --max-time 3 "http://127.0.0.1:$port/livez" >/dev/null 2>&1; then break; fi
+    sleep 2
+  done
+  curl -fsS --max-time 5 "http://127.0.0.1:$port/livez" >/dev/null 2>&1 \
+    || { tail -30 "$log"; die "the Worker never answered on 127.0.0.1:$port"; }
+
+  say "Running the acceptance harness against the local Worker"
+  echo "Note: gate 1 needs a WORKING Letta key. If .dev.vars holds a placeholder,"
+  echo "gate 1 is expected to fail -- and it must fail by reporting the real 401"
+  echo "from api.letta.com, never by inventing a reply."
+  local token
+  token="$(grep -m1 '^ODDFELLOW_OWNER_TOKEN=' "$HERE/.dev.vars" | cut -d= -f2-)"
+  python3 "$HARNESS" "http://127.0.0.1:$port" --owner-token "$token"
+}
+
+# --------------------------------------------------------------------------- #
+# Remote deploy.
+# --------------------------------------------------------------------------- #
+deploy_remote() {
+  [ -n "${LETTA_API_KEY:-}" ] || die "LETTA_API_KEY is not set in the environment"
+  [ -n "${ODDFELLOW_OWNER_TOKEN:-}" ] || die "ODDFELLOW_OWNER_TOKEN is not set in the environment"
+
+  say "Deploying to Cloudflare Workers"
+  ( cd "$HERE" && npx --yes wrangler@latest deploy ) | tee /tmp/oddfellow-deploy.log
+
+  # wrangler prints the deployed URL; take the last https://*.workers.dev it saw.
+  local url
+  url="$(grep -oE 'https://[a-z0-9.-]+\.workers\.dev' /tmp/oddfellow-deploy.log | tail -1 || true)"
+  [ -n "$url" ] || die "could not read the deployed URL from the deploy output"
+
+  say "Setting secrets on $url"
+  # --stdin so the value never appears in argv or a process listing.
+  printf '%s' "$LETTA_API_KEY"          | ( cd "$HERE" && npx --yes wrangler@latest secret put LETTA_API_KEY )
+  printf '%s' "$ODDFELLOW_OWNER_TOKEN"  | ( cd "$HERE" && npx --yes wrangler@latest secret put ODDFELLOW_OWNER_TOKEN )
+
+  say "Waiting for the new revision to answer"
+  local i
+  for i in $(seq 1 30); do
+    if curl -fsS --max-time 5 "$url/livez" >/dev/null 2>&1; then break; fi
+    sleep 2
+  done
+
+  say "Liveness and readiness"
+  curl -fsS --max-time 10 "$url/livez"   || true; echo
+  curl -fsS --max-time 10 "$url/healthz" || true; echo
+
+  say "Running the acceptance harness against $url"
+  python3 "$HARNESS" "$url" --owner-token "$ODDFELLOW_OWNER_TOKEN"
+
+  say "DONE — phone URL"
+  echo "$url"
+}
+
+case "$MODE" in
+  verify) verify_local ;;
+  deploy) deploy_remote ;;
+esac
