@@ -73,9 +73,9 @@ is expected to fail — and it must fail by reporting the real 401 from
 | | |
 |---|---|
 | 🛠 IMPLEMENTED | `worker.js` |
-| 🧪 TESTED | Verified locally against the acceptance harness: **every gate passes** except gate 1, which fails only because the test key is deliberately invalid — and it reports the real 401 from `api.letta.com` rather than faking success. |
-| ⏳ PENDING | Not deployed. Needs a Cloudflare account connection. |
-| ⚠️ NOT VERIFIED | Never served a real Letta reply. No valid API key has been used against it. |
+| ✅ VERIFIED with a real key | **2026-09-30 04:04 UTC — every gate passed, including gate 1, with a real Letta reply.** Run locally via `./deploy.sh verify` against a real `LETTA_API_KEY`. `/api/letta/status` returned `runtime: cloudflare-worker`, `letta_auth: true`, `agent_found: true`, `agent_name: "Oddfellow"`. A real reply came back in 3.0 s: *"I'm Oddfellow, and I confirm the zero-spend rule: no paid service, subscription, or billing without your explicit authorization."* History held both turns, `new-session` produced a distinct empty conversation, and gate 3 scanned 41 strings with no key-shaped value. The earlier "never served a real Letta reply" caveat is now closed. |
+| ⏳ PENDING | **Not deployed.** Needs a Cloudflare account connection. Everything above is local. |
+| ⚠️ NOT VERIFIED | Never served a request from the public internet, and never run with the owner's own Letta key (the sandbox key was used). |
 
 ## The one behavioural difference, stated plainly
 

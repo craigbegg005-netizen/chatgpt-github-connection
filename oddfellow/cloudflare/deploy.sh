@@ -18,6 +18,14 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 HARNESS="$HERE/../acceptance_check.py"
 MODE="${1:-}"
 
+# PID of the local dev server. Deliberately NOT a function-local: the cleanup
+# trap below is installed for EXIT as well as RETURN, and on the EXIT path the
+# function that assigned it has already returned, so a `local pid` is out of
+# scope. Under `set -u` that made a completely successful run finish with
+# "./deploy.sh: line 50: pid: unbound variable" — an error printed after
+# "RESULT: all checks passed", which reads like the run failed when it had not.
+pid=""
+
 say()  { printf '\n\033[1m%s\033[0m\n' "$*"; }
 die()  { printf '\nERROR: %s\n' "$*" >&2; exit 1; }
 
@@ -44,10 +52,15 @@ verify_local() {
   # node child running and holding the port — which is what happened the first
   # time this was tested, twice.
   ( cd "$HERE" && exec setsid npx --yes wrangler@latest dev --port "$port" --ip 127.0.0.1 >"$log" 2>&1 ) &
-  local pid=$!
+  pid=$!
   # Kill on ANY exit path, including SIGTERM from an outer `timeout`.
   # shellcheck disable=SC2064
-  cleanup() { kill -- -"$pid" 2>/dev/null || kill "$pid" 2>/dev/null || true; wait "$pid" 2>/dev/null || true; }
+  cleanup() {
+    [ -n "${pid:-}" ] || return 0
+    kill -- -"$pid" 2>/dev/null || kill "$pid" 2>/dev/null || true
+    wait "$pid" 2>/dev/null || true
+    pid=""
+  }
   trap cleanup RETURN EXIT INT TERM
 
   say "Waiting for it to answer /livez"
