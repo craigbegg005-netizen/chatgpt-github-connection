@@ -60,6 +60,30 @@ so a fresh deployment cannot be claimed without it), and a separate `owner_recor
 identifier at login. `/docs` and `/redoc` are disabled in production — good
 practice, and it is why v0.17 exposes no OpenAPI document.
 
+### `begg-ai-industries-v013.onrender.com` — Begg AI Core **v0.13.0**
+
+Title `Begg AI Core / Oddfellow`. Serves a complete OpenAPI document (24 paths),
+saved here as `begg-core-v0.13.0-openapi.json`:
+
+| Area | Endpoints |
+|---|---|
+| Job / task queue | `POST,GET /api/tasks`, `GET /api/tasks/{id}`, `POST /api/tasks/{id}/run`, `/approve`, `/reject`, `/retry` |
+| Scheduler | `POST,GET /api/schedules`, `PATCH /api/schedules/{id}`, `POST /api/scheduler/tick` |
+| Audit | `GET /api/audit`, `GET /api/timeline` |
+| Approvals | `GET /api/approvals` |
+| Departments | `GET /api/departments` |
+| Budget / zero-spend | `GET /api/budget`, `GET /api/budget/events`, `PATCH /api/budget/policy`, `POST /api/budget/revenue` |
+| Misc | `GET /api/apps`, `POST /api/checkpoints`, `GET /api/status`, `GET /health`, `GET /ready`, `POST /mcp` |
+
+Note `/api/budget/policy` — the zero-spend rule is **enforced in the running
+system**, not just documented in a handoff. And there is an MCP endpoint.
+
+### `begg-ai-core-v010.onrender.com` — Begg AI Core **v0.12.1**
+
+The same service one minor version earlier: 16 paths (no budget, apps,
+timeline, or checkpoints; no `/mcp`). Saved as
+`begg-core-v0.12.1-openapi.json`. Useful as a diff to show what v0.13.0 added.
+
 ## What this does and does not give us
 
 **Does give:** the exact endpoint set, the request body shapes, the
