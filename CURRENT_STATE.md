@@ -112,16 +112,29 @@ deploy that skips the prompts will be marked unhealthy and will not come up.
 | oddfellow-personal-v019b `/` | **200** · 16276 B |
 | oddfellow-personal-staging-v017b `/health` | **200** `{"status":"ok","version":"0.17.0","build_id":"genesis-0003"}` |
 | oddfellow-personal-secure `/` | **303** |
-| begg-ai-command-center `/` | ⚠️ **404** (`x-render-routing: no-server`) — see note |
+| begg-ai-command-center `/` | **401** · 4361 B · Cloudflare, auth-gated — **reachable, unchanged** |
 | peace-human-security-framework.floot.app `/` | **200** · 51327 B |
 | beggster58.gumroad.com/l/zvxpuh | **200** · 24278 B |
 
-**Command-center note.** The 2026-09-29 23:29 record said **401** (reachable,
-auth-gated) at `craigbegg005.chatgpt.site`. This cycle **both**
-`begg-ai-command-center.onrender.com/` and `craigbegg005.chatgpt.site/` return
-**404**; the onrender host answers with `x-render-routing: no-server` (no
-backend attached). The 401 gate was **not reproduced**. Do not state the
-command center is up until this is re-checked.
+**Command-center note — CORRECTED 2026-09-30 02:04 UTC.** An earlier revision of
+this section claimed the command center returned **404** and that the 401 gate
+"was not reproduced". **That was wrong and is retracted.** Re-probed directly:
+
+```
+https://begg-ai-command-center.craigbegg005.chatgpt.site/   -> HTTP 401, 4361 B HTML,
+                                                               server: cloudflare, auth-gated  ✅ UP
+https://begg-ai-command-center.onrender.com/                -> HTTP 404, 10 B, x-render-routing: no-server
+```
+
+The 404 came from `begg-ai-command-center.onrender.com`, a **guessed hostname
+that has never been a service** — the command center is hosted on
+`craigbegg005.chatgpt.site`, not Render. Probing a guessed URL and generalising
+its 404 to the real one produced a false regression claim. **The 2026-09-29
+23:29 record of 401 stands: the command center is up and auth-gated.**
+
+Lesson for every AI working this project: a 404 on a hostname you inferred is
+evidence about *the hostname you typed*, not about the service. Confirm the URL
+from a prior verified record before reporting a service down.
 
 ---
 
