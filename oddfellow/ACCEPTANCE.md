@@ -199,15 +199,23 @@ Open the front end. Settings → *Synthetic stack & controls*.
 
 ## GATE 3 — security
 
-- [ ] View source on the deployed front end: **no** `sk-`, no token, no `Bearer`
-- [ ] Open DevTools → Network, send a message: the Letta API key appears in
-      **no** request from the browser
+- [x] View source on the deployed front end: **no** `sk-`, no token, no `Bearer`
+      — verified 2026-09-30 08:03 UTC against the live rehearsal: 32,602 characters
+      of page source, **zero** key-shaped strings, token absent.
+- [x] Send a message: the Letta API key appears in **no** request from the browser
+      — verified the same run: the page contacted **exactly one origin, its own**.
+      No `api.letta.com`, and no third-party origin at all.
 - [ ] `curl` the backend with a **wrong** owner token → `401`
 - [ ] `curl` the backend with **no** token → `401`
-- [ ] Confirm the front end never talks to any origin other than its own and the
-      configured backend
-- [ ] The owner token is only in that browser's `localStorage` — never in the page
-      source, never in the repo
+- [x] Confirm the front end never talks to any origin other than its own and the
+      configured backend — verified: `["https://<its own origin>"]` and nothing else.
+- [x] The owner token is **not persisted at all by default** — never in the page
+      source, never in the repo, and (since v0.20.5) not in `localStorage` unless
+      the owner explicitly ticks "Remember on this device". Verified: the stored
+      record is `{"url":…,"remember":false}` with no token field.
+      ⚠️ **The conversation history IS stored unencrypted in `localStorage`** — that
+      is the local history cache, on the owner's own device, and it is readable by
+      any script in the origin. Worth knowing before loading any third-party script.
 
 ---
 
