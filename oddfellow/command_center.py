@@ -237,6 +237,25 @@ def build_router(
         require_owner(token, request)
         rate_limit(client_key(request, token), request)
 
+    def note(event: str, request: Request, **fields: Any) -> None:
+        """Record a control-surface action to stdout AND to the queryable ring.
+
+        The ring existed but nothing ever wrote to it, so /api/command/audit
+        returned {"records": []} no matter what happened. An endpoint whose result
+        cannot vary is worse than no endpoint: it looks like a clean audit. Found
+        by pausing the service and then asking what the audit said.
+
+        stdout remains the durable record; the ring is the last N, for the owner
+        to read back from a phone.
+        """
+        audit(event, request, **fields)
+        center.remember({
+            "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "event": event,
+            "request_id": getattr(request.state, "request_id", None),
+            **fields,
+        })
+
     @router.get("/status")
     async def command_status(request: Request) -> dict[str, Any]:
         guard(request, request.headers.get("X-Owner-Token"))
@@ -259,7 +278,7 @@ def build_router(
             )
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
-        audit("command_approval_created", request, approval_id=record["id"], risk=record["risk"])
+        note("command_approval_created", request, approval_id=record["id"], risk=record["risk"])
         return record
 
     @router.post("/approvals/{approval_id}/decide")
@@ -277,8 +296,8 @@ def build_router(
             raise HTTPException(status_code=404, detail="unknown approval") from exc
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
-        audit("command_approval_decided", request,
-              approval_id=approval_id, decision=record["decision"])
+        note("command_approval_decided", request,
+             approval_id=approval_id, decision=record["decision"])
         return record
 
     @router.post("/pause")
@@ -290,7 +309,7 @@ def build_router(
         state = center.set_paused(bool(payload.get("paused")), payload.get("reason", ""))
         # Audited after the switch flips, and the record says which way it went --
         # an emergency stop that is not in the log is not auditable.
-        audit("command_pause", request, paused=state["paused"], reason=state["reason"])
+        note("command_pause", request, paused=state["paused"], reason=state["reason"])
         return state
 
     @router.get("/audit")

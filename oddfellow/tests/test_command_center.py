@@ -213,3 +213,38 @@ def test_pause_does_not_need_a_restart_to_take_effect(client):
     assert client.post("/api/letta/message", headers=AUTH, json={"input": "x"}).status_code != 503
     client.post("/api/command/pause", headers=AUTH, json={"paused": True})
     assert client.post("/api/letta/message", headers=AUTH, json={"input": "x"}).status_code == 503
+
+
+def test_the_audit_endpoint_can_actually_return_something(client):
+    """It could not, and that is the point of this test.
+
+    `remember()` existed and nothing ever called it, so /api/command/audit
+    returned {"records": []} no matter what the owner did. An endpoint whose
+    result cannot vary is worse than no endpoint: it reads as a clean audit.
+    Found by pausing the service and then asking what the audit said.
+    """
+    before = client.get("/api/command/audit", headers=AUTH).json()["records"]
+    assert before == []
+
+    r = client.post("/api/command/pause", headers=AUTH,
+                    json={"paused": True, "reason": "audit regression test"})
+    assert r.status_code == 200
+
+    records = client.get("/api/command/audit", headers=AUTH).json()["records"]
+    assert records, "a control-surface action must be readable back from the audit"
+    assert records[-1]["event"] == "command_pause"
+    assert records[-1]["paused"] is True
+    assert records[-1]["reason"] == "audit regression test"
+
+    # Leave the service unpaused so this test cannot affect another one.
+    client.post("/api/command/pause", headers=AUTH, json={"paused": False, "reason": ""})
+
+
+def test_an_approval_decision_is_audited(client):
+    created = client.post("/api/command/approvals", headers=AUTH,
+                          json={"title": "audit test", "detail": "d", "risk": "high"}).json()
+    client.post("/api/command/approvals/%s/decide" % created["id"], headers=AUTH,
+                json={"decision": "approve", "note": "n"})
+    events = [r["event"] for r in client.get("/api/command/audit", headers=AUTH).json()["records"]]
+    assert "command_approval_created" in events
+    assert "command_approval_decided" in events
