@@ -64,7 +64,24 @@ tunnel_pids()  { pids_where cloudflared "--url http://127.0.0.1:$PORT"; }
 backend_up() { curl -fsS --max-time 5 "http://127.0.0.1:$PORT/livez" >/dev/null 2>&1; }
 tunnel_up()  { [ -n "$(tunnel_pids)" ]; }
 
+ensure_venv() {
+  # The watchdog must be able to rebuild its own dependency, or it is not a
+  # watchdog. It used to assume $VENV existed; when the venv lived in /tmp and
+  # /tmp was cleared, every restart failed with
+  #   setsid: failed to execute /root/.oddfellow/venv/bin/python: No such file
+  # and the rehearsal stayed down while the watchdog reported nothing useful.
+  # rehearsal.sh already did this; the watchdog did not.
+  [ -x "$VENV/bin/python" ] && return 0
+  log "venv missing at $VENV — creating it"
+  mkdir -p "$(dirname "$VENV")"
+  python3 -m venv "$VENV" >>"$BACKEND_LOG" 2>&1 || { log "venv creation FAILED"; return 1; }
+  "$VENV/bin/pip" install -q -r "$HERE/requirements.txt" pytest >>"$BACKEND_LOG" 2>&1 \
+    || { log "dependency install FAILED"; return 1; }
+  log "venv ready at $VENV"
+}
+
 start_backend() {
+  ensure_venv || return 1
   ( cd "$HERE" && ODDFELLOW_FRONTEND_DIR=frontend LETTA_MODEL=letta/auto \
       LETTA_API_KEY="$LETTA_API_KEY" ODDFELLOW_OWNER_TOKEN="$ODDFELLOW_OWNER_TOKEN" \
       ODDFELLOW_AGENT_ID="${ODDFELLOW_AGENT_ID:-agent-a9a8eb2c-2fed-4554-9998-aa4783c7efc4}" \
