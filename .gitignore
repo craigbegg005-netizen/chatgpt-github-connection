@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.dev.vars
+.wrangler/
+node_modules/
