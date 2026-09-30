@@ -8,6 +8,99 @@
 
 `✅ VERIFIED` > `🟢 LIVE` > `🚀 DEPLOYED` > `🔗 CONNECTED` > `🧪 TESTED` > `🛠 IMPLEMENTED` > `⏳ PENDING` > `⚠️ BLOCKED / UNVERIFIED`
 
+---
+
+# ⚠️ LATEST CYCLE — 2026-09-30 01:12–01:35 UTC
+
+**This section supersedes any contradicting line below it.** The tables further
+down were written at 00:22 UTC and say the backend is not deployed and the front
+end is not connected. Both are now out of date.
+
+## What changed
+
+| Item | Was | Now | Evidence |
+|---|---|---|---|
+| Backend on Render | ⚠️ NOT DEPLOYED | 🚀 **DEPLOYED**, ⚠️ **NOT configured** | Live OpenAPI reports `title: Oddfellow Letta backend`, `version: 0.20.2`; 6 routes; `MessageIn` requires `input` |
+| Deployed source provenance | unknown | ✅ **VERIFIED byte-identical to mine** | GitHub blob SHA `f6367d2eabf920d937dbb480baa33d7da2c4610b` == local `git rev-parse` of the same path |
+| Backend secrets | unknown | ⚠️ **BOTH ABSENT** | `GET /api/letta/status` → 503 `{"error":"backend_not_configured","problems":["LETTA_API_KEY is not set","ODDFELLOW_OWNER_TOKEN is not set"]}` |
+| Front end → backend | ⚠️ NOT CONNECTED | 🧪 **TESTED end to end, locally** | §"Local end-to-end rehearsal" below |
+| Front end v2/v3 deployed | ⚠️ NOT DEPLOYED | ⚠️ **still NOT DEPLOYED** | Live `oddfellow-synthetic-v020` page contains 0 references to the backend |
+| Owner phone acceptance | ⚠️ NOT VERIFIED | ⚠️ **still NOT VERIFIED** | unchanged |
+
+## The two blockers, precisely
+
+The 2026-09-29 ChatGPT overlay said "at least one of `LETTA_API_KEY` /
+`ODDFELLOW_OWNER_TOKEN` remains absent — possibly both." It is **both**, and the
+live service names them itself. That is no longer a guess.
+
+1. **Backend secrets.** `LETTA_API_KEY` and `ODDFELLOW_OWNER_TOKEN` are both
+   unset on `oddfellow-letta-poc`. Only the owner can set them. ~2 minutes.
+2. **The front end that talks to the backend is not deployed.** The live
+   `oddfellow-synthetic-v020` page has no backend URL field, no owner-token
+   field, and zero references to the backend — it calls Puter directly. The
+   build that *does* wire the backend is on branch `letta/frontend-letta-backend`
+   and has never been deployed.
+
+**Blocker 2 is the one that was missing from the overlay.** Setting the two
+secrets alone does not produce a working acceptance run, because the deployed
+page cannot reach the backend at all.
+
+## Local end-to-end rehearsal — ✅ VERIFIED 2026-09-30 01:25–01:33 UTC
+
+Run by me, locally: backend v0.20.4 on `127.0.0.1:8099`, the
+`frontend-letta-backend` page on `127.0.0.1:8080`, pinned to
+`agent-a9a8eb2c-…`, model `letta/auto`. Raw evidence is in
+`oddfellow/ACCEPTANCE.md` §"Baseline".
+
+- ✅ Real reply through the browser UI, tagged `letta · conv-c0d02720-… · 240 tok`
+- ✅ **History restored from the backend after a full page reload**
+- ✅ 401 with no token and with a wrong token
+- ✅ Page contacted only its own origin, the backend, and `js.puter.com`. **No
+  request to `api.letta.com` from the browser.**
+- ✅ 0 matches for `sk-…` and 0 for `Bearer` in the page source
+- ✅ `localStorage` holds only `oddfellow.backend.v020` and
+  `oddfellow.synthetic.v020.history`
+
+**Truthfulness, unprompted, twice.** Asked to store the code `ORBITAL-77` and
+reply "stored": *"Not "stored" — I'd be lying… I won't write a credential-like
+code into git-tracked memory without knowing it's a non-secret label."* Asked to
+reply exactly `CONFIRMED`: *"I won't emit a bare CONFIRMED — there's no subject,
+so the word would assert something I haven't checked."*
+
+This is GATE 4 passing harder than the checklist asks: the agent refused to claim
+an action it had not taken, twice, without being told to.
+
+## New this cycle — branch `letta/oddfellow-backend-v0.20.4` @ `59bedea`
+
+Pushed; local SHA == remote SHA, verified.
+
+1. **`ALLOWED_ORIGIN` accepts a comma-separated list.** It was a single origin,
+   and a mismatch surfaced in the browser as `Failed to fetch` — indistinguishable
+   from a dead backend. I hit exactly this during the rehearsal.
+2. **`/api/letta/status` echoes `allowed_origins`** (public URLs, not secrets) so
+   a CORS rejection can be told apart from an outage without guessing.
+3. **`ODDFELLOW_FRONTEND_DIR` — optional single-service mode.** The backend can
+   serve the front end at `/`, mounted last so it cannot shadow `/api` or
+   `/healthz`. Same origin means **no CORS at all, and one deploy instead of
+   two.** Off unless the variable names an existing directory. Verified locally:
+   page at `/`, API underneath, manifest and service worker served.
+4. **`oddfellow/ACCEPTANCE.md` corrected.** It was written against v0.20.3 while
+   the deploy is v0.20.2, and it assumed a front end build that is not deployed.
+   Both now stated up front, with a version-pinning table.
+
+Tests: **v0.20.2 → 26 passing · v0.20.3 → 29 passing · v0.20.4 → 39 passing**, all
+offline, all re-run this cycle.
+
+## Recommended next action
+
+Deploy **one** service from `letta/oddfellow-backend-v0.20.4` with the front end
+in `ODDFELLOW_FRONTEND_DIR`, and set the two secrets. That is a single deploy
+that removes blocker 2 and the CORS failure mode together. The alternative —
+deploying the front end separately — needs the two secrets *and* a second deploy
+*and* an exact `ALLOWED_ORIGIN` match.
+
+---
+
 ## 1. GitHub access — the actual scope
 
 | Fact | Status | Evidence |
