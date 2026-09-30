@@ -10,7 +10,122 @@
 
 ---
 
-# ⚠️ LATEST CYCLE — 2026-09-30 01:12–01:35 UTC
+# ✅ LATEST CYCLE — 2026-09-30 02:00 UTC
+
+**This section supersedes every contradicting line below it, including the
+01:12–01:35 cycle that follows.** It was written from commands re-run against
+the live services (01:54–02:02 UTC) and against a local v0.20.4 instance
+(02:00–02:02 UTC). Where a claim could not be reproduced this cycle it is marked
+as such, not softened.
+
+## What this cycle establishes
+
+| Item | Status | Evidence |
+|---|---|---|
+| Live backend `oddfellow-letta-poc` | 🟢 LIVE, ⚠️ **still NOT configured** | `GET /healthz` → **200** `{"ok":false}` — no `checks_failed` key, so still **v0.20.2**. `GET /api/letta/status` → **503** `{"error":"backend_not_configured","problems":["LETTA_API_KEY is not set","ODDFELLOW_OWNER_TOKEN is not set"]}` |
+| Deploy candidate branch head | ✅ **VERIFIED** local == remote | `letta/combined-single-service-v0.20.4` = `ecba923b5bdbfe030705859597cdc5924917e765` (`git rev-parse HEAD` == `git ls-remote --heads origin`) |
+| Backend test suite | ✅ **VERIFIED** | **45 passed / 0.84 s**, offline, clean venv (`python -m pytest oddfellow/tests/ -q`). Previously 39 — the GATE 3 fix added **6** regression tests |
+| Local v0.20.4 runtime | ✅ **VERIFIED** | §"Local runtime re-verification" below |
+| Third required env var | ⚠️ **NEW** | v0.20.4 also requires `LETTA_MODEL`; see §"New fact" |
+| One-click deploy path | 🛠 **READY** | branch-specific Render Blueprint link, below |
+
+## Branch state — `letta/combined-single-service-v0.20.4`
+
+Head is `ecba923` (local SHA == remote SHA, verified). Beyond the earlier
+`70d4b3d` it carries:
+
+- `c468757` — *Fix GATE 3 security findings from the audit*
+- `dc5b342` — *Correct the acceptance checklist version table*
+- `1e92095` — *Document the fail-closed health check vs Render healthCheckPath interaction*
+- `ecba923` — *Acceptance harness: reject flag-shaped arguments instead of tracing back*
+
+## Local runtime re-verification — v0.20.4 on 127.0.0.1:8103 (02:00–02:02 UTC)
+
+Run with `ODDFELLOW_FRONTEND_DIR=frontend`, `LETTA_MODEL=letta/auto`, a
+**deliberately invalid** `LETTA_API_KEY`, and a test owner token. (No secret
+value is recorded here; the invalid key is a literal placeholder, not a
+credential.)
+
+- `/healthz` → **200** `{"ok":true,"checks_failed":[],"service":"oddfellow_letta_backend","version":"0.20.4"}`
+- `/api/letta/status` with a valid owner token but a deliberately invalid
+  `LETTA_API_KEY` → **200** with `letta_auth:false`, `agent_found:false`, and a
+  **real 401 from api.letta.com**. It did **not** fake success.
+- `/api/letta/status` with no token → **401**; with a wrong token → **401**
+- `POST` 200 KB body, no token → **413**
+  `{"detail":"Request body too large.","max_bytes":65536}` — the M1 fix; the
+  limit applies **before** auth
+- Rate limiter, `ODDFELLOW_RATE_PER_MIN=5`: `/api/letta/status` requests 1–4 →
+  **200**, requests 5–12 → **429**. `/healthz` → **200 twelve times in a row** —
+  deliberately exempt, so a platform health check cannot be throttled into a
+  false failure.
+- Static mount does not shadow the API: `/` 200 text/html · `/manifest.json`
+  200 application/json · `/sw.js` 200 text/javascript · `/icons/icon-192.png`
+  200 image/png · `/icons/icon-512.png` 200 image/png
+- `/sw.js` contains the `/api/` cache guard (the **H1** fix)
+- Front-end labels corrected: **"Second model review pass"** present ·
+  **"reviewed by"** present · **"Local verification pass"** absent ·
+  **"verified by"** absent
+- Acceptance harness **Gate 3** leak scan now reports *"scanned 24 string(s)
+  across 3 endpoints"* for `sk-`/`Bearer`, none found — the **M4** fix is real;
+  previously the scan could never fail.
+
+## New fact — v0.20.4 requires a THIRD environment variable
+
+`LETTA_MODEL` is now required alongside `LETTA_API_KEY` and
+`ODDFELLOW_OWNER_TOKEN`. Verified with the two secrets set and `LETTA_MODEL`
+unset:
+
+- `/healthz` → **503** `{"ok":false,"checks_failed":["LETTA_MODEL"],…}`
+- `/api/letta/status` → **503**
+  `{"detail":{"error":"backend_not_configured","problems":["LETTA_MODEL is not set (refusing to guess a model)"]}}`
+
+The live **v0.20.2** service does not require it, so its *"two missing
+secrets"* message is **incomplete** for v0.20.4. `render.yaml` sets
+`LETTA_MODEL=letta/auto` literally, so a Blueprint deploy needs only the two
+secrets entered by hand.
+
+## Deploy path — one click
+
+Render supports branch-specific deploy links:
+
+    https://render.com/deploy?repo=https://github.com/craigbegg005-netizen/chatgpt-github-connection/tree/letta/combined-single-service-v0.20.4
+
+This creates a NEW service `oddfellow-letta-backend` per `render.yaml`, leaving
+`oddfellow-letta-poc` untouched as the rollback. Render prompts for
+`LETTA_API_KEY` and `ODDFELLOW_OWNER_TOKEN` because they are marked
+`sync: false`.
+
+⚠️ **Supply the secrets AT CREATION TIME.** The health check fails closed (503)
+without them, and Render's `healthCheckPath: /healthz` expects **200** — a
+deploy that skips the prompts will be marked unhealthy and will not come up.
+
+## Live surface probes — re-run 2026-09-30 01:54–02:02 UTC
+
+| Target | Result |
+|---|---|
+| oddfellow-letta-poc `/healthz` | **200** `{"ok":false}` (v0.20.2; no `checks_failed` key) |
+| oddfellow-letta-poc `/api/letta/status` | **503** `backend_not_configured`, 2 problems named |
+| oddfellow-letta-ui-v020 `/` | **200** · 20216 B (bytes unchanged; commit `40f9168` as previously recorded) |
+| oddfellow-synthetic-v020 `/` | **200** · 15721 B |
+| begg-ai-industries-v013 `/` | **200** · 17260 B |
+| begg-ai-core-v010 `/` | **200** · 14290 B |
+| oddfellow-personal-v019b `/` | **200** · 16276 B |
+| oddfellow-personal-staging-v017b `/health` | **200** `{"status":"ok","version":"0.17.0","build_id":"genesis-0003"}` |
+| oddfellow-personal-secure `/` | **303** |
+| begg-ai-command-center `/` | ⚠️ **404** (`x-render-routing: no-server`) — see note |
+| peace-human-security-framework.floot.app `/` | **200** · 51327 B |
+| beggster58.gumroad.com/l/zvxpuh | **200** · 24278 B |
+
+**Command-center note.** The 2026-09-29 23:29 record said **401** (reachable,
+auth-gated) at `craigbegg005.chatgpt.site`. This cycle **both**
+`begg-ai-command-center.onrender.com/` and `craigbegg005.chatgpt.site/` return
+**404**; the onrender host answers with `x-render-routing: no-server` (no
+backend attached). The 401 gate was **not reproduced**. Do not state the
+command center is up until this is re-checked.
+
+---
+
+# ⚠️ PREVIOUS CYCLE — 2026-09-30 01:12–01:35 UTC
 
 **This section supersedes any contradicting line below it.** The tables further
 down were written at 00:22 UTC and say the backend is not deployed and the front

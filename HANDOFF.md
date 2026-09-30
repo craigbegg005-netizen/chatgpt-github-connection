@@ -8,6 +8,18 @@ Rule for whoever edits this: state what you **verified** and how. Never upgrade 
 
 ---
 
+# 📌 LATEST — 2026-09-30 02:00 UTC (read this first)
+
+- See `CURRENT_STATE.md` → **"LATEST CYCLE — 2026-09-30 02:00 UTC"**. It
+  supersedes the 01:35 overlay below and the status tables under it.
+- **Deploy candidate: `letta/combined-single-service-v0.20.4` @ `ecba923`**
+  (local SHA == remote SHA, verified). One-click Render Blueprint link and the
+  **third** required env var (`LETTA_MODEL`) are documented in that section.
+- The two blockers below still stand, and the secrets must be entered **at
+  deploy time** — the health check fails closed (503) without them.
+
+---
+
 # ⚠️ OVERLAY — 2026-09-30 01:35 UTC. Read before §1.
 
 **The backend IS deployed now, and the front end has been tested against it
