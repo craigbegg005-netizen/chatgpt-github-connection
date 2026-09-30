@@ -222,6 +222,33 @@ def test_healthz_needs_no_auth(fake):
     assert client.get("/healthz").status_code == 200
 
 
+def test_healthz_is_ok_when_configured(fake):
+    m, f, client = fake
+    r = client.get("/healthz")
+    assert r.status_code == 200
+    assert r.json()["ok"] is True
+    assert r.json()["checks_failed"] == []
+
+
+def test_healthz_names_the_missing_keys_without_values(monkeypatch):
+    """The 2026-09-30 outage: deployed and serving, but undiagnosable from outside."""
+    m = load_app(monkeypatch, LETTA_API_KEY=None, ODDFELLOW_OWNER_TOKEN=None)
+    r = TestClient(m.app).get("/healthz")
+    assert r.status_code == 503, "a service that cannot serve must fail closed"
+    body = r.json()
+    assert body["ok"] is False
+    assert set(body["checks_failed"]) == {"LETTA_API_KEY", "ODDFELLOW_OWNER_TOKEN"}
+    # names only -- never the values
+    assert "test-owner-token" not in str(body)
+
+
+def test_healthz_names_a_misconfigured_paid_model(monkeypatch):
+    m = load_app(monkeypatch, LETTA_MODEL="openai/gpt-5")
+    r = TestClient(m.app).get("/healthz")
+    assert r.status_code == 503
+    assert r.json()["checks_failed"] == ["ODDFELLOW_ALLOW_PAID_MODEL"]
+
+
 # --------------------------------------------------------------------------- #
 # Authentication
 # --------------------------------------------------------------------------- #

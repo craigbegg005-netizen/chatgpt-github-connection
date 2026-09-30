@@ -1,5 +1,5 @@
 """
-Oddfellow Letta backend  --  v0.20.2 (verified build)
+Oddfellow Letta backend  --  v0.20.3 (verified build)
 
 Purpose
 -------
@@ -91,6 +91,18 @@ Environment variables (all set as Render secrets, never in source or the browser
   ODDFELLOW_ALLOW_PAID_MODEL optional  -- "true" to permit a non-letta/* model
   ODDFELLOW_RATE_PER_MIN     optional  -- default 20 requests/minute per client
 
+v0.20.3 -- self-diagnosing health check
+--------------------------------------
+v0.20.2 shipped a /healthz that returned only {"ok": false}. On 2026-09-30 it was
+deployed to Render, served the correct v0.20.2 API surface, and still could not
+answer a single request -- because LETTA_API_KEY and/or ODDFELLOW_OWNER_TOKEN were
+absent from the service environment. From outside, the only signal was
+{"ok": false}, which does not distinguish "not configured" from "down".
+
+/healthz now also reports `checks_failed`: the NAMES of the env vars that failed
+validation, never their values. Env var names are not secrets, and this turns that
+class of fault into a one-look fix.
+
 Deploy (Render, free plan)
 --------------------------
   Build:  pip install -r requirements.txt
@@ -108,6 +120,7 @@ from typing import Any, Deque, Dict, Optional
 
 import httpx
 from fastapi import FastAPI, Header, HTTPException, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
@@ -175,21 +188,27 @@ SEED_BLOCKS = [
 # Fail-closed configuration validation
 # --------------------------------------------------------------------------- #
 
-CONFIG_ERRORS: list[str] = []
+# Each problem is (env_var_name, human_readable_detail). The name is safe to
+# expose; the detail is only shown to an authenticated caller.
+CONFIG_PROBLEMS: list[tuple[str, str]] = []
 if not LETTA_API_KEY:
-    CONFIG_ERRORS.append("LETTA_API_KEY is not set")
+    CONFIG_PROBLEMS.append(("LETTA_API_KEY", "LETTA_API_KEY is not set"))
 if not ODDFELLOW_OWNER_TOKEN:
-    CONFIG_ERRORS.append("ODDFELLOW_OWNER_TOKEN is not set")
+    CONFIG_PROBLEMS.append(("ODDFELLOW_OWNER_TOKEN", "ODDFELLOW_OWNER_TOKEN is not set"))
 if not LETTA_MODEL:
-    CONFIG_ERRORS.append("LETTA_MODEL is not set (refusing to guess a model)")
+    CONFIG_PROBLEMS.append(("LETTA_MODEL", "LETTA_MODEL is not set (refusing to guess a model)"))
 elif not LETTA_MODEL.startswith("letta/") and not ALLOW_PAID_MODEL:
-    CONFIG_ERRORS.append(
+    CONFIG_PROBLEMS.append((
+        "ODDFELLOW_ALLOW_PAID_MODEL",
         f"LETTA_MODEL={LETTA_MODEL!r} is not a free letta/* model. "
         "Zero-spend doctrine blocks paid models. Set ODDFELLOW_ALLOW_PAID_MODEL=true "
-        "only with the owner's explicit approval."
-    )
+        "only with the owner's explicit approval.",
+    ))
 
-app = FastAPI(title="Oddfellow Letta backend", version="0.20.2")
+CONFIG_ERRORS: list[str] = [detail for _, detail in CONFIG_PROBLEMS]
+CONFIG_FAILED_KEYS: list[str] = [key for key, _ in CONFIG_PROBLEMS]
+
+app = FastAPI(title="Oddfellow Letta backend", version="0.20.3")
 
 if ALLOWED_ORIGIN:
     app.add_middleware(
@@ -481,8 +500,26 @@ class MessageIn(BaseModel):
 
 @app.get("/healthz")
 async def healthz() -> dict:
-    """Unauthenticated liveness probe for Render. Reveals no configuration detail."""
-    return {"ok": not CONFIG_ERRORS}
+    """
+    Unauthenticated liveness probe for Render.
+
+    Reports the NAMES of configuration keys that failed validation, never their
+    values. A boolean-only probe makes a whole class of deployment fault
+    undiagnosable from outside: on 2026-09-30 this service was deployed, serving
+    the correct v0.20.2 API surface, and still could not answer a single request
+    -- and the only external signal was {"ok": false}. Env var names are not
+    secrets; naming them turns that into a one-look fix.
+    """
+    healthy = not CONFIG_ERRORS
+    body = {
+        "ok": healthy,
+        "checks_failed": CONFIG_FAILED_KEYS,
+        "service": "oddfellow_letta_backend",
+        "version": "0.20.3",
+    }
+    # Fail closed: a service that cannot answer a single request must not report
+    # 200 to a platform health check, or the platform will route traffic to it.
+    return JSONResponse(status_code=200 if healthy else 503, content=body)
 
 
 @app.get("/api/letta/status")
@@ -495,7 +532,7 @@ async def status(x_owner_token: Optional[str] = Header(default=None)) -> dict:
 
     result: dict = {
         "backend": "oddfellow_letta_backend",
-        "version": "0.20.2",
+        "version": "0.20.3",
         "letta_base_url": LETTA_BASE_URL,
         "model": LETTA_MODEL,
         "agent_pinned": bool(ODDFELLOW_AGENT_ID),

@@ -1,8 +1,15 @@
-# Oddfellow Letta backend v0.20.2
+# Oddfellow Letta backend v0.20.3
 
 Written and tested by Oddfellow (Letta agent), 2026-09-29 → 2026-09-30.
 
-**Status: IMPLEMENTED + TESTED end to end locally. NOT DEPLOYED.**
+**Status:** v0.20.2 is 🚀 **DEPLOYED** at
+`https://oddfellow-letta-poc.onrender.com` (deploy `dep-dau5m8ee0cbs73d9qcjg`,
+promoted by ChatGPT through Render) and its API version was independently
+verified against the live OpenAPI document. It is **NOT acceptance-LIVE**: its
+service environment is missing `LETTA_API_KEY` and/or `ODDFELLOW_OWNER_TOKEN`, so
+`/healthz` returns `{"ok": false}`.
+
+**v0.20.3** (this branch) is 🛠 IMPLEMENTED + 🧪 TESTED locally, NOT deployed.
 
 A FastAPI service that holds the Letta API key server-side and mediates between
 the Oddfellow front end and the Letta API. The key never reaches the browser.
@@ -34,9 +41,26 @@ Fix (zero cost, no new infrastructure):
    Returns **Server-Sent Events** (`data: {...}`, ending `data: [DONE]`).
 4. Persist the conversation id in the agent's `metadata` so it survives restarts.
 
+## v0.20.3 changes
+
+1. **`/healthz` now names the failing configuration keys.** v0.20.2 returned only
+   `{"ok": false}`, which cannot distinguish "not configured" from "down". That
+   cost a deployment on 2026-09-30. It now also returns `checks_failed` — env var
+   **names only, never values**.
+2. **`/healthz` fails closed.** It returned HTTP 200 even when the service could
+   not answer a single request, so a platform health check would happily route
+   traffic to a broken instance. It now returns **503** when configuration is
+   invalid.
+3. **`render.yaml`** — a Render Blueprint so the service can be built normally
+   from a branch instead of being materialised from the `ODDFELLOW_LETTA_SRC`
+   environment variable. That workaround makes Render's commit metadata report
+   `main`/`1e04fb5` regardless of what is actually running, so provenance is
+   unverifiable from the platform side.
+4. `tests/test_backend.py` extended from 26 to **29 tests**.
+
 ## Automated test suite
 
-`tests/test_backend.py` — **26 tests, 26 passing, 0.6 s, no network, no API key.**
+`tests/test_backend.py` — **29 tests, 29 passing, 0.6 s, no network, no API key.**
 
 ```bash
 pip install -r requirements-dev.txt

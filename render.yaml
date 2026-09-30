@@ -1,0 +1,48 @@
+# Render Blueprint for the Oddfellow Letta backend.
+#
+# Why this exists: the currently-deployed service (oddfellow-letta-poc) was
+# materialised from a Render environment variable (ODDFELLOW_LETTA_SRC) rather
+# than built from a repository. Its Render metadata therefore reports
+# repo=chatgpt-github-connection branch=main commit=1e04fb5, which is NOT the
+# source that is actually running. That makes provenance unverifiable from the
+# platform side -- you have to fetch the live OpenAPI document to find out what
+# version is deployed.
+#
+# This blueprint makes the deploy reproducible: Render clones the branch, runs a
+# normal pip install, and the git commit genuinely identifies the running code.
+#
+# Do NOT point this at the existing service until the replacement is verified.
+# Preserve the current service as the rollback path.
+#
+#   Create:  Render dashboard -> New -> Blueprint -> pick this repo/branch
+#   Secrets: LETTA_API_KEY and ODDFELLOW_OWNER_TOKEN use `sync: false`, so Render
+#            prompts for them and never stores them in this file.
+
+services:
+  - type: web
+    name: oddfellow-letta-backend
+    runtime: python
+    plan: free
+    rootDir: oddfellow
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn oddfellow_letta_backend:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /healthz
+    autoDeploy: false
+    envVars:
+      # Non-secret configuration, safe to commit.
+      - key: LETTA_MODEL
+        value: letta/auto
+      - key: ODDFELLOW_AGENT_ID
+        value: agent-a9a8eb2c-2fed-4554-9998-aa4783c7efc4
+      - key: ODDFELLOW_RATE_PER_MIN
+        value: "20"
+      # Secrets. `sync: false` means Render prompts for the value at deploy time
+      # and keeps it out of this file and out of git. Never fill these in here.
+      - key: LETTA_API_KEY
+        sync: false
+      - key: ODDFELLOW_OWNER_TOKEN
+        sync: false
+      # Set to your front end's origin, e.g.
+      # https://oddfellow-synthetic-v020.onrender.com
+      - key: ALLOWED_ORIGIN
+        sync: false
