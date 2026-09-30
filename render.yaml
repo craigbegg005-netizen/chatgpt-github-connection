@@ -60,8 +60,13 @@ services:
       # while rejecting oddfellow-letta-ui-v020, the one that HAS it. That
       # mismatch presents in the browser as "Failed to fetch", which is
       # indistinguishable from a dead backend.
+      # oddfellow-letta-ui-v020-pwa is the front end that is actually deployed
+      # with the PWA icons and backend wiring (verified live 2026-09-30 02:35
+      # UTC: 20897 B = commit 91b411c, /icons/icon-192.png -> 200). It was
+      # missing from this list, so the one deployed front end that can reach a
+      # backend was the one being rejected.
       - key: ALLOWED_ORIGIN
-        value: https://oddfellow-letta-ui-v020.onrender.com,https://oddfellow-synthetic-v020.onrender.com
+        value: https://oddfellow-letta-ui-v020-pwa.onrender.com,https://oddfellow-letta-ui-v020.onrender.com,https://oddfellow-synthetic-v020.onrender.com
       # Secrets. `sync: false` means Render prompts for the value at deploy time
       # and keeps it out of this file and out of git. Never fill these in here.
       - key: LETTA_API_KEY
