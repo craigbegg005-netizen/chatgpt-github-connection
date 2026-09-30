@@ -818,3 +818,57 @@ def test_audit_line_is_one_json_object_per_line(monkeypatch, capsys):
     assert json_lines
     for line in json_lines:
         assert json.loads(line)["event"]
+
+
+# --------------------------------------------------------------------------- #
+# Liveness vs readiness
+# --------------------------------------------------------------------------- #
+# Render's healthCheckPath must point at /livez, not /healthz. A non-200 health
+# check is a FAILED DEPLOY, so pointing it at the fail-closed readiness probe
+# turns "the secrets are not entered yet" into "the build failed" -- which is
+# what happened to oddfellow-letta-backend's first deploy on 2026-09-30.
+
+def test_livez_is_200_even_when_unconfigured(monkeypatch):
+    m = load_app(monkeypatch, LETTA_API_KEY=None, ODDFELLOW_OWNER_TOKEN=None, LETTA_MODEL=None)
+    r = TestClient(m.app).get("/livez")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["live"] is True
+    assert body["ready"] is False
+    assert set(body["checks_failed"]) == {"LETTA_API_KEY", "ODDFELLOW_OWNER_TOKEN", "LETTA_MODEL"}
+
+
+def test_livez_reports_ready_when_configured(fake):
+    m, f, client = fake
+    body = client.get("/livez").json()
+    assert body["live"] is True and body["ready"] is True and body["checks_failed"] == []
+
+
+def test_livez_needs_no_auth(fake):
+    m, f, client = fake
+    assert client.get("/livez").status_code == 200
+
+
+def test_healthz_still_fails_closed_when_unconfigured(monkeypatch):
+    """The readiness gate must not be softened by adding a liveness probe."""
+    m = load_app(monkeypatch, ODDFELLOW_OWNER_TOKEN=None)
+    assert TestClient(m.app).get("/healthz").status_code == 503
+
+
+def test_render_yaml_health_check_points_at_livez():
+    """Pin the deploy contract: a regression here re-breaks deploys silently."""
+    path = os.path.join(os.path.dirname(APP_DIR), "render.yaml")
+    if not os.path.isfile(path):
+        pytest.skip("render.yaml not present in this checkout")
+    text = open(path).read()
+    assert "healthCheckPath: /livez" in text
+    assert "healthCheckPath: /healthz" not in text
+
+
+def test_livez_is_not_shadowed_by_the_frontend_mount(monkeypatch, tmp_path):
+    (tmp_path / "index.html").write_text("<html>front end</html>")
+    m = load_app(monkeypatch, ODDFELLOW_FRONTEND_DIR=str(tmp_path))
+    client = TestClient(m.app)
+    assert client.get("/").status_code == 200
+    assert client.get("/livez").json()["live"] is True
+    assert client.get("/healthz").status_code == 200

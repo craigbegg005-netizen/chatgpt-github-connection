@@ -118,6 +118,20 @@ absent from the service environment. From outside, the only signal was
 validation, never their values. Env var names are not secrets, and this turns that
 class of fault into a one-look fix.
 
+v0.20.5 -- liveness separated from readiness
+--------------------------------------------
+Render's `healthCheckPath` now points at **/livez**, not /healthz. A non-200
+health check is a FAILED DEPLOY, so pointing it at the fail-closed readiness
+probe turned "the required env vars have not been entered yet" into "the build
+failed" -- indistinguishable from outside. That is what happened to the first
+deploy of oddfellow-letta-backend on 2026-09-30: `update_failed`, DNS resolving,
+TCP connecting in 10 ms, and no HTTP response ever, because no instance was ever
+marked healthy.
+
+/livez returns 200 whenever the process is up, and carries `ready` and
+`checks_failed` in its body. /healthz is unchanged: it still fails closed with
+503 and remains the readiness gate for humans and for the acceptance harness.
+
 v0.20.5 -- auditable, and the owner token stops living on disk
 --------------------------------------------------------------
 Doctrine says "fail closed, be auditable". The service was failing closed but
@@ -706,6 +720,34 @@ async def healthz() -> dict:
     # Fail closed: a service that cannot answer a single request must not report
     # 200 to a platform health check, or the platform will route traffic to it.
     return JSONResponse(status_code=200 if healthy else 503, content=body)
+
+
+@app.get("/livez")
+async def livez() -> dict:
+    """
+    Liveness only: is this process up and serving? Always 200.
+
+    Render's `healthCheckPath` points HERE, not at /healthz. That split was
+    learned the hard way. /healthz fails closed with 503 when a required env var
+    is missing, which is right for readiness -- but Render treats a non-200
+    health check as a FAILED DEPLOY. On 2026-09-30 the first deploy of
+    oddfellow-letta-backend was marked `update_failed` for exactly that reason:
+    the code was fine, the secrets had simply not been entered yet, and the
+    fail-closed probe turned a configuration gap into a build failure that could
+    not be diagnosed from outside.
+
+    Splitting liveness from readiness means a deploy always comes up, and the
+    truth is still one request away: this endpoint reports `ready` and
+    `checks_failed` in its body, the boot audit line records the same, and
+    /healthz keeps failing closed with 503 for anything that gates on readiness.
+    """
+    return {
+        "live": True,
+        "ready": not CONFIG_ERRORS,
+        "checks_failed": CONFIG_FAILED_KEYS,
+        "service": "oddfellow_letta_backend",
+        "version": "0.20.5",
+    }
 
 
 @app.get("/api/letta/status")

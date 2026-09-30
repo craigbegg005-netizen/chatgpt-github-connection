@@ -26,7 +26,17 @@ services:
     rootDir: oddfellow
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn oddfellow_letta_backend:app --host 0.0.0.0 --port $PORT
-    healthCheckPath: /healthz
+    # Liveness, NOT readiness. /healthz fails closed (503) when a required env
+    # var is missing, which is correct -- but Render treats a non-200 health
+    # check as a FAILED DEPLOY, so pointing this at /healthz turns "the secrets
+    # have not been entered yet" into "the build failed", with no way to tell
+    # the two apart from outside. That is what happened to the first deploy of
+    # this service on 2026-09-30 (update_failed).
+    #
+    # /livez is always 200 while the process is up, and reports `ready` and
+    # `checks_failed` in its body. /healthz still fails closed and remains the
+    # readiness gate for humans and for the acceptance harness.
+    healthCheckPath: /livez
     autoDeploy: false
     envVars:
       # Non-secret configuration, safe to commit.
