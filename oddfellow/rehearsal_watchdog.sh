@@ -63,27 +63,33 @@ start_backend() {
   ( cd "$HERE" && ODDFELLOW_FRONTEND_DIR=frontend LETTA_MODEL=letta/auto \
       LETTA_API_KEY="$LETTA_API_KEY" ODDFELLOW_OWNER_TOKEN="$ODDFELLOW_OWNER_TOKEN" \
       ODDFELLOW_AGENT_ID="${ODDFELLOW_AGENT_ID:-agent-a9a8eb2c-2fed-4554-9998-aa4783c7efc4}" \
-      setsid nohup "$VENV/bin/python" -m uvicorn oddfellow_letta_backend:app \
-      --host 127.0.0.1 --port "$PORT" >>"$BACKEND_LOG" 2>&1 </dev/null & disown )
+      exec setsid --fork "$VENV/bin/python" -m uvicorn oddfellow_letta_backend:app \
+      --host 127.0.0.1 --port "$PORT" ) >>"$BACKEND_LOG" 2>&1 </dev/null &
+  disown
   for _ in $(seq 1 30); do backend_up && return 0; sleep 1; done
   return 1
 }
 
 start_tunnel() {
   [ -x "$CLOUDFLARED" ] || { log "cloudflared missing at $CLOUDFLARED"; return 1; }
-  ( cd "$(dirname "$CLOUDFLARED")" && setsid nohup "$CLOUDFLARED" tunnel \
-      --url "http://127.0.0.1:$PORT" --no-autoupdate >>"$TUNNEL_LOG" 2>&1 </dev/null & disown )
+  ( cd "$(dirname "$CLOUDFLARED")" && exec setsid --fork "$CLOUDFLARED" tunnel \
+      --url "http://127.0.0.1:$PORT" --no-autoupdate ) >>"$TUNNEL_LOG" 2>&1 </dev/null &
+  disown
   return 0
 }
 
 # Return the first candidate URL that actually answers /livez. An old log holds a
 # URL that is now dead, so a live response is the only thing worth trusting.
+# Newest-first, because the live tunnel is almost always the most recent one and
+# each dead candidate costs a full curl timeout.
 live_url() {
   local f u
   for f in "$TUNNEL_LOG" /tmp/tunnel3.log /tmp/tunnel2.log /tmp/tunnel.log; do
     [ -f "$f" ] || continue
-    for u in $(grep -oE 'https://[a-z0-9-]+\.trycloudflare\.com' "$f" 2>/dev/null | sort -u); do
-      if curl -fsS --max-time 8 "$u/livez" >/dev/null 2>&1; then echo "$u"; return 0; fi
+    for u in $(grep -oE 'https://[a-z0-9-]+\.trycloudflare\.com' "$f" 2>/dev/null \
+        | awk '!seen[$0]++' | tail -6 \
+        | awk '{a[NR]=$0} END{for(i=NR;i>0;i--) print a[i]}'); do
+      if curl -fsS --max-time 5 "$u/livez" >/dev/null 2>&1; then echo "$u"; return 0; fi
     done
   done
   return 1

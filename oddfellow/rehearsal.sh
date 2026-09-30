@@ -34,6 +34,13 @@ die() { printf '\nERROR: %s\n' "$*" >&2; exit 1; }
 
 # A background bash task is reaped when it times out, so anything long-running
 # must be detached from the shell that started it. This is how.
+#
+# Two details matter, both learned by getting them wrong. The redirect goes on
+# the *subshell*, not on the command inside it: `setsid` execs in place when it
+# is not already a process-group leader, so if only the inner command is
+# redirected, the detached process inherits the caller's stdout pipe and the
+# caller hangs until its timeout even though the work started fine. And
+# `setsid --fork` guarantees a fork, so the launching shell always returns.
 
 # Find PIDs whose executable matches the given glob AND whose /proc/<pid>/cmdline
 # contains every substring given, skipping this shell and its parent.
@@ -95,8 +102,9 @@ up() {
     ( cd "$HERE" && ODDFELLOW_FRONTEND_DIR=frontend LETTA_MODEL=letta/auto \
         LETTA_API_KEY="$LETTA_API_KEY" ODDFELLOW_OWNER_TOKEN="$ODDFELLOW_OWNER_TOKEN" \
         ODDFELLOW_AGENT_ID="${ODDFELLOW_AGENT_ID:-agent-a9a8eb2c-2fed-4554-9998-aa4783c7efc4}" \
-        setsid nohup "$VENV/bin/python" -m uvicorn oddfellow_letta_backend:app \
-        --host 127.0.0.1 --port "$PORT" >"$BACKEND_LOG" 2>&1 </dev/null & disown )
+        exec setsid --fork "$VENV/bin/python" -m uvicorn oddfellow_letta_backend:app \
+        --host 127.0.0.1 --port "$PORT" ) >"$BACKEND_LOG" 2>&1 </dev/null &
+    disown
     for _ in $(seq 1 30); do
       curl -fsS --max-time 3 "http://127.0.0.1:$PORT/livez" >/dev/null 2>&1 && break
       sleep 1
@@ -107,28 +115,44 @@ up() {
   curl -fsS --max-time 5 "http://127.0.0.1:$PORT/livez" >/dev/null 2>&1 \
     || { tail -20 "$BACKEND_LOG" 2>/dev/null; die "the backend never answered"; }
 
+  # Record where the log ends before starting anything, so the URL we report is
+  # one this run actually produced. The log is appended to across restarts, and
+  # its newest line is not necessarily the live tunnel — a URL from an earlier
+  # tunnel can be the last thing written. Reporting that stale URL is worse than
+  # reporting nothing, because it looks like success.
+  local before=0
+  [ -f "$TUNNEL_LOG" ] && before="$(wc -c <"$TUNNEL_LOG")"
+
   if [ -z "$(tunnel_pids)" ]; then
     [ -x "$CLOUDFLARED" ] || die "cloudflared not found at $CLOUDFLARED (fetch it from the Cloudflare releases page)"
     say "Opening a Cloudflare quick tunnel"
-    ( cd "$(dirname "$CLOUDFLARED")" && setsid nohup "$CLOUDFLARED" tunnel \
-        --url "http://127.0.0.1:$PORT" --no-autoupdate >>"$TUNNEL_LOG" 2>&1 </dev/null & disown )
+    ( cd "$(dirname "$CLOUDFLARED")" && exec setsid --fork "$CLOUDFLARED" tunnel \
+        --url "http://127.0.0.1:$PORT" --no-autoupdate ) >>"$TUNNEL_LOG" 2>&1 </dev/null &
+    disown
   else
     say "Tunnel already running"
   fi
 
   local url=""
   for _ in $(seq 1 30); do
-    url="$(grep -oE 'https://[a-z0-9-]+\.trycloudflare\.com' "$TUNNEL_LOG" 2>/dev/null | tail -1 || true)"
+    url="$(tail -c "+$((before + 1))" "$TUNNEL_LOG" 2>/dev/null \
+      | grep -oE 'https://[a-z0-9-]+\.trycloudflare\.com' | tail -1 || true)"
     [ -n "$url" ] && break
     sleep 2
   done
+  # Nothing new was appended, so the tunnel was already up: ask which candidate
+  # actually answers instead of guessing from the log.
+  [ -n "$url" ] || url="$(find_url || true)"
   [ -n "$url" ] || { tail -20 "$TUNNEL_LOG" 2>/dev/null; die "no tunnel URL appeared"; }
 
   say "Waiting for the public URL to answer"
-  for _ in $(seq 1 20); do
-    curl -fsS --max-time 10 "$url/livez" >/dev/null 2>&1 && break
+  local answered=""
+  for _ in $(seq 1 15); do
+    curl -fsS --max-time 6 "$url/livez" >/dev/null 2>&1 && { answered=1; break; }
     sleep 2
   done
+  [ -n "$answered" ] || url="$(find_url || true)"
+  [ -n "$url" ] || { tail -20 "$TUNNEL_LOG" 2>/dev/null; die "no tunnel URL answers /livez"; }
 
   say "REHEARSAL URL"
   echo "$url"
@@ -139,16 +163,21 @@ up() {
 
 find_url() {
   # A quick-tunnel URL cannot be recovered any other way, and an old log holds a
-  # URL that is now dead — so collect every candidate and return the first one
-  # that actually answers. Prefer the canonical log, but never trust a log line
-  # over a live response.
+  # URL that is now dead — so try candidates newest-first and return the first
+  # that actually answers. Never trust a log line over a live response.
+  #
+  # Newest-first matters for speed: the live tunnel is almost always the most
+  # recent one, and each dead candidate costs a full curl timeout.
   local f u
   for f in "$TUNNEL_LOG" /tmp/tunnel3.log /tmp/tunnel2.log /tmp/tunnel.log; do
     [ -f "$f" ] || continue
-    for u in $(grep -oE 'https://[a-z0-9-]+\.trycloudflare\.com' "$f" 2>/dev/null | sort -u); do
-      if curl -fsS --max-time 8 "$u/livez" >/dev/null 2>&1; then echo "$u"; return; fi
+    for u in $(grep -oE 'https://[a-z0-9-]+\.trycloudflare\.com' "$f" 2>/dev/null \
+        | awk '!seen[$0]++' | tail -6 \
+        | awk '{a[NR]=$0} END{for(i=NR;i>0;i--) print a[i]}'); do
+      if curl -fsS --max-time 5 "$u/livez" >/dev/null 2>&1; then echo "$u"; return 0; fi
     done
   done
+  return 1
 }
 
 status() {
@@ -175,10 +204,11 @@ keepalive() {
     say "Watchdog already running (pid $(watchdog_pid))"
   else
     say "Starting the rehearsal watchdog"
-    ( cd "$HERE" && setsid nohup env \
+    ( cd "$HERE" && exec setsid --fork env \
         LETTA_API_KEY="$LETTA_API_KEY" ODDFELLOW_OWNER_TOKEN="$ODDFELLOW_OWNER_TOKEN" \
         ODDFELLOW_REHEARSAL_PORT="$PORT" ODDFELLOW_VENV="$VENV" CLOUDFLARED="$CLOUDFLARED" \
-        bash "$HERE/rehearsal_watchdog.sh" >/dev/null 2>&1 </dev/null & disown )
+        bash "$HERE/rehearsal_watchdog.sh" ) >/dev/null 2>&1 </dev/null &
+    disown
     for _ in $(seq 1 10); do [ -n "$(watchdog_pid || true)" ] && break; sleep 1; done
   fi
   if [ -n "$(watchdog_pid || true)" ]; then
