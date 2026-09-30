@@ -217,6 +217,8 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
+from command_center import CommandCenter, build_router
+
 # --------------------------------------------------------------------------- #
 # Configuration
 # --------------------------------------------------------------------------- #
@@ -465,6 +467,36 @@ def require_owner(token: Optional[str], request: Optional[Request] = None) -> No
         # missing one; the audit log records which it was, for the owner.
         audit("auth_denied", request, reason="bad_token")
         raise HTTPException(status_code=401, detail="Invalid or missing owner token.")
+
+
+# --------------------------------------------------------------------------- #
+# Begg AI Command Center — the owner-facing layer
+# --------------------------------------------------------------------------- #
+#
+# Mounted here, after the auth helpers, so it shares this service's owner-token
+# check, rate limiter and audit trail rather than growing a second, weaker set.
+# See command_center.py for why it is a module and not a separate service.
+
+COMMAND = CommandCenter()
+app.include_router(
+    build_router(COMMAND, require_owner, rate_limit, client_key, audit)
+)
+
+
+def require_not_paused(request: Optional[Request] = None) -> None:
+    """Refuse work while the owner has the company paused.
+
+    The pause switch has to actually stop things. A switch that logs a warning and
+    proceeds is decoration, and an emergency stop that does not stop is worse than
+    no stop at all, because it is trusted.
+    """
+    if COMMAND.is_paused():
+        state = COMMAND.pause_state()
+        audit("paused_refused", request, reason=state.get("reason", ""))
+        raise HTTPException(
+            status_code=503,
+            detail={"error": "paused_by_owner", "reason": state.get("reason", "")},
+        )
 
 
 # --------------------------------------------------------------------------- #
@@ -915,6 +947,7 @@ async def send_message(
 ) -> dict:
     require_owner(x_owner_token, request)
     rate_limit(client_key(request, x_owner_token), request)
+    require_not_paused(request)
 
     agent = await resolve_agent()
     agent_id = agent.get("id")

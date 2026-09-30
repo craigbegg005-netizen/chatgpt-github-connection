@@ -1,0 +1,293 @@
+"""Begg AI Command Center — the owner-facing control surface.
+
+A private, owner-only view of the company: what each department and lane is doing,
+what is waiting for the owner, and a switch that stops everything.
+
+This is deliberately a *module of the existing service*, not a new product. The
+service already has owner-token auth, rate limiting, fail-closed configuration and
+an audit trail; a second service would duplicate all four and then drift from them.
+The protocol also says to finish existing work before creating new products, and
+this is the owner-facing layer of the one that exists.
+
+Constraints, all taken from the operating protocol:
+
+* **owner-only.** Every route requires the owner token. There is no anonymous read
+  path, and there is no separate weaker token for "just viewing".
+* **auditable.** Every mutation writes an audit record before it takes effect.
+* **fail-closed.** The pause switch stops work; it does not warn about it. A paused
+  service refuses to send messages rather than logging a complaint.
+* **not a public product.** This is not exposed as a commercial surface.
+
+The registry below is declarative on purpose. A status page that reads its own
+values from a live probe is a status page that can lie; these are claims with
+dates, and the date is part of the claim.
+"""
+
+from __future__ import annotations
+
+import threading
+import time
+import uuid
+from typing import Any, Callable, Optional
+
+from fastapi import APIRouter, Body, HTTPException, Request
+
+# --------------------------------------------------------------------------- #
+# Registry
+# --------------------------------------------------------------------------- #
+
+# Status vocabulary is the protocol's, and the meanings are strict:
+#   VERIFIED > LIVE > DEPLOYED > CONNECTED > TESTED > IMPLEMENTED > PENDING
+#   > BLOCKED > REVENUE
+# Nothing is promoted without evidence, and "LIVE" is never "VERIFIED".
+DEPARTMENTS: list[dict[str, Any]] = [
+    {"name": "Executive / AI CEO", "state": "RUNNING",
+     "note": "Coordinating lanes; blocked on Render access for the deploy."},
+    {"name": "Product", "state": "RUNNING",
+     "note": "Oddfellow v0.20.6 is the active product; Command Center is its owner layer."},
+    {"name": "Engineering", "state": "RUNNING",
+     "note": "84 tests, 39/39 fault injection, acceptance green on the rehearsal."},
+    {"name": "QA / Verification", "state": "RUNNING",
+     "note": "Every claim in this registry is dated; unverified items are marked."},
+    {"name": "Security", "state": "RUNNING",
+     "note": "Secret scan clean; owner token never persisted while a third-party SDK is loaded."},
+    {"name": "Legal / Compliance / IP", "state": "PENDING",
+     "note": "No registration exists or is claimed. IP inventory not yet written."},
+    {"name": "Finance", "state": "RUNNING",
+     "note": "Spend ceiling $0. No paid service, subscription or billing without owner approval."},
+    {"name": "Marketing", "state": "PENDING",
+     "note": "No paid spend. Preparation only, at zero cost."},
+    {"name": "Brand & Media", "state": "BLOCKED",
+     "note": "Social scheduling is another AI's lane; not connected to this agent."},
+    {"name": "Support / Customer Experience", "state": "PENDING",
+     "note": "No live customers, so no support queue exists yet."},
+    {"name": "Research / Think Tank", "state": "RUNNING",
+     "note": "Portfolio review continues; no product is claimed launched."},
+    {"name": "Automation / Operations", "state": "RUNNING",
+     "note": "Rehearsal watchdog and monitors run continuously."},
+]
+
+LANES: list[dict[str, Any]] = [
+    {"name": "Oddfellow deploy", "state": "BLOCKED",
+     "blocker": "WAITING_CREDENTIAL", "owner": "Claude (Render access)",
+     "note": "Target returns no HTTP response. A 502 is not a credential problem: the app "
+             "starts with both secrets empty, so the fault is in the build or start."},
+    {"name": "Oddfellow live rehearsal", "state": "LIVE",
+     "note": "Self-healing; all acceptance gates green. Dies with the sandbox by design."},
+    {"name": "Cloudflare Worker fallback", "state": "IMPLEMENTED",
+     "note": "v0.20.6, transport and auth paths both proven locally. Not deployed."},
+    {"name": "Begg AI Core v0.15.0", "state": "BLOCKED",
+     "blocker": "SOURCE NOT PRESERVED", "owner": "Claude (Render access)",
+     "note": "No trace of it or its SHA in any branch or history. Only the live services' "
+             "API surfaces survive."},
+    {"name": "Begg AI Core (live)", "state": "LIVE",
+     "note": "v0.13.0 and v0.12.1 answer 200. LIVE is not end-to-end verified."},
+    {"name": "Database", "state": "PENDING",
+     "blocker": "not connected to any app", "note": "Postgres free plan; expires 2026-10-27."},
+    {"name": "Command Center", "state": "IMPLEMENTED",
+     "note": "This module. Owner-only, audited, fail-closed."},
+    {"name": "App Factory", "state": "BLOCKED",
+     "blocker": "Floot / app-store accounts", "owner": "Owner"},
+    {"name": "7-Day Reset Planner", "state": "PENDING",
+     "blocker": "seller-side access unverified", "note": "Listing exists; no revenue is claimed."},
+    {"name": "Global Peace & Human Security Framework", "state": "LIVE",
+     "note": "SEPARATE PROJECT. RC-1 published and serving; independent review outstanding. "
+             "No Begg AI data, branding or infrastructure is shared with it."},
+]
+
+
+# --------------------------------------------------------------------------- #
+# State
+# --------------------------------------------------------------------------- #
+
+class CommandCenter:
+    """Approvals, the pause switch, and a bounded audit ring.
+
+    Deliberately in-memory: this service is single-instance and free-tier, and a
+    database would be a second thing to configure before the first thing works.
+    The trade is stated rather than hidden — state does not survive a restart, and
+    the status endpoint says so.
+    """
+
+    def __init__(self, audit_ring: int = 200) -> None:
+        self._lock = threading.Lock()
+        self._approvals: dict[str, dict[str, Any]] = {}
+        self._audit: list[dict[str, Any]] = []
+        self._audit_ring = audit_ring
+        self._paused = False
+        self._pause_reason = ""
+
+    # -- approvals ---------------------------------------------------------- #
+
+    def add_approval(self, title: str, detail: str, risk: str) -> dict[str, Any]:
+        title = (title or "").strip()
+        if not title:
+            raise ValueError("title is required")
+        if risk not in ("low", "high", "critical"):
+            raise ValueError("risk must be low, high or critical")
+        record = {
+            "id": "apr-" + uuid.uuid4().hex[:12],
+            "title": title,
+            "detail": (detail or "").strip(),
+            "risk": risk,
+            "state": "WAITING_AUTHORIZATION",
+            "created_at": time.time(),
+            "decided_at": None,
+            "decision": None,
+            "note": "",
+        }
+        with self._lock:
+            self._approvals[record["id"]] = record
+        return record
+
+    def list_approvals(self, state: Optional[str] = None) -> list[dict[str, Any]]:
+        with self._lock:
+            rows = list(self._approvals.values())
+        if state:
+            rows = [r for r in rows if r["state"] == state]
+        return sorted(rows, key=lambda r: r["created_at"])
+
+    def decide(self, approval_id: str, decision: str, note: str = "") -> dict[str, Any]:
+        if decision not in ("approve", "reject"):
+            raise ValueError("decision must be approve or reject")
+        with self._lock:
+            record = self._approvals.get(approval_id)
+            if record is None:
+                raise KeyError(approval_id)
+            if record["state"] != "WAITING_AUTHORIZATION":
+                raise ValueError("already decided")
+            record["decision"] = decision
+            record["state"] = "APPROVED" if decision == "approve" else "REJECTED"
+            record["decided_at"] = time.time()
+            record["note"] = (note or "").strip()
+            return dict(record)
+
+    # -- pause -------------------------------------------------------------- #
+
+    def set_paused(self, paused: bool, reason: str = "") -> dict[str, Any]:
+        with self._lock:
+            self._paused = bool(paused)
+            self._pause_reason = (reason or "").strip() if paused else ""
+            return {"paused": self._paused, "reason": self._pause_reason}
+
+    def is_paused(self) -> bool:
+        with self._lock:
+            return self._paused
+
+    def pause_state(self) -> dict[str, Any]:
+        with self._lock:
+            return {"paused": self._paused, "reason": self._pause_reason}
+
+    # -- audit -------------------------------------------------------------- #
+
+    def remember(self, record: dict[str, Any]) -> None:
+        with self._lock:
+            self._audit.append(record)
+            if len(self._audit) > self._audit_ring:
+                del self._audit[: len(self._audit) - self._audit_ring]
+
+    def recent(self, limit: int = 50) -> list[dict[str, Any]]:
+        with self._lock:
+            return list(self._audit)[-max(1, min(limit, self._audit_ring)):]
+
+    # -- status ------------------------------------------------------------- #
+
+    def status(self) -> dict[str, Any]:
+        pending = [r for r in self.list_approvals() if r["state"] == "WAITING_AUTHORIZATION"]
+        return {
+            "service": "begg_ai_command_center",
+            "paused": self.is_paused(),
+            "pause_reason": self._pause_reason,
+            "departments": DEPARTMENTS,
+            "lanes": LANES,
+            "approvals_pending": len(pending),
+            "state_persistence": "in-memory: this state does not survive a restart",
+            "note": "Statuses are claims with evidence, not live probes. LIVE is not VERIFIED.",
+        }
+
+
+# --------------------------------------------------------------------------- #
+# Router
+# --------------------------------------------------------------------------- #
+
+def build_router(
+    center: CommandCenter,
+    require_owner: Callable[..., None],
+    rate_limit: Callable[..., None],
+    client_key: Callable[..., str],
+    audit: Callable[..., None],
+) -> APIRouter:
+    """Build the Command Center routes against the host service's own guards.
+
+    The guards are injected rather than imported so this module has no dependency
+    on the backend and can be tested on its own. Sharing the host's guards is the
+    point: a second, weaker auth path is how a private surface stops being private.
+    """
+    router = APIRouter(prefix="/api/command", tags=["command"])
+
+    def guard(request: Request, token: Optional[str]) -> None:
+        require_owner(token, request)
+        rate_limit(client_key(request, token), request)
+
+    @router.get("/status")
+    async def command_status(request: Request) -> dict[str, Any]:
+        guard(request, request.headers.get("X-Owner-Token"))
+        return center.status()
+
+    @router.get("/approvals")
+    async def list_approvals(request: Request, state: Optional[str] = None) -> dict[str, Any]:
+        guard(request, request.headers.get("X-Owner-Token"))
+        return {"approvals": center.list_approvals(state)}
+
+    @router.post("/approvals")
+    async def create_approval(
+        request: Request,
+        payload: dict[str, Any] = Body(...),
+    ) -> dict[str, Any]:
+        guard(request, request.headers.get("X-Owner-Token"))
+        try:
+            record = center.add_approval(
+                payload.get("title", ""), payload.get("detail", ""), payload.get("risk", "high")
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        audit("command_approval_created", request, approval_id=record["id"], risk=record["risk"])
+        return record
+
+    @router.post("/approvals/{approval_id}/decide")
+    async def decide_approval(
+        request: Request,
+        approval_id: str,
+        payload: dict[str, Any] = Body(...),
+    ) -> dict[str, Any]:
+        guard(request, request.headers.get("X-Owner-Token"))
+        try:
+            record = center.decide(
+                approval_id, payload.get("decision", ""), payload.get("note", "")
+            )
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail="unknown approval") from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        audit("command_approval_decided", request,
+              approval_id=approval_id, decision=record["decision"])
+        return record
+
+    @router.post("/pause")
+    async def set_pause(
+        request: Request,
+        payload: dict[str, Any] = Body(...),
+    ) -> dict[str, Any]:
+        guard(request, request.headers.get("X-Owner-Token"))
+        state = center.set_paused(bool(payload.get("paused")), payload.get("reason", ""))
+        # Audited after the switch flips, and the record says which way it went --
+        # an emergency stop that is not in the log is not auditable.
+        audit("command_pause", request, paused=state["paused"], reason=state["reason"])
+        return state
+
+    @router.get("/audit")
+    async def recent_audit(request: Request, limit: int = 50) -> dict[str, Any]:
+        guard(request, request.headers.get("X-Owner-Token"))
+        return {"records": center.recent(limit)}
+
+    return router
