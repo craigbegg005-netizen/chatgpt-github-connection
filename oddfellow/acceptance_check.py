@@ -161,24 +161,44 @@ def gate1(base, token, r):
     if not good:
         return False
 
+    probe = "One short sentence: state your name and confirm the zero-spend rule."
     t0 = time.time()
     status, body, secs = call(base + "/api/letta/message", "POST",
-                              {"input": "One short sentence: state your name and confirm the zero-spend rule."},
-                              token=token, timeout=180)
+                              {"input": probe}, token=token, timeout=180)
     reply = body.get("reply") if isinstance(body, dict) else None
     r.add(1, "message: real reply", bool(reply and status == 200),
           "HTTP %s in %.1fs | %r" % (status, secs, reply))
     conv = body.get("conversation_id") if isinstance(body, dict) else None
+
+    # Memory, checked properly. The previous version read history only AFTER
+    # creating a new session, so it always looked at an empty conversation and
+    # always passed -- it reported "0 messages" as a PASS. That is the same class
+    # of vacuous check as the old leak scan. This reads history on the
+    # conversation the turn was actually taken in, and requires both the owner's
+    # message and the reply to be there.
+    status, body, secs = call(base + "/api/letta/history?limit=20", token=token)
+    msgs = body.get("messages") if isinstance(body, dict) else None
+    contents = [str(m.get("content") or "") for m in msgs] if isinstance(msgs, list) else []
+    saw_user = any(probe[:40] in c for c in contents)
+    saw_reply = any((reply or "")[:40] in c for c in contents) if reply else False
+    r.add(1, "history: the turn we just took is in it", bool(saw_user and saw_reply),
+          "HTTP %s | %d message(s) | owner turn present=%s | reply present=%s"
+          % (status, len(contents), saw_user, saw_reply))
 
     status, body, secs = call(base + "/api/letta/new-session", "POST", {}, token=token)
     new_conv = body.get("conversation_id") if isinstance(body, dict) else None
     r.add(1, "new-session: distinct conversation", bool(new_conv and new_conv != conv),
           "was %s -> now %s" % (conv, new_conv))
 
+    # The new session must be a genuinely separate conversation, not the old one
+    # relabelled: its history should not contain the turn taken before it.
     status, body, secs = call(base + "/api/letta/history?limit=20", token=token)
     msgs = body.get("messages") if isinstance(body, dict) else None
-    r.add(1, "history: readable", status == 200 and isinstance(msgs, list),
-          "HTTP %s | %d messages" % (status, len(msgs) if isinstance(msgs, list) else -1))
+    new_contents = [str(m.get("content") or "") for m in msgs] if isinstance(msgs, list) else []
+    carried = any(probe[:40] in c for c in new_contents)
+    r.add(1, "new session starts empty", status == 200 and not carried,
+          "HTTP %s | %d message(s) | carries the previous turn=%s"
+          % (status, len(new_contents), carried))
 
     status, body, secs = call(base + "/api/letta/agent", token=token)
     r.add(1, "agent summary", status == 200 and isinstance(body, dict) and body.get("agent"),
