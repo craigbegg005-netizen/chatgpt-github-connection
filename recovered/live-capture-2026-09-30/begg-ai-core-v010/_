@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Begg AI Command Center</title>
+  <style>
+    :root { color-scheme: dark; --bg:#0b0d10; --card:#14181d; --line:#27303a; --text:#f5f7fa; --muted:#9ca8b5; --accent:#74d3ff; --warn:#ffc766; --danger:#ff8a8a; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:system-ui,-apple-system,Segoe UI,sans-serif; background:var(--bg); color:var(--text); }
+    main { max-width:980px; margin:auto; padding:18px; }
+    h1 { margin:4px 0 2px; font-size:1.55rem; }
+    .sub { color:var(--muted); margin-bottom:18px; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:12px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px; }
+    label { display:block; color:var(--muted); font-size:.86rem; margin-bottom:6px; }
+    input, textarea, select { width:100%; background:#0e1216; color:var(--text); border:1px solid var(--line); border-radius:10px; padding:11px; }
+    textarea { min-height:105px; resize:vertical; }
+    button { border:0; border-radius:10px; padding:10px 13px; font-weight:700; background:var(--accent); color:#04121a; cursor:pointer; }
+    button.secondary { background:#252e38; color:var(--text); }
+    button.warn { background:var(--warn); color:#1e1400; }
+    button.danger { background:var(--danger); color:#2b0000; }
+    .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    .pill { display:inline-block; border:1px solid var(--line); border-radius:999px; padding:4px 8px; color:var(--muted); font-size:.8rem; }
+    .item { margin-top:10px; padding-top:10px; border-top:1px solid var(--line); }
+    pre { white-space:pre-wrap; word-break:break-word; color:#dce5ee; }
+    .small { font-size:.82rem; color:var(--muted); }
+    .hidden { display:none; }
+    .two { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    @media (max-width:640px) { .two { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Begg AI Command Center</h1>
+  <div class="sub">Oddfellow operational console · zero-cost safe · approval-gated</div>
+  <p class="small">Local mock runs only demonstrate the queue and routing. They do not perform the requested work and appear as simulated tasks.</p>
+
+  <section class="card" style="margin-bottom:12px">
+    <div class="row"><strong>Private API access</strong><span id="authState" class="pill">checking</span></div>
+    <div class="two" style="margin-top:10px">
+      <div><label>API token (only needed if configured on the server)</label><input id="token" type="password" placeholder="Stored only in this browser" /></div>
+      <div style="display:flex;align-items:end"><button class="secondary" onclick="saveToken()">Save token locally</button></div>
+    </div>
+  </section>
+
+  <div class="grid">
+    <section class="card">
+      <div class="row"><strong>System</strong><span id="mode" class="pill">loading</span></div>
+      <div id="providers" class="small" style="margin-top:10px"></div>
+    </section>
+    <section class="card">
+      <strong>Operations</strong>
+      <div id="counts" class="small" style="margin-top:10px"></div>
+      <div id="ops" class="small" style="margin-top:8px"></div>
+    </section>
+  </div>
+
+  <section class="card" style="margin-top:12px">
+    <strong>Create task</strong>
+    <div class="two" style="margin-top:10px">
+      <div><label>Title</label><input id="title" placeholder="e.g. Draft launch checklist" /></div>
+      <div><label>Action scope</label><select id="scope"><option value="internal">Internal work</option><option value="external_write">External write/change</option><option value="publish">Publish</option><option value="spend">Spend money</option><option value="security">Security change</option><option value="account_change">Account change</option></select></div>
+    </div>
+    <div class="two" style="margin-top:10px">
+      <div><label>Department</label><select id="department"><option value="core">Core</option><option value="engineering">Engineering</option><option value="app_factory">App Factory</option><option value="revenue">Revenue</option><option value="marketing">Marketing</option><option value="influencer">Influencer</option><option value="operations" selected>Operations</option><option value="research">Research</option><option value="executive">Executive</option></select></div>
+      <div><label>Priority (0–100)</label><input id="priority" type="number" min="0" max="100" value="50" /></div>
+    </div>
+    <div style="margin-top:10px"><label>Instruction</label><textarea id="prompt" placeholder="Tell Oddfellow what to do"></textarea></div>
+    <div class="row" style="margin-top:10px">
+      <button onclick="createTask()">Queue task</button>
+      <button class="secondary" onclick="refreshAll()">Refresh</button>
+    </div>
+    <div class="small" style="margin-top:8px">External writes, publishing, spending, security, and account changes are automatically held for approval.</div>
+  </section>
+
+  <section class="card" style="margin-top:12px">
+    <strong>Recurring schedule</strong>
+    <div class="two" style="margin-top:10px">
+      <div><label>Title</label><input id="schedTitle" placeholder="e.g. Daily portfolio review" /></div>
+      <div><label>Every N minutes</label><input id="schedMinutes" type="number" min="1" value="1440" /></div>
+    </div>
+    <div class="two" style="margin-top:10px">
+      <div><label>Action scope</label><select id="schedScope"><option value="internal">Internal work</option><option value="external_write">External write/change</option><option value="publish">Publish</option><option value="spend">Spend money</option><option value="security">Security change</option><option value="account_change">Account change</option></select></div>
+      <div><label>First run (optional, local browser time)</label><input id="schedFirst" type="datetime-local" /></div>
+    </div>
+    <div class="two" style="margin-top:10px">
+      <div><label>Department</label><select id="schedDepartment"><option value="core">Core</option><option value="engineering">Engineering</option><option value="app_factory">App Factory</option><option value="revenue">Revenue</option><option value="marketing">Marketing</option><option value="influencer">Influencer</option><option value="operations" selected>Operations</option><option value="research">Research</option><option value="executive">Executive</option></select></div>
+      <div><label>Priority (0–100)</label><input id="schedPriority" type="number" min="0" max="100" value="50" /></div>
+    </div>
+    <div style="margin-top:10px"><label>Instruction</label><textarea id="schedPrompt" placeholder="What Oddfellow should do each run"></textarea></div>
+    <div class="row" style="margin-top:10px"><button onclick="createSchedule()">Create schedule</button></div>
+    <div id="schedules"></div>
+  </section>
+
+  <section class="card" style="margin-top:12px">
+    <strong>Departments</strong>
+    <div id="departments"></div>
+  </section>
+
+  <section class="card" style="margin-top:12px">
+    <strong>Pending approvals</strong>
+    <div id="approvals"></div>
+  </section>
+
+  <section class="card" style="margin-top:12px">
+    <strong>Recent tasks</strong>
+    <div id="tasks"></div>
+  </section>
+</main>
+<script>
+const tokenEl = document.getElementById('token');
+tokenEl.value = localStorage.getItem('begg_api_token') || '';
+function saveToken(){ localStorage.setItem('begg_api_token', tokenEl.value.trim()); refreshAll(); }
+async function api(path, options={}) {
+  const headers = {'Content-Type':'application/json', ...(options.headers||{})};
+  const token = (localStorage.getItem('begg_api_token') || '').trim();
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const r = await fetch(path, {...options, headers});
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+function esc(v='') { return String(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+async function refreshStatus() {
+  try {
+    const s = await api('/api/status');
+    document.getElementById('authState').textContent = s.api_token_required ? 'token protected' : 'local/open';
+    document.getElementById('mode').textContent = s.mode;
+    document.getElementById('providers').innerHTML = s.providers.map(p => `${esc(p.name)} · ${esc(p.model)} · ${p.available?'ready':'off'}${p.paid?' · paid-gated':''}`).join('<br>');
+    document.getElementById('counts').textContent = Object.entries(s.task_counts).map(([k,v])=>`${k}: ${v}`).join(' · ') || 'No tasks yet';
+    document.getElementById('ops').textContent = `approvals: ${s.pending_approvals} · enabled schedules: ${s.enabled_schedules} · queue: ${s.queue_depth} · active departments: ${s.departments_active}${s.highest_priority_queued===null?'':` · top priority: ${s.highest_priority_queued}`}`;
+  } catch (e) {
+    document.getElementById('authState').textContent = 'authorization needed';
+    throw e;
+  }
+}
+async function refreshTasks() {
+  const items = await api('/api/tasks?limit=25');
+  document.getElementById('tasks').innerHTML = items.map(t => `<div class="item"><div class="row"><strong>#${t.id} ${esc(t.title)}</strong><span class="pill">${esc(t.status)}</span><span class="pill">${esc(t.action_scope||'internal')}</span><span class="pill">${esc(t.department||'operations')}</span><span class="pill">P${t.priority??50}</span></div><div class="small">${esc(t.provider||'unassigned')} ${t.model?`· ${esc(t.model)}`:''}${t.source_schedule_id?` · schedule #${t.source_schedule_id}`:''} · attempts ${t.attempts||0}</div>${t.result?`<pre>${esc(t.result)}</pre>`:''}${t.error?`<pre>${esc(t.error)}</pre>`:''}${t.status==='queued'?`<button class="secondary" onclick="runTask(${t.id})">Run now</button>`:''}${['failed','simulated'].includes(t.status)?`<button class="secondary" onclick="retryTask(${t.id})">Retry</button>`:''}</div>`).join('') || '<div class="small" style="margin-top:10px">No tasks yet.</div>';
+}
+async function refreshApprovals(){
+  const items = await api('/api/approvals?limit=50');
+  document.getElementById('approvals').innerHTML = items.map(t => `<div class="item"><div><strong>#${t.id} ${esc(t.title)}</strong> <span class="pill">${esc(t.action_scope)}</span></div><div class="small" style="margin:7px 0">${esc(t.prompt)}</div><div class="row"><button class="warn" onclick="approveTask(${t.id})">Approve</button><button class="danger" onclick="rejectTask(${t.id})">Reject</button></div></div>`).join('') || '<div class="small" style="margin-top:10px">Nothing awaiting approval.</div>';
+}
+async function refreshSchedules(){
+  const items = await api('/api/schedules?limit=50');
+  document.getElementById('schedules').innerHTML = items.map(s => `<div class="item"><div class="row"><strong>#${s.id} ${esc(s.title)}</strong><span class="pill">${s.enabled?'enabled':'paused'}</span><span class="pill">every ${s.interval_minutes} min</span></div><div class="small">next: ${esc(s.next_run_at)} · ${esc(s.action_scope)} · ${esc(s.department||'operations')} · P${s.priority??50}</div><div class="row" style="margin-top:7px"><button class="secondary" onclick="toggleSchedule(${s.id}, ${s.enabled?0:1})">${s.enabled?'Pause':'Resume'}</button></div></div>`).join('') || '<div class="small" style="margin-top:10px">No schedules yet.</div>';
+}
+async function refreshDepartments(){
+  const items = await api('/api/departments');
+  document.getElementById('departments').innerHTML = items.map(d => `<div class="item"><div class="row"><strong>${esc(d.name)}</strong><span class="pill">open ${d.open_tasks}</span></div><div class="small">${Object.entries(d.task_counts).map(([k,v])=>`${esc(k)}: ${v}`).join(' · ') || 'No tasks yet'}</div></div>`).join('');
+}
+async function createTask() {
+  const title = document.getElementById('title').value.trim();
+  const prompt = document.getElementById('prompt').value.trim();
+  const action_scope = document.getElementById('scope').value;
+  const department = document.getElementById('department').value;
+  const priority = Number(document.getElementById('priority').value || 50);
+  if (!title || !prompt) return;
+  await api('/api/tasks', {method:'POST', body:JSON.stringify({title,prompt,action_scope,department,priority})});
+  document.getElementById('title').value=''; document.getElementById('prompt').value='';
+  await refreshAll();
+}
+async function createSchedule(){
+  const title = document.getElementById('schedTitle').value.trim();
+  const prompt = document.getElementById('schedPrompt').value.trim();
+  const interval_minutes = Number(document.getElementById('schedMinutes').value);
+  const action_scope = document.getElementById('schedScope').value;
+  const department = document.getElementById('schedDepartment').value;
+  const priority = Number(document.getElementById('schedPriority').value || 50);
+  const local = document.getElementById('schedFirst').value;
+  if(!title || !prompt || !interval_minutes) return;
+  const payload = {title,prompt,interval_minutes,action_scope,department,priority};
+  if(local) payload.first_run_at = new Date(local).toISOString();
+  await api('/api/schedules',{method:'POST',body:JSON.stringify(payload)});
+  document.getElementById('schedTitle').value=''; document.getElementById('schedPrompt').value='';
+  await refreshAll();
+}
+async function runTask(id) { await api(`/api/tasks/${id}/run`, {method:'POST', body:'{}'}); await refreshAll(); }
+async function retryTask(id) { await api(`/api/tasks/${id}/retry`, {method:'POST', body:'{}'}); await refreshAll(); }
+async function approveTask(id){ await api(`/api/tasks/${id}/approve`,{method:'POST',body:'{}'}); await refreshAll(); }
+async function rejectTask(id){ await api(`/api/tasks/${id}/reject`,{method:'POST',body:'{}'}); await refreshAll(); }
+async function toggleSchedule(id, enabled){ await api(`/api/schedules/${id}`,{method:'PATCH',body:JSON.stringify({enabled:!!enabled})}); await refreshAll(); }
+async function refreshAll() {
+  try { await Promise.all([refreshStatus(), refreshTasks(), refreshApprovals(), refreshSchedules(), refreshDepartments()]); }
+  catch(e){ console.error(e); }
+}
+refreshAll();
+setInterval(refreshAll, 5000);
+</script>
+</body>
+</html>

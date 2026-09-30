@@ -1,0 +1,9 @@
+{
+  "name": "Oddfellow Synthetic v0.20",
+  "short_name": "Oddfellow",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b0d11",
+  "theme_color": "#0b0d11",
+  "description": "Private synthetic AI operating layer with free-only model routing, persistent memory, verification, and voice."
+}

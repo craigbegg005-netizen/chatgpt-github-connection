@@ -116,3 +116,14 @@ Fingerprints to match against a candidate checkout — all verified above:
 
 A checkout that does not reproduce those is **not** the original. Do not present
 a reconstruction as the recovered original.
+
+## Full sweep — [`live-capture-2026-09-30/`](live-capture-2026-09-30/MANIFEST.md)
+
+The 2026-09-30 02:14–02:20 UTC sweep re-captured **every** known live surface
+(10 services, 35 files) with `curl` and no credentials, including the HTML of
+each deployed front end — the deployed pages are the only surviving copy of
+those front ends' source. Each file carries a SHA-256 fingerprint in
+[`live-capture-2026-09-30/MANIFEST.md`](live-capture-2026-09-30/MANIFEST.md),
+and the route inventories extracted from the specs are in
+[`live-capture-2026-09-30/API-SURFACES.md`](live-capture-2026-09-30/API-SURFACES.md).
+`capture.sh` is included so the sweep is reproducible.

@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0d11" />
+  <meta name="description" content="Oddfellow Personal AI v0.19" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+  <title>Oddfellow Personal AI v0.19</title>
+  <script src="https://js.puter.com/v2/"></script>
+  <style>
+    :root{color-scheme:dark;--bg:#0b0d11;--panel:#141820;--line:#2a3140;--text:#edf2f7;--muted:#9aa4b2;--accent:#d7ff52;--warn:#ffcc66;--bad:#ff6b6b;--good:#63e6be}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;min-height:100vh}
+    button,input,textarea,select{font:inherit}.app{max-width:900px;margin:auto;min-height:100vh;display:flex;flex-direction:column}.top{position:sticky;top:0;z-index:2;background:rgba(11,13,17,.96);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:12px 14px}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.brand{font-weight:800;font-size:18px;letter-spacing:.2px}.badge{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:3px 8px}.grow{flex:1}.btn{border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:12px;padding:9px 11px;cursor:pointer}.btn:disabled{opacity:.45;cursor:not-allowed}.btn.primary{background:var(--accent);color:#111;border-color:var(--accent);font-weight:800}.btn.danger{border-color:#5b2d34}.status{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:10px}.tile{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px 10px;min-width:0}.tile small{display:block;color:var(--muted);font-size:11px}.tile span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px;margin-top:2px}.chat{flex:1;padding:16px 14px 150px}.msg{max-width:82%;margin:10px 0;padding:11px 13px;border-radius:16px;white-space:pre-wrap;word-break:break-word;border:1px solid var(--line)}.msg.user{margin-left:auto;background:#1d2430}.msg.assistant{background:#11161c}.msg.system{max-width:100%;color:var(--muted);font-size:13px;background:#10141a}.composer{position:fixed;left:0;right:0;bottom:0;background:linear-gradient(transparent,rgba(11,13,17,.98) 18%);padding:24px 12px calc(12px + env(safe-area-inset-bottom))}.composer-inner{max-width:900px;margin:auto;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:10px}.composer textarea{width:100%;resize:none;max-height:140px;min-height:48px;background:transparent;color:var(--text);border:0;outline:0;padding:8px}.controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.controls label{font-size:12px;color:var(--muted);display:flex;gap:5px;align-items:center}.dot{width:8px;height:8px;border-radius:50%;background:var(--muted);display:inline-block}.dot.good{background:var(--good)}.dot.warn{background:var(--warn)}.dot.bad{background:var(--bad)}dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:16px;max-width:640px;width:calc(100% - 24px)}dialog::backdrop{background:#000a}.settings-grid{display:grid;gap:10px}.settings-grid label{display:grid;gap:5px;color:var(--muted)}.settings-grid select,.settings-grid input[type=range]{width:100%}.footnote{font-size:12px;color:var(--muted)}@media(max-width:650px){.status{grid-template-columns:repeat(2,minmax(0,1fr))}.msg{max-width:92%}.brand{font-size:16px}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="row"><div class="brand">Oddfellow</div><span class="badge">v0.19 · genesis-0006</span><span class="grow"></span><button class="btn" id="signin">Sign in</button><button class="btn" id="settings">Settings</button></div>
+    <div class="status">
+      <div class="tile"><small>Account</small><span id="account">checking…</span></div>
+      <div class="tile"><small>Model</small><span id="model">detecting…</span></div>
+      <div class="tile"><small>History</small><span id="history">local mirror</span></div>
+      <div class="tile"><small>Spend ceiling</small><span>$0 developer spend</span></div>
+    </div>
+  </header>
+  <main class="chat" id="chat" aria-live="polite"></main>
+</div>
+<div class="composer">
+  <div class="composer-inner">
+    <textarea id="input" placeholder="Message Oddfellow…" rows="2"></textarea>
+    <div class="controls">
+      <button class="btn" id="mic">🎙 Voice</button>
+      <button class="btn" id="stopVoice">■ Stop voice</button>
+      <label><input type="checkbox" id="handsfree"> hands-free</label>
+      <label><input type="checkbox" id="speak" checked> speak replies</label>
+      <label><input type="checkbox" id="websearch"> web search</label>
+      <span class="grow"></span>
+      <button class="btn" id="newchat">New</button>
+      <button class="btn primary" id="send">Send</button>
+    </div>
+  </div>
+</div>
+<dialog id="settingsDialog">
+  <form method="dialog">
+    <div class="row"><strong>Oddfellow settings</strong><span class="grow"></span><button class="btn">Close</button></div>
+    <div class="settings-grid" style="margin-top:14px">
+      <label>Model<select id="modelSelect"></select></label>
+      <label>Voice rate <input id="voiceRate" type="range" min="0.7" max="1.4" step="0.05" value="1"></label>
+      <div class="row"><button type="button" class="btn" id="exportBtn">Export JSON</button><button type="button" class="btn" id="importBtn">Import JSON</button><input type="file" id="importFile" accept="application/json" hidden></div>
+      <p class="footnote">Oddfellow never stores developer API keys. AI and private cloud history use your signed-in Puter account. No automatic paid fallback or automatic retry is performed after allowance/rate-limit failures.</p>
+    </div>
+  </form>
+</dialog>
+<script>
+(() => {
+  'use strict';
+  const VERSION='0.19.0', BUILD='genesis-0006';
+  const LOCAL_KEY='oddfellow:v019:history';
+  const CLOUD_KEY='oddfellow:v019:history';
+  const PREF_KEY='oddfellow:v019:prefs';
+  const MAX_HISTORY=120, CONTEXT_MESSAGES=36;
+  const DOCTRINE=`You are Oddfellow, the user's personal AI operating interface for Begg AI Industries and related projects. Follow the standing doctrine: Preserve → Integrate → Improve → Execute → Verify → Continue. Treat short commands such as “Continue”, “Continue across the board”, “Complete what you can”, “Use creative control”, “Open bottlenecks”, “Make it active”, “Make it autonomous”, “Make it live”, “Make it profitable”, “Connect everything”, “Keep projects separate”, “Verify it”, and “Update the handoff” as operational instructions. Work across feasible independent lanes while preserving project boundaries and rollback paths. Never claim LIVE, CONNECTED, DEPLOYED, VERIFIED, or revenue without evidence. Do not expose secrets. Do not authorize spending or paid fallback. Be concise, action-oriented, and explicit about blockers. Current client version: ${VERSION}/${BUILD}.`;
+
+  const el=id=>document.getElementById(id);
+  const chat=el('chat'), input=el('input'), send=el('send'), mic=el('mic');
+  let messages=[], busy=false, recognition=null, listening=false, model='gpt-5.6-luna';
+  let prefs={speak:true,handsfree:false,websearch:false,voiceRate:1,model:null};
+
+  function loadLocal(){
+    try{const x=JSON.parse(localStorage.getItem(LOCAL_KEY)||'[]'); if(Array.isArray(x)) messages=x.slice(-MAX_HISTORY);}catch{}
+    try{prefs={...prefs,...JSON.parse(localStorage.getItem(PREF_KEY)||'{}')};}catch{}
+  }
+  function savePrefs(){localStorage.setItem(PREF_KEY,JSON.stringify(prefs));}
+  async function saveHistory(){
+    messages=messages.slice(-MAX_HISTORY);
+    localStorage.setItem(LOCAL_KEY,JSON.stringify(messages));
+    if(await isSignedIn()){
+      try{await puter.kv.set({key:CLOUD_KEY,value:messages,disableSharing:true});el('history').textContent='private cloud + local';}
+      catch{el('history').textContent='local mirror (cloud error)';}
+    }
+  }
+  async function loadCloud(){
+    if(!(await isSignedIn())) return;
+    try{
+      const cloud=await puter.kv.get(CLOUD_KEY);
+      if(Array.isArray(cloud)&&cloud.length){messages=cloud.slice(-MAX_HISTORY);localStorage.setItem(LOCAL_KEY,JSON.stringify(messages));el('history').textContent='private cloud + local';render();}
+    }catch{el('history').textContent='local mirror (cloud unavailable)';}
+  }
+  async function isSignedIn(){try{return !!(puter?.auth?.isSignedIn && puter.auth.isSignedIn());}catch{return false;}}
+  function render(){
+    chat.innerHTML='';
+    if(!messages.length) addDom('system','Oddfellow v0.19 ready. Sign in for private cloud history and AI access. Voice works where your browser supports speech recognition.');
+    for(const m of messages) addDom(m.role,m.content);
+    window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
+  }
+  function addDom(role,content){const d=document.createElement('div');d.className='msg '+role;d.textContent=content;chat.appendChild(d);}
+  function add(role,content){messages.push({role,content:String(content),ts:new Date().toISOString()});render();saveHistory();}
+  function setBusy(v){busy=v;send.disabled=v;mic.disabled=v;send.textContent=v?'Thinking…':'Send';}
+  function responseText(r){
+    if(typeof r==='string') return r;
+    if(r?.message?.content && typeof r.message.content==='string') return r.message.content;
+    if(typeof r?.content==='string') return r.content;
+    if(typeof r?.text==='string') return r.text;
+    try{return JSON.stringify(r);}catch{return 'Oddfellow received a response it could not display.';}
+  }
+  function speakText(text){
+    if(!prefs.speak||!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(text);u.rate=Number(prefs.voiceRate)||1;u.onend=()=>{if(prefs.handsfree&&!busy) startListening();}; window.speechSynthesis.speak(u);
+  }
+  function errorMessage(err){
+    const raw=String(err?.message||err||'Unknown error');
+    if(/402|payment|allowance|quota/i.test(raw)) return 'AI allowance is unavailable or exhausted. Oddfellow stopped here; no paid fallback was authorized.';
+    if(/429|rate.?limit|too many/i.test(raw)) return 'AI rate limit reached. Oddfellow stopped without automatic retry.';
+    if(/auth|sign.?in|unauthor/i.test(raw)) return 'Please sign in, then send the message again.';
+    return 'Oddfellow could not complete that request: '+raw.slice(0,500);
+  }
+  async function sendMessage(){
+    const text=input.value.trim(); if(!text||busy)return; input.value='';
+    messages.push({role:'user',content:text,ts:new Date().toISOString()});render();await saveHistory();setBusy(true);
+    try{
+      if(!(await isSignedIn())){await doSignIn(); if(!(await isSignedIn())) throw new Error('Sign-in required');}
+      const context=messages.filter(m=>m.role==='user'||m.role==='assistant').slice(-CONTEXT_MESSAGES).map(m=>({role:m.role,content:m.content}));
+      const payload=[{role:'system',content:DOCTRINE},...context];
+      const opts={model,normalize:true}; if(prefs.websearch) opts.tools=[{type:'web_search'}];
+      const r=await puter.ai.chat(payload,opts);
+      const textOut=responseText(r); messages.push({role:'assistant',content:textOut,ts:new Date().toISOString()});
+      el('model').textContent=model+' · verified this session'; render();await saveHistory();speakText(textOut);
+    }catch(e){add('system',errorMessage(e));}
+    finally{setBusy(false);if(prefs.handsfree&&!(window.speechSynthesis?.speaking)) startListening();}
+  }
+  async function doSignIn(){
+    try{if(await isSignedIn())return;await puter.auth.signIn();await refreshAccount();await loadCloud();}
+    catch(e){add('system','Sign-in was not completed.');}
+  }
+  async function refreshAccount(){
+    const signed=await isSignedIn();el('account').textContent=signed?'signed in':'not signed in';el('signin').textContent=signed?'Signed in':'Sign in';
+  }
+  async function discoverModels(){
+    const select=el('modelSelect'); select.innerHTML='';
+    let ids=[];
+    try{const all=await puter.ai.listModels();ids=(all||[]).map(x=>x.id).filter(Boolean);}
+    catch{}
+    const preferred=['gpt-5.6-luna','openai/gpt-5.6-luna','gpt-5-nano'];
+    model=prefs.model&&ids.includes(prefs.model)?prefs.model:(preferred.find(x=>ids.includes(x))||'gpt-5.6-luna');
+    const show=(ids.length?ids.slice(0,150):[model]);
+    for(const id of show){const o=document.createElement('option');o.value=id;o.textContent=id;if(id===model)o.selected=true;select.appendChild(o);}
+    el('model').textContent=model+' · not yet verified';
+  }
+  function initVoice(){
+    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(!SR){mic.disabled=true;mic.textContent='Voice unsupported';return;}
+    recognition=new SR(); recognition.lang='en-US';recognition.interimResults=true;recognition.continuous=false;
+    recognition.onstart=()=>{listening=true;mic.textContent='🎙 Listening…';};
+    recognition.onend=()=>{listening=false;mic.textContent='🎙 Voice';};
+    recognition.onerror=e=>{listening=false;mic.textContent='🎙 Voice'; if(!/no-speech|aborted/.test(e.error)) add('system','Voice input error: '+e.error);};
+    recognition.onresult=e=>{
+      let final='',interim='';for(let i=e.resultIndex;i<e.results.length;i++){const t=e.results[i][0].transcript;if(e.results[i].isFinal)final+=t;else interim+=t;}
+      input.value=(final||interim).trim();
+      if(final&&prefs.handsfree){setTimeout(sendMessage,150);}
+    };
+  }
+  function startListening(){if(!recognition||listening||busy)return;try{window.speechSynthesis?.cancel();recognition.start();}catch{}}
+  function stopVoice(){try{recognition?.stop();}catch{} try{window.speechSynthesis?.cancel();}catch{}}
+  function newChat(){stopVoice();messages=[];localStorage.removeItem(LOCAL_KEY);render();saveHistory();}
+  function exportJson(){const blob=new Blob([JSON.stringify({version:VERSION,build:BUILD,exportedAt:new Date().toISOString(),messages},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='oddfellow-history-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);}
+  async function importJson(file){try{const data=JSON.parse(await file.text());const arr=Array.isArray(data)?data:data.messages;if(!Array.isArray(arr))throw 0;messages=arr.filter(x=>x&&['user','assistant','system'].includes(x.role)&&typeof x.content==='string').slice(-MAX_HISTORY);render();await saveHistory();}catch{add('system','Import failed: choose an Oddfellow JSON export.');}}
+
+  el('signin').onclick=doSignIn;el('settings').onclick=()=>el('settingsDialog').showModal();send.onclick=sendMessage;mic.onclick=()=>listening?recognition.stop():startListening();el('stopVoice').onclick=stopVoice;el('newchat').onclick=newChat;
+  input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}});
+  el('handsfree').onchange=e=>{prefs.handsfree=e.target.checked;savePrefs();if(prefs.handsfree)startListening();else try{recognition?.stop();}catch{}};
+  el('speak').onchange=e=>{prefs.speak=e.target.checked;savePrefs();};
+  el('websearch').onchange=e=>{prefs.websearch=e.target.checked;savePrefs();};
+  el('voiceRate').oninput=e=>{prefs.voiceRate=Number(e.target.value);savePrefs();};
+  el('modelSelect').onchange=e=>{model=e.target.value;prefs.model=model;savePrefs();el('model').textContent=model+' · not yet verified';};
+  el('exportBtn').onclick=exportJson;el('importBtn').onclick=()=>el('importFile').click();el('importFile').onchange=e=>{if(e.target.files?.[0])importJson(e.target.files[0]);};
+  window.addEventListener('beforeunload',stopVoice);
+  if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+
+  loadLocal();el('handsfree').checked=!!prefs.handsfree;el('speak').checked=!!prefs.speak;el('websearch').checked=!!prefs.websearch;el('voiceRate').value=prefs.voiceRate||1;render();initVoice();refreshAccount().then(loadCloud);discoverModels();
+})();
+</script>
+</body>
+</html>

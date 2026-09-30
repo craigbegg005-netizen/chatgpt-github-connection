@@ -1,0 +1,1 @@
+{"detail":{"error":"backend_not_configured","problems":["LETTA_API_KEY is not set","ODDFELLOW_OWNER_TOKEN is not set"]}}
