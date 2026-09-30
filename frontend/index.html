@@ -72,7 +72,25 @@ const KEY='oddfellow.synthetic.v020.history';
 const CLOUD_KEY='oddfellow:synthetic:v020:history';
 const state={history:[],models:[],freeModels:[],signed:false,busy:false,recognition:null};
 const BKEY='oddfellow.backend.v020';
-const DEFAULT_BACKEND_URL='https://oddfellow-letta-backend.onrender.com';
+// Where the backend lives when the owner has not chosen one.
+//
+// The preferred deployment serves the page AND the API from one origin, so the
+// right default is this page's own origin. Hard-coding a hostname is how this
+// project twice ended up with a front end pointed at the wrong backend -- once
+// at a page with no backend wiring, once at a backend that CORS-rejected it. A
+// static-only deploy (the PWA service) shares no origin with the API, so fall
+// back to the known backend when this origin does not answer /livez.
+const SAME_ORIGIN_BACKEND=location.origin;
+const FALLBACK_BACKEND_URL='https://oddfellow-letta-backend.onrender.com';
+let DEFAULT_BACKEND_URL=SAME_ORIGIN_BACKEND;
+async function chooseDefaultBackend(){
+  try{
+    const r=await fetch(SAME_ORIGIN_BACKEND+'/livez',{method:'GET',cache:'no-store'});
+    if(r.ok){DEFAULT_BACKEND_URL=SAME_ORIGIN_BACKEND;return 'same origin'}
+  }catch{}
+  DEFAULT_BACKEND_URL=FALLBACK_BACKEND_URL;
+  return 'fallback';
+}
 const backend={url:'',token:'',ready:false,session:null,remember:false,saved:false};
 
 // The owner token is the key to the whole backend: it authorises reading history
@@ -325,6 +343,10 @@ $('stopvoice').onclick=()=>{if('speechSynthesis'in window)speechSynthesis.cancel
 loadLocal();render();setupVoice();accountRefresh();
 
 // --- Letta backend settings ---
+// Wrapped so the backend default can be resolved (same origin, or the known
+// fallback) before anything reads it.
+(async()=>{
+await chooseDefaultBackend();
 loadBackend();
 if($('beurl'))$('beurl').value=backend.url;
 if($('betoken'))$('betoken').value=backend.token;
@@ -361,7 +383,13 @@ else if(backend.saved){
   // the third-party Puter SDK. Only the owner token is needed again.
   setBackendChip('Backend: token needed',false);
 }
+else if(DEFAULT_BACKEND_URL===SAME_ORIGIN_BACKEND){
+  // This origin serves the API too, so it is backend mode by construction --
+  // again, do not load the third-party Puter SDK.
+  setBackendChip('Backend: token needed',false);
+}
 else{setBackendChip('Backend: off',false);discover()}
+})();
 if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
 </script>
 </body>
