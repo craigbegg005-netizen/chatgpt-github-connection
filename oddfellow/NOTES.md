@@ -34,6 +34,20 @@ Fix (zero cost, no new infrastructure):
    Returns **Server-Sent Events** (`data: {...}`, ending `data: [DONE]`).
 4. Persist the conversation id in the agent's `metadata` so it survives restarts.
 
+## Automated test suite
+
+`tests/test_backend.py` — **26 tests, 26 passing, 0.6 s, no network, no API key.**
+
+```bash
+pip install -r requirements-dev.txt
+python -m pytest oddfellow/tests -v
+```
+
+The Letta transport is faked, so the suite runs offline and costs nothing. It
+covers the fail-closed config paths, auth, agent resolution (including the 402
+agent-limit and the created-but-unreadable quirk), SSE parsing, conversation
+reuse and replacement, rate limiting, and that no secret is ever echoed back.
+
 ## Test evidence (local uvicorn, real Letta API, free `letta/auto`)
 
 - 401 on missing token; 401 on wrong token
