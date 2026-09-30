@@ -25,7 +25,6 @@ button,select{background:#1b2330;color:#eef4fa;border:1px solid #344152;border-r
 details{margin:10px 16px;border:1px solid var(--line);border-radius:12px;background:#111720}summary{padding:10px 12px;cursor:pointer;font-size:13px;color:#c8d2de}.settings{padding:0 12px 12px;display:grid;gap:8px}
 .settings input[type=url],.settings input[type=password]{flex:1;min-width:0;background:#141a22;border:1px solid #303a48;border-radius:9px;color:#fff;padding:7px 9px;font:inherit;font-size:12px}.setting{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;color:#b3becb}.notice{font-size:11px;color:#8f9baa;padding:0 16px 8px}.danger{color:#ffcccb}
 </style>
-<script src="https://js.puter.com/v2/"></script>
 </head>
 <body>
 <div class="shell">
@@ -55,10 +54,11 @@ details{margin:10px 16px;border:1px solid var(--line);border-radius:12px;backgro
       <div class="setting"><span>Persistent private cloud history after sign-in</span><span id="cloudState">off</span></div>
       <div class="setting"><span>Letta backend URL</span><input id="beurl" type="url" placeholder="https://your-service.onrender.com" autocomplete="off"></div>
       <div class="setting"><span>Owner token</span><input id="betoken" type="password" placeholder="paste your ODDFELLOW_OWNER_TOKEN" autocomplete="off"></div>
+      <div class="setting"><span>Remember owner token on this device</span><input id="beremember" type="checkbox"></div>
       <div class="setting"><span>Letta memory + continuity</span><button class="tiny" id="betest">Test connection</button></div>
     </div>
   </details>
-  <div class="notice">Architecture: identity kernel → intent planner → route selection → memory → verifier → response/voice. When a Letta backend is configured, replies and memory come from the persistent Oddfellow agent; otherwise the free-only local router is used. The backend URL is pre-filled &mdash; you only need to paste the owner token once. Deep mode uses two free models from different providers and a third free model to synthesize them. If no verified free model is available, Oddfellow stops instead of using a paid route.</div>
+  <div class="notice">Architecture: identity kernel → intent planner → route selection → memory → verifier → response/voice. When a Letta backend is configured, replies and memory come from the persistent Oddfellow agent; otherwise the free-only local router is used. The backend URL is pre-filled &mdash; paste the owner token once per session, or tick &ldquo;Remember on this device&rdquo;. The owner token is never written to this device&rsquo;s storage while the third-party Puter SDK is loaded. Deep mode uses two free models from different providers and a third free model to synthesize them. If no verified free model is available, Oddfellow stops instead of using a paid route.</div>
 </div>
 <main id="chat"></main>
 <div class="composer"><div class="inner">
@@ -73,11 +73,51 @@ const CLOUD_KEY='oddfellow:synthetic:v020:history';
 const state={history:[],models:[],freeModels:[],signed:false,busy:false,recognition:null};
 const BKEY='oddfellow.backend.v020';
 const DEFAULT_BACKEND_URL='https://oddfellow-letta-poc.onrender.com';
-const backend={url:'',token:'',ready:false,session:null};
+const backend={url:'',token:'',ready:false,session:null,remember:false,saved:false};
 
-function loadBackend(){try{const b=JSON.parse(localStorage.getItem(BKEY)||'{}');backend.url=b.url||DEFAULT_BACKEND_URL;backend.token=b.token||''}catch{backend.url=DEFAULT_BACKEND_URL}}
-function saveBackend(){try{localStorage.setItem(BKEY,JSON.stringify({url:backend.url,token:backend.token}))}catch{}}
+// The owner token is the key to the whole backend: it authorises reading history
+// and sending messages as the owner. It must not sit in localStorage while a
+// third-party script runs in this origin, because localStorage is readable by
+// any script on the page. So:
+//   * the Puter SDK (js.puter.com) is loaded LAZILY, only when a Puter feature is
+//     actually used -- with a backend configured it is never loaded at all;
+//   * the token is kept in memory only, unless the owner explicitly ticks
+//     "Remember on this device".
+function loadBackend(){
+  try{
+    const b=JSON.parse(localStorage.getItem(BKEY)||'{}');
+    backend.url=b.url||DEFAULT_BACKEND_URL;
+    backend.remember=!!b.remember;
+    backend.token=backend.remember?(b.token||''):'';
+    // "saved" means the owner has deliberately configured a backend at some
+    // point. It is what keeps the third-party Puter SDK from loading on a
+    // reload, even though the token itself is not kept.
+    backend.saved=!!b.url;
+  }catch{backend.url=DEFAULT_BACKEND_URL}
+}
+function saveBackend(){
+  try{
+    const rec={url:backend.url,remember:backend.remember};
+    if(backend.remember)rec.token=backend.token;
+    localStorage.setItem(BKEY,JSON.stringify(rec));
+    backend.saved=!!backend.url;
+  }catch{}
+}
 function backendConfigured(){return !!(backend.url&&backend.token)}
+
+let puterPromise=null;
+function ensurePuter(){
+  if(window.puter)return Promise.resolve(window.puter);
+  if(puterPromise)return puterPromise;
+  puterPromise=new Promise((resolve,reject)=>{
+    const s=document.createElement('script');
+    s.src='https://js.puter.com/v2/';s.async=true;
+    s.onload=()=>window.puter?resolve(window.puter):reject(new Error('Puter SDK loaded but did not initialise.'));
+    s.onerror=()=>reject(new Error('Could not load the Puter SDK.'));
+    document.head.appendChild(s);
+  });
+  return puterPromise;
+}
 
 async function backendCall(path,opts={}){
   const r=await fetch(backend.url.replace(/\/+$/,'')+path,Object.assign({},opts,{
@@ -138,13 +178,13 @@ When the owner says "Continue across the board", treat it as permission to resum
 function saveLocal(){localStorage.setItem(KEY,JSON.stringify(state.history.slice(-120)))}
 async function saveCloud(){
   if(!state.signed) return;
-  try{await puter.kv.set(CLOUD_KEY,state.history.slice(-120),{disableSharing:true});$('memory').textContent='Memory: private cloud + browser';$('memory').classList.add('good')}
+  try{const p=await ensurePuter();await p.kv.set(CLOUD_KEY,state.history.slice(-120),{disableSharing:true});$('memory').textContent='Memory: private cloud + browser';$('memory').classList.add('good')}
   catch(e){$('memory').textContent='Memory: browser only'}
 }
 function loadLocal(){try{state.history=JSON.parse(localStorage.getItem(KEY)||'[]')}catch{state.history=[]}}
 async function loadCloud(){
   if(!state.signed) return;
-  try{const h=await puter.kv.get(CLOUD_KEY);if(Array.isArray(h)&&h.length>=state.history.length){state.history=h;saveLocal()} $('cloudState').textContent='on';render()}
+  try{const p=await ensurePuter();const h=await p.kv.get(CLOUD_KEY);if(Array.isArray(h)&&h.length>=state.history.length){state.history=h;saveLocal()} $('cloudState').textContent='on';render()}
   catch(e){$('cloudState').textContent='unavailable'}
 }
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
@@ -172,7 +212,7 @@ function freeish(m){
 }
 async function discover(){
   try{
-    state.models=await puter.ai.listModels();
+    const p=await ensurePuter();state.models=await p.ai.listModels();
     state.freeModels=state.models.filter(freeish);
     $('router').textContent='Router: '+state.freeModels.length+' free routes';
     $('router').classList.toggle('good',state.freeModels.length>0);
@@ -206,7 +246,7 @@ function context(userText){
 }
 async function callModel(model,messages){
   if(!model)throw new Error('No verified free model route is currently available.');
-  const r=await puter.ai.chat(messages,{model:model.id,normalize:true});
+  const p=await ensurePuter();const r=await p.ai.chat(messages,{model:model.id,normalize:true});
   const out=extract(r).trim(); if(!out)throw new Error('Model returned an empty response.'); return out;
 }
 async function syntheticReply(text){
@@ -258,14 +298,26 @@ function setupVoice(){
   r.onerror=e=>{$('voice').textContent='Voice: '+e.error;$('voice').classList.add('warn')};
   $('mic').onclick=()=>r.start();
 }
+function warnIfTokenExposed(){
+  // The Puter SDK is a third-party script that runs in this origin, so it can
+  // read localStorage. The moment it is loaded, stop persisting the owner token.
+  if(backend.remember&&backend.token){
+    backend.remember=false;saveBackend();
+    if($('beremember'))$('beremember').checked=false;
+    add('assistant','The Puter SDK is a third-party script and can read this page\u2019s storage, so Oddfellow has stopped remembering your owner token on this device. It stays in memory for this session only. Leave the account disconnected to keep it remembered.','security');
+  }
+}
 async function accountRefresh(){
   try{
-    state.signed=!!puter.auth.isSignedIn();
-    if(state.signed){const u=await puter.auth.getUser();$('account').textContent='Account: '+(u.username||'connected');$('account').classList.add('good');$('signin').textContent='Account connected';await loadCloud()}
+    // Never load the Puter SDK just to refresh a status chip.
+    if(!window.puter){state.signed=false;$('account').textContent='Account: local';$('signin').textContent='Connect account';return}
+    const p=window.puter;
+    state.signed=!!p.auth.isSignedIn();
+    if(state.signed){const u=await p.auth.getUser();$('account').textContent='Account: '+(u.username||'connected');$('account').classList.add('good');$('signin').textContent='Account connected';await loadCloud()}
     else{$('account').textContent='Account: local';$('signin').textContent='Connect account'}
   }catch{}
 }
-$('signin').onclick=async()=>{try{if(!puter.auth.isSignedIn())await puter.auth.signIn();await accountRefresh();await discover()}catch(e){add('assistant','Account connection was not completed: '+(e?.msg||e?.message||String(e)))}};
+$('signin').onclick=async()=>{try{const p=await ensurePuter();warnIfTokenExposed();if(!p.auth.isSignedIn())await p.auth.signIn();await accountRefresh();await discover()}catch(e){add('assistant','Account connection was not completed: '+(e?.msg||e?.message||String(e)))}};
 $('send').onclick=send;$('input').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}});
 $('newchat').onclick=()=>{if(confirm('Start a new local conversation?')){state.history=[];saveLocal();saveCloud();render()}};
 $('export').onclick=()=>{const blob=new Blob([JSON.stringify({version:'0.20.0',exportedAt:new Date().toISOString(),history:state.history},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='oddfellow-synthetic-v020-history.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
@@ -276,6 +328,13 @@ loadLocal();render();setupVoice();accountRefresh();
 loadBackend();
 if($('beurl'))$('beurl').value=backend.url;
 if($('betoken'))$('betoken').value=backend.token;
+if($('beremember')){
+  $('beremember').checked=backend.remember;
+  $('beremember').addEventListener('change',()=>{
+    backend.remember=$('beremember').checked;saveBackend();
+    if(!backend.remember)add('assistant','Owner token will not be saved on this device. It stays in memory for this session only.','security');
+  });
+}
 function readBackendFields(){
   backend.url=($('beurl')&&$('beurl').value||'').trim();
   backend.token=($('betoken')&&$('betoken').value||'').trim();
@@ -297,6 +356,11 @@ if($('betest'))$('betest').onclick=async()=>{
 };
 
 if(backendConfigured()){backendStatus().then(s=>{if(s)lettaHistory()})}
+else if(backend.saved){
+  // A backend has been configured before, so this is backend mode: do NOT load
+  // the third-party Puter SDK. Only the owner token is needed again.
+  setBackendChip('Backend: token needed',false);
+}
 else{setBackendChip('Backend: off',false);discover()}
 if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
 </script>

@@ -1,5 +1,5 @@
 """
-Oddfellow Letta backend  --  v0.20.4 (verified build)
+Oddfellow Letta backend  --  v0.20.5 (verified build)
 
 Purpose
 -------
@@ -118,6 +118,43 @@ absent from the service environment. From outside, the only signal was
 validation, never their values. Env var names are not secrets, and this turns that
 class of fault into a one-look fix.
 
+v0.20.5 -- auditable, and the owner token stops living on disk
+--------------------------------------------------------------
+Doctrine says "fail closed, be auditable". The service was failing closed but
+was not auditable: a rejected credential, a throttled caller, and a Letta failure
+all produced the same thing from the outside -- nothing. Every security-relevant
+event is now one JSON object on stdout, which is the only durable record on a
+free Render instance:
+
+    config_check     once at boot: what this instance actually is
+    auth_denied      reason: no_token | bad_token | not_configured
+    rate_limited     which caller, which limit
+    message_sent     agent, conversation, sizes, tokens -- never the text
+    session_created  a new conversation was created
+    agent_created    this backend created the agent itself
+
+Reads are deliberately NOT audited: only state changes, refusals, and throttles.
+No token, key, message body, or Letta error payload is ever written. Every
+response carries an `X-Request-ID` that appears on the matching audit line, so a
+caller's report can be tied to a server record. Set ODDFELLOW_AUDIT_LOG=false to
+silence it.
+
+The front end (oddfellow/frontend/index.html) had a real exposure: the owner
+token was written to localStorage while `https://js.puter.com/v2/` -- a
+third-party script -- ran in the same origin and could therefore read it. The
+token authorises reading history and sending messages as the owner. Now:
+
+  * the Puter SDK is loaded LAZILY, only when a Puter feature is used. Once a
+    backend has been configured, it is never loaded at all;
+  * the owner token is kept in memory only. Persisting it is an explicit opt-in
+    ("Remember on this device"), and the moment the Puter SDK is loaded the
+    opt-in is revoked and the owner is told why.
+
+Residual, stated plainly: while the Puter SDK is loaded in the page, a malicious
+copy of it could still read the token from the page. The complete fix is to
+exchange the owner token for a short-lived httpOnly session cookie, which is a
+v0.21 change, not this one.
+
 Deploy (Render, free plan)
 --------------------------
   Build:  pip install -r requirements.txt
@@ -129,8 +166,10 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import json
 import os
 import time
+import uuid
 from collections import defaultdict, deque
 from typing import Any, Deque, Dict, Optional
 
@@ -232,7 +271,74 @@ elif not LETTA_MODEL.startswith("letta/") and not ALLOW_PAID_MODEL:
 CONFIG_ERRORS: list[str] = [detail for _, detail in CONFIG_PROBLEMS]
 CONFIG_FAILED_KEYS: list[str] = [key for key, _ in CONFIG_PROBLEMS]
 
-app = FastAPI(title="Oddfellow Letta backend", version="0.20.4")
+# --------------------------------------------------------------------------- #
+# Audit log
+# --------------------------------------------------------------------------- #
+# Doctrine: "Fail closed. Be auditable." Until now this service emitted nothing,
+# so a rejected credential, a throttled caller, and a Letta failure were all
+# invisible -- the only external signal was whatever the caller chose to report.
+#
+# Render's free plan has an ephemeral disk, so stdout is the only durable record.
+# Every security-relevant event is emitted as ONE JSON object per line, which
+# Render captures and which can be read back from the dashboard or `render logs`.
+#
+# Nothing secret is ever written: no tokens, no API keys, no message bodies, no
+# Letta error payloads. Callers are identified only by the same short digest the
+# rate limiter uses, which is not reversible.
+
+AUDIT_ENABLED = os.environ.get("ODDFELLOW_AUDIT_LOG", "true").strip().lower() != "false"
+
+
+def audit(event: str, request: Optional[Request] = None, **fields: Any) -> None:
+    """Emit one JSON audit record to stdout. Never raises."""
+    if not AUDIT_ENABLED:
+        return
+    record: Dict[str, Any] = {
+        "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "event": event,
+        "service": "oddfellow_letta_backend",
+        "version": "0.20.5",
+    }
+    if request is not None:
+        record["request_id"] = getattr(request.state, "request_id", None)
+        record["method"] = request.method
+        record["path"] = request.url.path
+        # The Origin header is a public URL, not a secret, and is the single most
+        # useful field for diagnosing a browser "Failed to fetch".
+        origin = request.headers.get("origin")
+        if origin:
+            record["origin"] = origin
+    record.update(fields)
+    try:
+        print(json.dumps(record, default=str, sort_keys=True), flush=True)
+    except Exception:
+        # An audit failure must never take the service down.
+        pass
+
+
+app = FastAPI(title="Oddfellow Letta backend", version="0.20.5")
+
+
+@app.middleware("http")
+async def attach_request_id(request: Request, call_next):
+    """Give every request an id so its audit lines and its response can be tied together."""
+    request.state.request_id = uuid.uuid4().hex[:12]
+    response = await call_next(request)
+    response.headers["X-Request-ID"] = request.state.request_id
+    return response
+
+
+# One line at boot, so the log opens with what this instance actually is. If the
+# service is misconfigured, this is the line that says so -- without a dashboard.
+audit(
+    "config_check",
+    ok=not CONFIG_ERRORS,
+    checks_failed=CONFIG_FAILED_KEYS,
+    model=LETTA_MODEL or None,
+    agent_pinned=bool(ODDFELLOW_AGENT_ID),
+    allowed_origins=ALLOWED_ORIGINS,
+    frontend_dir=os.environ.get("ODDFELLOW_FRONTEND_DIR", "").strip() or None,
+)
 
 if ALLOWED_ORIGINS:
     app.add_middleware(
@@ -290,7 +396,7 @@ def client_key(request: Request, token: Optional[str]) -> str:
     return "host:" + host
 
 
-def rate_limit(client: str) -> None:
+def rate_limit(client: str, request: Optional[Request] = None) -> None:
     global _last_sweep
     now = time.time()
     if now - _last_sweep > 300.0:
@@ -303,15 +409,23 @@ def rate_limit(client: str) -> None:
     while window and now - window[0] > 60.0:
         window.popleft()
     if len(window) >= RATE_PER_MIN:
+        audit("rate_limited", request, caller=client, limit_per_min=RATE_PER_MIN)
         raise HTTPException(status_code=429, detail="Rate limit exceeded. Try again shortly.")
     window.append(now)
 
 
-def require_owner(token: Optional[str]) -> None:
+def require_owner(token: Optional[str], request: Optional[Request] = None) -> None:
     if CONFIG_ERRORS:
         # Fail closed with a clear, non-secret-bearing message.
+        audit("auth_denied", request, reason="not_configured", checks_failed=CONFIG_FAILED_KEYS)
         raise HTTPException(status_code=503, detail={"error": "backend_not_configured", "problems": CONFIG_ERRORS})
-    if not token or not hmac.compare_digest(token, ODDFELLOW_OWNER_TOKEN):
+    if not token:
+        audit("auth_denied", request, reason="no_token")
+        raise HTTPException(status_code=401, detail="Invalid or missing owner token.")
+    if not hmac.compare_digest(token, ODDFELLOW_OWNER_TOKEN):
+        # The caller is told nothing that distinguishes a wrong token from a
+        # missing one; the audit log records which it was, for the owner.
+        audit("auth_denied", request, reason="bad_token")
         raise HTTPException(status_code=401, detail="Invalid or missing owner token.")
 
 
@@ -460,6 +574,7 @@ async def resolve_agent() -> dict:
                 ),
             },
         )
+    audit("agent_created", agent_id=agent_id, name=confirmed.get("name"))
     return confirmed
 
 
@@ -586,7 +701,7 @@ async def healthz() -> dict:
         "ok": healthy,
         "checks_failed": CONFIG_FAILED_KEYS,
         "service": "oddfellow_letta_backend",
-        "version": "0.20.4",
+        "version": "0.20.5",
     }
     # Fail closed: a service that cannot answer a single request must not report
     # 200 to a platform health check, or the platform will route traffic to it.
@@ -602,12 +717,12 @@ async def status(
     Auth + connectivity + agent resolution check.
     This is the endpoint to hit first after a deploy.
     """
-    require_owner(x_owner_token)
-    rate_limit(client_key(request, x_owner_token))
+    require_owner(x_owner_token, request)
+    rate_limit(client_key(request, x_owner_token), request)
 
     result: dict = {
         "backend": "oddfellow_letta_backend",
-        "version": "0.20.4",
+        "version": "0.20.5",
         "letta_base_url": LETTA_BASE_URL,
         "model": LETTA_MODEL,
         "agent_pinned": bool(ODDFELLOW_AGENT_ID),
@@ -658,8 +773,8 @@ async def get_agent(
     request: Request,
     x_owner_token: Optional[str] = Header(default=None),
 ) -> dict:
-    require_owner(x_owner_token)
-    rate_limit(client_key(request, x_owner_token))
+    require_owner(x_owner_token, request)
+    rate_limit(client_key(request, x_owner_token), request)
     agent = await resolve_agent()
     return {"agent": agent_summary(agent)}
 
@@ -670,8 +785,8 @@ async def send_message(
     request: Request,
     x_owner_token: Optional[str] = Header(default=None),
 ) -> dict:
-    require_owner(x_owner_token)
-    rate_limit(client_key(request, x_owner_token))
+    require_owner(x_owner_token, request)
+    rate_limit(client_key(request, x_owner_token), request)
 
     agent = await resolve_agent()
     agent_id = agent.get("id")
@@ -715,6 +830,19 @@ async def send_message(
             },
         )
 
+    # Audited by shape, never by content: the owner's message and the agent's
+    # reply are private, the fact that a turn happened is not.
+    audit(
+        "message_sent",
+        request,
+        agent_id=agent_id,
+        conversation_id=conversation_id,
+        input_chars=len(payload.input),
+        reply_chars=len(reply) if isinstance(reply, str) else None,
+        stop_reason=stop,
+        completion_tokens=usage.get("completion_tokens"),
+    )
+
     return {
         "reply": reply,
         "agent_id": agent_id,
@@ -738,11 +866,12 @@ async def new_session(
     Useful when memory was attached after this conversation was created: the
     old conversation keeps its cached prompt, a new one picks up current memory.
     """
-    require_owner(x_owner_token)
-    rate_limit(client_key(request, x_owner_token))
+    require_owner(x_owner_token, request)
+    rate_limit(client_key(request, x_owner_token), request)
     agent = await resolve_agent()
     conv_id = await create_conversation(agent.get("id"))
     await remember_conversation(agent.get("id"), conv_id, agent.get("metadata"))
+    audit("session_created", request, agent_id=agent.get("id"), conversation_id=conv_id)
     return {"agent_id": agent.get("id"), "conversation_id": conv_id}
 
 
@@ -753,8 +882,8 @@ async def history(
     x_owner_token: Optional[str] = Header(default=None),
 ) -> dict:
     """Recent conversation for cloud-history reload. Read-only."""
-    require_owner(x_owner_token)
-    rate_limit(client_key(request, x_owner_token))
+    require_owner(x_owner_token, request)
+    rate_limit(client_key(request, x_owner_token), request)
     agent = await resolve_agent()
     agent_id = agent.get("id")
     conversation_id = await resolve_conversation(agent)

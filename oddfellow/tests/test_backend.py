@@ -12,6 +12,7 @@ fail-closed paths and the workarounds for the known Letta API quirks.
 
 import asyncio
 import importlib
+import json
 import os
 import sys
 import time
@@ -37,7 +38,8 @@ BASE_ENV = {
 ALL_ENV = [
     "LETTA_API_KEY", "ODDFELLOW_OWNER_TOKEN", "LETTA_MODEL", "ODDFELLOW_AGENT_ID",
     "ALLOWED_ORIGIN", "LETTA_BASE_URL", "ODDFELLOW_ALLOW_PAID_MODEL",
-    "ODDFELLOW_RATE_PER_MIN", "ODDFELLOW_FRONTEND_DIR",
+    "ODDFELLOW_RATE_PER_MIN", "ODDFELLOW_FRONTEND_DIR", "ODDFELLOW_AUDIT_LOG",
+    "ODDFELLOW_MAX_BODY_BYTES",
 ]
 
 
@@ -663,3 +665,156 @@ def test_rate_limit_map_does_not_grow_without_bound(monkeypatch):
     assert "tok:aaaa" not in m._hits
 
 
+
+
+# --------------------------------------------------------------------------- #
+# Audit log
+# --------------------------------------------------------------------------- #
+# Doctrine requires the system to be auditable. These tests pin the two things
+# that matter: that the events are actually emitted, and that nothing secret or
+# private can ever appear in them.
+
+def audit_lines(capsys):
+    """Every JSON audit record written to stdout so far."""
+    out = capsys.readouterr().out
+    records = []
+    for line in out.splitlines():
+        line = line.strip()
+        if not line.startswith("{"):
+            continue
+        try:
+            record = json.loads(line)
+        except Exception:
+            continue
+        if "event" in record:
+            records.append(record)
+    return records
+
+
+def events(capsys, name):
+    return [r for r in audit_lines(capsys) if r["event"] == name]
+
+
+def test_config_check_is_emitted_at_boot(monkeypatch, capsys):
+    load_app(monkeypatch)
+    records = events(capsys, "config_check")
+    assert len(records) == 1
+    assert records[0]["ok"] is True
+    assert records[0]["checks_failed"] == []
+    assert records[0]["model"] == "letta/auto"
+
+
+def test_config_check_names_a_missing_key_at_boot(monkeypatch, capsys):
+    load_app(monkeypatch, LETTA_MODEL=None)
+    record = events(capsys, "config_check")[0]
+    assert record["ok"] is False
+    assert "LETTA_MODEL" in record["checks_failed"]
+
+
+def test_a_missing_token_is_audited(fake, capsys):
+    m, f, client = fake
+    client.get("/api/letta/status")
+    assert events(capsys, "auth_denied")[-1]["reason"] == "no_token"
+
+
+def test_a_wrong_token_is_audited(fake, capsys):
+    m, f, client = fake
+    client.get("/api/letta/status", headers={"X-Owner-Token": "not-the-token"})
+    assert events(capsys, "auth_denied")[-1]["reason"] == "bad_token"
+
+
+def test_an_unconfigured_backend_audits_which_checks_failed(monkeypatch, capsys):
+    m = load_app(monkeypatch, ODDFELLOW_OWNER_TOKEN=None)
+    TestClient(m.app).get("/api/letta/status", headers=auth())
+    record = events(capsys, "auth_denied")[-1]
+    assert record["reason"] == "not_configured"
+    assert "ODDFELLOW_OWNER_TOKEN" in record["checks_failed"]
+
+
+def test_a_rate_limited_caller_is_audited(monkeypatch, capsys):
+    m = load_app(monkeypatch, ODDFELLOW_RATE_PER_MIN="2")
+    f = FakeLetta(m)
+    monkeypatch.setattr(m, "letta", f.letta)
+    monkeypatch.setattr(m, "letta_raw", f.letta_raw)
+    monkeypatch.setattr(m, "LettaError", LettaError)
+    client = TestClient(m.app, raise_server_exceptions=False)
+    codes = [client.get("/api/letta/status", headers=auth()).status_code for _ in range(4)]
+    assert codes[-1] == 429
+    record = events(capsys, "rate_limited")[-1]
+    assert record["limit_per_min"] == 2
+    assert OWNER_TOKEN not in json.dumps(record)
+
+
+def test_a_sent_message_is_audited_without_its_content(fake, capsys):
+    m, f, client = fake
+    private = "the-owner-private-sentence-9f3a"
+    r = client.post("/api/letta/message", headers=auth(), json={"input": private})
+    assert r.status_code == 200
+    record = events(capsys, "message_sent")[-1]
+    assert record["input_chars"] == len(private)
+    assert record["conversation_id"]
+    # The turn happened; what was said must not be in the log.
+    assert private not in json.dumps(record)
+
+
+def test_audit_never_contains_the_owner_token_or_the_api_key(fake, capsys):
+    m, f, client = fake
+    client.get("/api/letta/status", headers=auth())
+    client.get("/api/letta/status")
+    client.get("/api/letta/status", headers={"X-Owner-Token": "not-the-token"})
+    client.post("/api/letta/message", headers=auth(), json={"input": "hello"})
+    blob = capsys.readouterr().out
+    assert OWNER_TOKEN not in blob
+    assert BASE_ENV["LETTA_API_KEY"] not in blob
+    assert "not-the-token" not in blob
+
+
+def test_every_response_carries_a_request_id(fake, capsys):
+    m, f, client = fake
+    assert client.get("/healthz").headers.get("X-Request-ID")
+    assert client.get("/api/letta/status", headers=auth()).headers.get("X-Request-ID")
+
+
+def test_request_id_ties_a_response_to_its_audit_line(fake, capsys):
+    m, f, client = fake
+    rid = client.get("/api/letta/status").headers["X-Request-ID"]
+    assert any(r.get("request_id") == rid for r in audit_lines(capsys))
+
+
+def test_the_audit_log_records_the_origin_header(fake, capsys):
+    """A browser 'Failed to fetch' is diagnosed from the Origin actually sent."""
+    m, f, client = fake
+    client.get("/api/letta/status", headers={"Origin": "https://example.test"})
+    assert events(capsys, "auth_denied")[-1]["origin"] == "https://example.test"
+
+
+def test_a_new_session_is_audited(fake, capsys):
+    m, f, client = fake
+    r = client.post("/api/letta/new-session", headers=auth())
+    assert r.status_code == 200
+    record = events(capsys, "session_created")[-1]
+    assert record["conversation_id"] == r.json()["conversation_id"]
+
+
+def test_a_read_only_request_is_not_audited(fake, capsys):
+    """Reads are not events. Only state changes, refusals, and throttles are."""
+    m, f, client = fake
+    assert client.get("/api/letta/status", headers=auth()).status_code == 200
+    assert client.get("/api/letta/agent", headers=auth()).status_code == 200
+    assert audit_lines(capsys) == []
+
+
+def test_audit_can_be_switched_off(monkeypatch, capsys):
+    m = load_app(monkeypatch, ODDFELLOW_AUDIT_LOG="false")
+    TestClient(m.app).get("/healthz")
+    assert audit_lines(capsys) == []
+
+
+def test_audit_line_is_one_json_object_per_line(monkeypatch, capsys):
+    """Render captures stdout verbatim; a multi-line record would be unparseable."""
+    load_app(monkeypatch)
+    raw = capsys.readouterr().out
+    json_lines = [l for l in raw.splitlines() if l.strip().startswith("{")]
+    assert json_lines
+    for line in json_lines:
+        assert json.loads(line)["event"]
