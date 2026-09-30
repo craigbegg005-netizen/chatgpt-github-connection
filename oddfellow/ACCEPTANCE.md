@@ -8,23 +8,55 @@ Prepared by Oddfellow (Letta agent), 2026-09-30. Times in CT.
 
 ---
 
-## ⚠️ CURRENT AS OF 2026-09-30 02:56 UTC — read this before the tables below
+## ⚠️ CURRENT AS OF 2026-09-30 07:00 UTC — read this before the tables below
 
-The tables below were written against builds that are no longer the candidate.
+The tables further down were written against builds that are no longer the candidate.
 **Nothing is deployed.** The current state:
 
 | Thing | Now |
 |---|---|
-| Deploy candidate | `letta/combined-single-service-v0.20.4` @ **`6350c00`** — **v0.20.5**, not deployed |
-| Backend version it serves | `0.20.5` |
+| Deploy candidate | `letta/combined-single-service-v0.20.4` @ **`62fecf5`** |
+| Backend version it serves | **`0.20.6`** — ⚠️ the branch is *named* v0.20.4; report both, do not assume equivalence |
+| Tests | **84 pass** · fault injection **39/39** |
 | Health check the platform uses | **`/livez`** (always 200). `/healthz` still fails closed with 503. |
-| Second deploy target | `oddfellow/cloudflare/` — the same API as a Cloudflare Worker, verified locally, not deployed |
-| Live front end **with** PWA icons and backend wiring | `oddfellow-letta-ui-v020-pwa` — 🟢 LIVE, 20897 B = commit `91b411c` |
+| Second deploy target | `oddfellow/cloudflare/` — the same API as a Cloudflare Worker, **now also v0.20.6**, verified locally, not deployed |
+| `oddfellow-letta-backend` | 🔴 **not serving** — DNS resolves, TCP connects in 19ms, **no HTTP response** at 20/45/60/90/120s. ⚠️ **`WAITING_CREDENTIAL`** |
 | Live backend | `oddfellow-letta-poc` — 🟢 LIVE, v0.20.2, ⚠️ **unconfigured** |
-| `oddfellow-letta-backend` | 🔴 resolves in DNS, accepts TCP, **no HTTP response** — no healthy instance |
+| Live front end **with** PWA icons and backend wiring | `oddfellow-letta-ui-v020-pwa` — 🟢 LIVE, 20897 B = commit `91b411c` |
 
 **Run the harness rather than reading tables:** `python oddfellow/acceptance_check.py
-<url> --owner-token "$ODDFELLOW_OWNER_TOKEN"`. It now automates GATE 2 as well.
+<url> --owner-token "$ODDFELLOW_OWNER_TOKEN"`. It automates GATE 2, and it **backs off and
+retries on HTTP 429** — Render's free tier rate-limits at 20 requests/minute and a platform
+limit is not a property of the build under test.
+
+### Two candidate causes for `oddfellow-letta-backend` never coming up
+
+Neither is visible from outside the Render platform. Both are in `render.yaml`.
+
+1. **The blueprint requires `rootDir: oddfellow` but pinned no branch.** `main` is an index
+   only — `git ls-tree origin/main` returns `.gitignore` and `README.md`, and **no `oddfellow/`
+   directory** — so a service pointed at `main` cannot satisfy `rootDir` and its build fails
+   with no obvious cause. Now pinned to `letta/combined-single-service-v0.20.4`.
+2. **`autoDeploy: false` means a push never deploys, and saving env vars is not a deploy.**
+   Bringing the service up requires an explicit deploy in the Render dashboard.
+
+**The one action that resolves both:** confirm the service's branch, then trigger a manual
+deploy and read Events/Logs.
+
+### The live rehearsal — how to run the gates before the deploy exists
+
+`oddfellow/rehearsal.sh` runs the whole stack inside an agent sandbox and publishes it through a
+Cloudflare quick tunnel, so every gate below can be exercised without a credential:
+
+```bash
+LETTA_API_KEY=... ODDFELLOW_OWNER_TOKEN=... ./rehearsal.sh up
+./rehearsal.sh keepalive   # detached watchdog: restarts either process if it dies
+./rehearsal.sh status      # backend / tunnel / watchdog, then this harness
+```
+
+**It is a rehearsal, not a deployment:** it dies with the sandbox, it uses the sandbox's
+platform-managed Letta key, and Cloudflare's tunnel edge terminates TLS. What it proves is that
+the stack is correct.
 
 Two things in the text below are now wrong and are kept only so the correction is
 visible: the "Backend version" row (says `0.20.2`), and any instruction to expect

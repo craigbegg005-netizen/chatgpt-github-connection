@@ -178,7 +178,13 @@ async function backendStatus(){
     if(backend.ready&&s.model){$('router').textContent='Router: '+s.model;$('router').classList.add('good')}
     return s;
   }catch(e){
-    backend.ready=false;setBackendChip('Backend: '+(e&&e.message?e.message:'unreachable'),false);return null;
+    backend.ready=false;
+    // backendCall already prefixes its message with "Backend: ", which reads
+    // correctly in a chat line ("Stopped safely: Backend: letta_api_error - ...")
+    // but produced "Backend: Backend: ..." in the chip. Strip it here rather than
+    // dropping it there, because the chat line needs it.
+    const m=(e&&e.message)?String(e.message).replace(/^Backend:\s*/,''):'unreachable';
+    setBackendChip('Backend: '+m,false);return null;
   }
 }
 async function lettaReply(text){
@@ -352,9 +358,22 @@ function setupVoice(){
   if(!SR){$('voice').textContent='Voice: unsupported';return}
   $('voice').textContent='Voice: ready';$('voice').classList.add('good');
   const r=new SR();r.continuous=false;r.interimResults=false;r.lang='en-US';state.recognition=r;
+  // The mic is a toggle, and it must never throw. Calling start() while already
+  // listening raises InvalidStateError, and on a phone a second tap is the most
+  // natural thing in the world -- it used to produce a silent console error and
+  // no feedback at all. onend also has to reset the flag, or a recognition that
+  // ends without a result leaves the button stuck in the "listening" state.
+  let listening=false;
+  const setListening=v=>{listening=v;$('mic').classList.toggle('active',v)};
+  r.onstart=()=>setListening(true);
+  r.onend=()=>setListening(false);
   r.onresult=e=>{const t=Array.from(e.results).map(x=>x[0].transcript).join(' ');$('input').value=t;if($('hands').checked)send()};
-  r.onerror=e=>{$('voice').textContent='Voice: '+e.error;$('voice').classList.add('warn')};
-  $('mic').onclick=()=>r.start();
+  r.onerror=e=>{setListening(false);$('voice').textContent='Voice: '+e.error;$('voice').classList.add('warn')};
+  $('mic').onclick=()=>{
+    if(listening){try{r.stop()}catch{};return}
+    try{r.start();setListening(true)}
+    catch(e){setListening(false);$('voice').textContent='Voice: '+((e&&e.name)||'unavailable');$('voice').classList.add('warn')}
+  };
 }
 function warnIfTokenExposed(){
   // The Puter SDK is a third-party script that runs in this origin, so it can
