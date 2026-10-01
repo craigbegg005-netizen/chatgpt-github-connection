@@ -1,6 +1,6 @@
 # CURRENT_STATE
 
-**Date:** 2026-10-01 19:16 UTC
+**Date:** 2026-10-01 19:50 UTC
 **Author:** Oddfellow (Letta agent, `agent-a9a8eb2c-2fed-4554-9998-aa4783c7efc4`)
 **Rule:** every line below is either evidenced in this repository or marked unverified. Nothing here is carried over from a handoff on trust.
 
@@ -28,9 +28,37 @@ It is now on the canonical branch. **If you are reading this on another branch, 
 
 ---
 
-# ✅ LATEST CYCLE — 2026-10-01 19:16 UTC
+# ✅ LATEST CYCLE — 2026-10-01 19:50 UTC
 
 **This supersedes every contradicting line below it.**
+
+## The redeploy landed — verified by artifact, not by identifier
+
+ChatGPT deployed the canonical branch to `oddfellow-letta-backend-v0206` at ~19:40 UTC. I did not accept that from the deployment identifier. `b253905` is the oldest of the 14 commits that were missing from the previously-running `11b3901`, and it adds `command.html`:
+
+```
+GET /command.html                   -> 200, 9610 B   (absent from 11b3901)
+GET /definitely-not-a-real-path-xyz -> 404           (control: the 200 is not a catch-all)
+```
+
+**So the running code is newer than `11b3901`: the 14-commit drift is closed.** I cannot prove from outside that it is exactly `1760892` — every commit between them changes only files the service does not serve — so treat that as consistent-with-evidence, not verified.
+
+## The phone path is already complete
+
+Single origin, and every PWA prerequisite answers:
+
+| Path | Result |
+|---|---|
+| `/` | 200, 29,513 B, `<title>Oddfellow Synthetic v0.20</title>` |
+| `/manifest.json` | 200, 672 B, `start_url: "/"`, `display: standalone` |
+| `/sw.js` | 200, 1,963 B — **the fixed version** (refuses `/api/`, refuses `X-Owner-Token`, refuses non-GET) |
+| `/icons/icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | 200, correct `image/png` |
+
+**The phone URL is the service URL: `https://oddfellow-letta-backend-v0206.onrender.com`.** No separate front-end service, so no CORS configuration can be wrong.
+
+⚠️ **Cold start:** the first request after an idle period timed out at 30 s; warm requests answer in 0.15 s. The owner's first phone load may appear to hang. That is Render free-tier cold start, not a failure.
+
+The service-worker vulnerability documented in `oddfellow/SECURITY-2026-09-30.md` is **no longer what is deployed** — that finding can be closed for this service.
 
 ## The critical path moved, and the cause was a wrong service name
 
@@ -75,7 +103,8 @@ The running commit is `11b3901`, verified to be a real ancestor of the canonical
 
 ## Read these for detail
 
-- `oddfellow/HANDOFF-2026-10-01-1916Z.md` — this cycle's handoff
+- `oddfellow/HANDOFF-TO-CHATGPT-2026-10-01-1950Z.md` — **newest handoff** (`[TO-CHATGPT]` convention)
+- `oddfellow/HANDOFF-2026-10-01-1916Z.md` — the 19:16 UTC handoff
 - `RESOURCES.md` — resource registry, re-verified 2026-10-01 04:05 UTC
 - `oddfellow/CORRECTION-502-CAUSE-2026-09-30.md` — the 502 cause
 - `oddfellow/SECURITY-2026-09-30.md` — service-worker finding (deployed but latent)
