@@ -1,0 +1,59 @@
+ODDFELLOW — LIVE SERVICE BASELINE (pre-secrets)
+Target: https://oddfellow-letta-backend-v0206.onrender.com
+Captured: 2026-10-01T20:37:13Z by Oddfellow (Letta agent)
+Deployed commit: 1760892dce27320358c6b2aa38e6d6c9a4a1e4ca (index.html sha256 verified identical)
+
+WHY THIS FILE EXISTS
+This is the 'before'. When the two secrets are set, the same two commands are re-run and
+the diff is the proof. A result is only evidence if there is a dated baseline to compare it to.
+
+======================================================================
+golive_check.py
+======================================================================
+==============================================================================
+ODDFELLOW GO-LIVE VERIFICATION
+target: https://oddfellow-letta-backend-v0206.onrender.com
+==============================================================================
+
+  [PASS]  1. service is reachable                           HTTP 200 in 0.12s
+  [FAIL]  2. startup configuration complete                 checks_failed=['LETTA_API_KEY', 'ODDFELLOW_OWNER_TOKEN']
+  [FAIL]  3. /healthz returns 200                           HTTP 503 {"ok": false, "checks_failed": ["LETTA_API_KEY", "ODDFELLOW_OWNER_TOKEN"], "service": "oddfellow_letta_backend", "version": "0.20.6"}
+  [PASS]  4. deployed build is current                      reports 0.20.6, expected 0.20.6
+  [FAIL]  5. acceptance harness                               - later gates: skipped: the service cannot serve requests until gate 0 passes
+  [FAIL]  6. owner authenticates and the agent resolves     HTTP 503 letta_auth=None agent_found=None agent=None
+  [FAIL]  7. a real reply comes back                        HTTP 503, 0 chars, 0.1s
+  [FAIL]  8. history persists and contains this turn        HTTP 503, 0 message(s), this turn present=False, conversation=None
+
+==============================================================================
+STEPS A MACHINE CANNOT DO — they need a human, and are NOT claimed here
+==============================================================================
+  [MANUAL] 9.  Voice: speak to it and confirm a spoken reply comes back.
+  [MANUAL] 10. PWA install: install it from the phone home screen.
+  [MANUAL] 11. Offline/failure: with the network off, confirm it fails closed and says so.
+
+  Step 12 (mark ACCEPTED) is the owner's call, after 9-11.
+
+RESULT: 6 machine-checkable step(s) FAILED
+
+======================================================================
+acceptance_check.py
+======================================================================
+Oddfellow acceptance harness
+target: https://oddfellow-letta-backend-v0206.onrender.com
+token : supplied
+time : 2026-10-01 20:37:14 UTC
+==============================================================================
+
+GATE 0
+  [PASS] livez (the deploy health check)        HTTP 200 live=True ready=False checks_failed=['LETTA_API_KEY', 'ODDFELLOW_OWNER_TOKEN']
+  [FAIL] healthz                                HTTP 503 {'ok': False, 'checks_failed': ['LETTA_API_KEY', 'ODDFELLOW_OWNER_TOKEN'], 'service': 'oddfellow_letta_backend', 'version': '0.20.6'} (0.1s)
+  [PASS] healthz says what is missing           checks_failed=['LETTA_API_KEY', 'ODDFELLOW_OWNER_TOKEN'] -- set these in the service environment
+  [PASS] deployed build is current              Oddfellow Letta backend | version 0.20.6 (expected at least 0.20.6)
+  [PASS] openapi routes                         all present | ['/api/command/approvals', '/api/command/approvals/{approval_id}/decide', '/api/command/audit', '/api/command/pause', '/api/command/status', '/api/letta/agent', '/api/letta/history', '/api/letta/message', '/api/letta/new-session', '/api/letta/status', '/healthz', '/livez']
+  [PASS] message schema takes 'input'           props=['input', 'mode']
+  [FAIL] later gates                            skipped: the service cannot serve requests until gate 0 passes
+
+==============================================================================
+RESULT: 2 check(s) FAILED
+  - healthz: HTTP 503 {'ok': False, 'checks_failed': ['LETTA_API_KEY', 'ODDFELLOW_OWNER_TOKEN'], 'service': 'oddfellow_letta_backend', 'version': '0.20.6'} (0.1s)
+  - later gates: skipped: the service cannot serve requests until gate 0 passes
