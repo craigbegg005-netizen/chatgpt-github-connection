@@ -9,13 +9,16 @@ Status labels: ✅ VERIFIED · 🟢 LIVE · 🚀 DEPLOYED · 🔗 CONNECTED · �
 Maintained by Oddfellow (Letta agent). Last verification sweep: **2026-10-01 04:05 UTC**.
 Every "verified" line below was checked by an actual request from this agent at that time.
 
-**Sweep 2026-10-01 04:05 UTC — full re-probe of all 10 services / 35 surfaces.** Everything
-below still holds. Three notes from that sweep:
+**Sweep 2026-10-01 04:05 UTC — re-probe of all 10 services.** **33 of 35 surfaces** returned a
+result; the other 2 are named below and are the reason for the count. Everything below still
+holds. Three notes from that sweep:
 
-- **Two transient timeouts, not outages.** `oddfellow-staging-v017b/` and
-  `begg-ai-industries-v013/` returned no response on `/` while their `/health`, `/ready` and
-  `/openapi.json` all answered 200 in the same sweep. That is a Render free-tier cold start
-  losing a race, not a service going down. **Re-probe before calling either dead.**
+- **Two transient timeouts, not outages — and they were not captured at all.**
+  `oddfellow-staging-v017b/` and `begg-ai-industries-v013/` returned no response on `/` while
+  their `/health`, `/ready` and `/openapi.json` all answered 200 **in the same sweep**. That is
+  a Render free-tier cold start losing a race, not a service going down. Those two `/` surfaces
+  are the 2 missing from the 35 — a failed request leaves no capture file, so **the count itself
+  is the signal that something timed out.** Re-probe before calling either dead.
 - **Command center content changed slightly** — 4361 B → **4233 B** — same app, same title
   ("Begg AI Industries Command Center"), still **401** auth-gated. Consistent with ChatGPT
   still working on it. Not a regression.
