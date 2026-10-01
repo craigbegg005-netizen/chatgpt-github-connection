@@ -8,8 +8,13 @@ voice behaviour and offline behaviour need a human on a phone, and PWA install n
 browser. This script runs the machine-checkable ones, states the human ones plainly,
 and refuses to call the result ACCEPTED — because it cannot.
 
-    python golive_check.py https://oddfellow-letta-backend.onrender.com \
+    python golive_check.py https://oddfellow-letta-backend-v0206.onrender.com \
         --owner-token "$ODDFELLOW_OWNER_TOKEN"
+
+NOTE ON THE TARGET: use `oddfellow-letta-backend-v0206`. The similar-looking
+`oddfellow-letta-backend` is a different, dead service (HTTP 000), and pointing this
+script at it produced a 20-hour blind spot on 2026-10-01. A tool whose usage example
+names the wrong service will be run against the wrong service.
 
 Stdlib only. Exits 0 only when every machine-checkable step passed.
 

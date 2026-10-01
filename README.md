@@ -71,12 +71,13 @@ branch name is historical; the served version is authoritative.
 ## What is live right now
 
 Status labels are strict: **VERIFIED > LIVE > DEPLOYED > CONNECTED > TESTED > IMPLEMENTED >
-PENDING > BLOCKED**. Nothing is upgraded without evidence. Every line below was checked by an
-actual request on 2026-09-30 between 04:00 and 06:10 UTC.
+PENDING > BLOCKED**. Nothing is upgraded without evidence. The Oddfellow rows were re-checked by
+actual requests on **2026-10-01 20:05 UTC**; the rest on 2026-09-30 between 04:00 and 06:10 UTC.
 
 | Service | State |
 |---|---|
-| `oddfellow-letta-backend.onrender.com` | ⚠️ **Not serving** — no HTTP response at 60s and 120s. The deploy target. |
+| `oddfellow-letta-backend-v0206.onrender.com` | 🟢 **LIVE, current build** — `/livez` 200 in ~0.13s, version **0.20.6**, front end + manifest + icons + `sw.js` all 200. ⚠️ `ready:false`: `LETTA_API_KEY` and `ODDFELLOW_OWNER_TOKEN` are not set, so `/healthz` is 503. **This is the deploy target.** |
+| `oddfellow-letta-backend.onrender.com` | 🔴 **DEAD — do not use.** No HTTP response (000). This hostname is *not* the deploy target; probing it produced a 20-hour blind spot on 2026-10-01. |
 | `oddfellow-letta-poc.onrender.com` | 🟢 LIVE — `/livez` → 404 in 0.16s, i.e. the older v0.20.2 build that predates that route. |
 | `oddfellow-personal-staging-v017b.onrender.com` | 🟢 LIVE — 303 → `/setup`, unenrolled, no owner data. |
 | `oddfellow-personal-secure.onrender.com` | 🟢 LIVE — 303. |

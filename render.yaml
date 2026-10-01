@@ -39,6 +39,22 @@
 
 services:
   - type: web
+    # ⚠️ THIS NAME IS NOT THE LIVE SERVICE. Read before applying this Blueprint.
+    #
+    # The live, serving service is **`oddfellow-letta-backend-v0206`** (verified
+    # 2026-10-01 20:05 UTC: /livez 200, version 0.20.6, front end + PWA assets all
+    # 200). The name below, `oddfellow-letta-backend`, is a DIFFERENT service that
+    # has returned HTTP 000 — no response at all — since 2026-09-30. Probing the
+    # wrong one of these two names produced a 20-hour blind spot.
+    #
+    # The name is deliberately NOT renamed here. Changing `name` in a Render
+    # Blueprint makes Render treat it as a different service, and the standing rule
+    # is no Render churn before the owner secrets are in place. So this file is left
+    # as-is and flagged instead: if you re-apply this Blueprint, you will be
+    # creating or targeting the wrong service.
+    #
+    # The rest of this file (branch pin, rootDir, /livez health check, env vars)
+    # remains accurate and is what the live service should be configured with.
     name: oddfellow-letta-backend
     runtime: python
     plan: free
