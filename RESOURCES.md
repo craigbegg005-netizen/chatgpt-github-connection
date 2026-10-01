@@ -37,7 +37,7 @@ holds. Three notes from that sweep:
 | Repo (only one this GitHub App can see) | `craigbegg005-netizen/chatgpt-github-connection` | ✅ VERIFIED — `installation/repositories` → `total_count: 1` |
 | Canonical deploy branch | `letta/combined-single-service-v0.20.4` @ `8b455fd` | ✅ VERIFIED 2026-10-01 04:05 UTC |
 | `main` | `8ddfe325` | ✅ VERIFIED 2026-10-01 04:05 UTC |
-| `letta/universal-connector-v0.21` @ `1cd5288` | **Universal Connector core** — `oddfellow/connector/`, 35 tests | ✅ VERIFIED 2026-10-01 21:10 UTC (pushed, local SHA == remote). **Dev branch; deploy branch and the live service are untouched.** |
+| `letta/universal-connector-v0.21` @ `038b4e2` | **Universal Connector core** — `oddfellow/connector/`, 35 tests + a manual capability-detection harness | ✅ VERIFIED 2026-10-01 21:40 UTC (pushed, local SHA == remote). **Dev branch; deploy branch and the live service are untouched.** |
 | `letta/frontend-letta-backend` | `445e05c` | ✅ VERIFIED |
 | `letta/recovery-capture-2026-09-30` | `f27ec28` | ✅ VERIFIED |
 | `letta/independent-verification-2026-09-30` | `46d731b` | ✅ VERIFIED — independent reproduction of the deploy branch's claims |
@@ -168,6 +168,13 @@ its real workflow by this agent.
 | Linear | not connected |
 | Cloudflare | not connected |
 | Render | ⚠️ **not accessible to this agent** — Claude and ChatGPT have access; that access is theirs, not mine |
+| Stripe (as the MCP server named **`BeggAi`**) | 🔗 **CONNECTED — MCP only, sandbox only.** The `BeggAi` MCP server exposes **Stripe's own 10 tools**, not an Oddfellow connector. Verified 2026-10-01 21:38 UTC by calling `list_available_accounts_or_orgs`: **exactly one** account is reachable — `acct_1UJn2qAGpvydXJoO`, `livemode:false`, "New business sandbox". ⚠️ The master handoff records **two** Stripe contexts; only one is visible here, so treat the second as unverified. **`livemode:false` is the material fact: no live charge is possible from this connection.** |
+
+⚠️ **Naming caution, because this one is easy to get wrong:** the MCP server is *called*
+`BeggAi`, but it is Stripe's server. A handoff line reading "BeggAi MCP arrived" does **not**
+mean the Oddfellow Universal Connector's MCP surface went live. The connector's own gateway
+still serves nothing (`letta/universal-connector-v0.21`, `gateway.py`). Two different things,
+one confusingly similar name.
 
 ---
 
