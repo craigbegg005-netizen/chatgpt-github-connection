@@ -100,10 +100,26 @@ detection mechanism works — it does not make any target provider verified.
 
 ### Voice
 
-`letta/voice-v1` @ `e83a61b`. Elevated-risk commands now enter a **real**
+`letta/voice-v1` @ `9becaa8a`. Elevated-risk commands now enter a **real**
 `WAITING_AUTHORIZATION` in the backend, and a spoken approval binds only to exactly
 one pending action — ambiguous or mismatched, and nothing is approved.
+
+The **thinking** and **speaking** states were listed in a cross-AI handoff as
+implemented; grepping the page showed **listening → 5 occurrences, thinking → 0,
+speaking → 0**. They now exist and are verified in a real browser. The gap was not
+cosmetic: a reply takes seconds, and without a thinking state a tap looks like it did
+nothing.
+
 🛠 IMPLEMENTED · 🧪 BROWSER/BACKEND TESTED · ⚠️ **REAL PHONE MIC / STT UNVERIFIED.**
+
+### The rehearsal serves whatever branch is checked out
+
+`rehearsal.sh status` now reports the revision it is serving, e.g.
+`letta/combined-single-service-v0.20.4 @ db9b3e6e`. This is not cosmetic either: the
+rehearsal's behaviour changes when anyone switches branches, and today the voice
+states worked in the browser and then silently stopped being served twenty minutes
+later when the checkout moved. A dirty tree is flagged separately, because
+uncommitted edits are served too.
 
 ### Unchanged
 
