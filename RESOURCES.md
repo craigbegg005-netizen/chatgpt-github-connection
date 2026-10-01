@@ -6,8 +6,22 @@ value here is not marked VERIFIED, treat it as reported and re-check before rely
 Status labels: ✅ VERIFIED · 🟢 LIVE · 🚀 DEPLOYED · 🔗 CONNECTED · 🧪 TESTED ·
 🛠 IMPLEMENTED · ⏳ PENDING · ⚠️ BLOCKED/UNVERIFIED · 💰 REVENUE.
 
-Maintained by Oddfellow (Letta agent). Last verification sweep: **2026-09-30 06:05 UTC**.
+Maintained by Oddfellow (Letta agent). Last verification sweep: **2026-10-01 04:05 UTC**.
 Every "verified" line below was checked by an actual request from this agent at that time.
+
+**Sweep 2026-10-01 04:05 UTC — full re-probe of all 10 services / 35 surfaces.** Everything
+below still holds. Three notes from that sweep:
+
+- **Two transient timeouts, not outages.** `oddfellow-staging-v017b/` and
+  `begg-ai-industries-v013/` returned no response on `/` while their `/health`, `/ready` and
+  `/openapi.json` all answered 200 in the same sweep. That is a Render free-tier cold start
+  losing a race, not a service going down. **Re-probe before calling either dead.**
+- **Command center content changed slightly** — 4361 B → **4233 B** — same app, same title
+  ("Begg AI Industries Command Center"), still **401** auth-gated. Consistent with ChatGPT
+  still working on it. Not a regression.
+- **`oddfellow-letta-backend` is still not serving.** No HTTP response on `/healthz` or
+  `/livez`. Cause established: missing secrets failing the health check, deploy marked
+  `update_failed` — see `oddfellow/CORRECTION-502-CAUSE-2026-09-30.md`.
 
 ---
 
@@ -16,10 +30,11 @@ Every "verified" line below was checked by an actual request from this agent at 
 | Resource | Value | Status |
 |---|---|---|
 | Repo (only one this GitHub App can see) | `craigbegg005-netizen/chatgpt-github-connection` | ✅ VERIFIED — `installation/repositories` → `total_count: 1` |
-| Canonical deploy branch | `letta/combined-single-service-v0.20.4` @ `1cf94f8` | ✅ VERIFIED |
-| `main` | `f60881b` | ✅ VERIFIED |
+| Canonical deploy branch | `letta/combined-single-service-v0.20.4` @ `8b455fd` | ✅ VERIFIED 2026-10-01 04:05 UTC |
+| `main` | `8ddfe325` | ✅ VERIFIED 2026-10-01 04:05 UTC |
 | `letta/frontend-letta-backend` | `445e05c` | ✅ VERIFIED |
 | `letta/recovery-capture-2026-09-30` | `f27ec28` | ✅ VERIFIED |
+| `letta/independent-verification-2026-09-30` | `46d731b` | ✅ VERIFIED — independent reproduction of the deploy branch's claims |
 
 **⚠️ Structural gap:** no Oddfellow or Begg AI codebase exists under version control anywhere
 this installation can reach. The recovered v0.16/v0.17 services can only be rebuilt from their
@@ -89,7 +104,7 @@ its real workflow by this agent.
 
 | Name | Resource | Status |
 |---|---|---|
-| 7-Day Reset Planner | `https://beggster58.gumroad.com/l/zvxpuh` — $4.99 | ⚠️ listing owner-reported published; seller-side workflow and delivery **unverified**. No revenue claims |
+| 7-Day Reset Planner | `https://beggster58.gumroad.com/l/zvxpuh` — $4.99 | 🟢 **LIVE and published** — verified 2026-10-01 04:0x UTC: HTTP 200, 24278 B, `"name":"The 7 day reset planner"`, `price_cents: 499`, `is_published: true`. ⚠️ **Delivery still unverified**: Gumroad does not expose paid files on the public page (`public_files: []` is the preview list, not the deliverable), so whether a buyer receives the PDF cannot be determined without a purchase or seller access. Seller-side workflow unverified. **No revenue claims** |
 
 ## Social / brand
 
