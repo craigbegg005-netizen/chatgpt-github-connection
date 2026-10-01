@@ -36,6 +36,7 @@ from __future__ import annotations
 import threading
 import time
 import uuid
+import os
 from typing import Any, Callable, Optional
 
 from fastapi import APIRouter, Body, HTTPException, Request
@@ -334,5 +335,82 @@ def build_router(
     async def recent_audit(request: Request, limit: int = 50) -> dict[str, Any]:
         guard(request, request.headers.get("X-Owner-Token"))
         return {"records": center.recent(limit)}
+
+    @router.get("/jobs")
+    async def queue_jobs(
+        request: Request, status: Optional[str] = None
+    ) -> dict[str, Any]:
+        """The connector's job queue, if a queue database is configured.
+
+        Read-only and owner-gated like every other route here. Three deliberate
+        choices:
+
+        * **It degrades instead of failing.** With no queue configured it returns
+          an explicit `configured: false` payload, not an error. A control surface
+          that 500s when an optional component is absent teaches the owner to
+          ignore it, and an ignored control surface is worse than none.
+        * **The connector is imported lazily.** A problem in the connector cannot
+          take down the whole backend, and the connector is not a hard dependency
+          of the service that serves the page.
+        * **It reads; it does not decide.** Approving, claiming, or requeueing are
+          state changes with their own gates. This endpoint is a window, and a
+          window that can also act is a door.
+        """
+        guard(request, request.headers.get("X-Owner-Token"))
+
+        db = os.environ.get("ODDFELLOW_QUEUE_DB", "").strip()
+        empty = {
+            "configured": False,
+            "jobs": [],
+            "count": 0,
+            "dead_letters": {"count": 0, "jobs": []},
+        }
+        if not db:
+            return {**empty, "note": "No queue configured. Set ODDFELLOW_QUEUE_DB to the connector database path."}
+        if not os.path.exists(db):
+            return {**empty, "note": f"ODDFELLOW_QUEUE_DB is set but does not exist: {db}"}
+
+        try:
+            from connector.schema import Status as JobStatus
+            from connector.store import Store
+        except Exception as exc:
+            # Reported, not raised: the connector is optional by design.
+            return {**empty, "note": f"Connector is not importable: {type(exc).__name__}: {exc}"}
+
+        store = Store(db)
+        try:
+            wanted = None
+            if status:
+                try:
+                    wanted = JobStatus(status)
+                except ValueError:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"unknown status {status!r}; expected one of "
+                               + ", ".join(s.value for s in JobStatus),
+                    ) from None
+            jobs = store.jobs(wanted)
+            return {
+                "configured": True,
+                "count": len(jobs),
+                "jobs": [
+                    {
+                        "job_id": j.job_id,
+                        "title": j.title,
+                        "kind": j.kind.value,
+                        "risk": j.risk.value,
+                        "status": j.status.value,
+                        "provider": j.provider,
+                        "attempts": j.attempts,
+                        # Reported separately and prominently, because COMPLETE is
+                        # not VERIFIED and a reader must not have to remember that.
+                        "verified": j.verified,
+                    }
+                    for j in jobs
+                ],
+                "dead_letters": store.dead_letter_report(),
+            }
+        finally:
+            store.close()
 
     return router
