@@ -84,3 +84,58 @@ should make with an attorney if the name is going to carry real spend:
    common-law user in the same class is how a filing becomes an opposition.
 
 **Nothing here is a registration, a filing, or legal advice, and none is claimed.**
+
+---
+
+# Addendum — 2026-10-01 00:05 UTC: EU and UK attempt, INCOMPLETE
+
+The main search above covered **US and Australia only**. This addendum records an
+attempt to close that gap. **It did not close it, and the gap is still open.**
+
+## The registers could not be reached
+
+| Register | Result |
+|---|---|
+| EUIPO | **HTTP 000** — no response |
+| UK IPO (`ipo.gov.uk`) | **HTTP 403** — refuses automated requests |
+
+So there is **no direct EUIPO or UK IPO register data in this document.** What
+follows is from general web search, which is weaker evidence and is labelled as
+such.
+
+## What the search did surface: a major UK user of the name
+
+**The Oddfellows** — trading name of *The Independent Order of Oddfellows
+Manchester Unity Friendly Society Limited*, Manchester. Incorporated in England
+and Wales (No. 223F), authorised by the PRA and regulated by the FCA and PRA
+(registration No. 109995). Founded 1810. Reported ~**404,000 UK members** and over
+**£700m of funds under management**, with a financial services brand, *Unity
+Mutual*.
+
+That is a large, well-resourced, long-established organisation trading under this
+name in the UK. Its services are financial (Class 36), **not** software or SaaS, so
+it is not a bar in Classes 9 or 42 on the class-specific analysis used above. But
+it is a considerably bigger brand user of "The Oddfellows" than any US mark found,
+and it is the kind of party whose opposition would be expensive. **This belongs in
+any UK/EU clearance decision.**
+
+## A false positive, recorded because I nearly wrote it down
+
+A search result pointed at UK IPO Trade Mark Journal 2025/004, record
+`UK00004147216`, with Class 35/36 services. It looked like a UK Oddfellow filing.
+**It is not.** Fetching the record shows the mark belongs to **UNION OF STEWARD
+EMPLOYEE OWNERS LIMITED** (representative: Springbird IP Limited). The search
+engine returned it because its class descriptions share vocabulary — "equitable
+capitalism", "purpose-driven", "impact investing" — with nothing to do with the
+name.
+
+**Had I recorded it without opening it, this document would contain a fabricated
+UK registration.** The same discipline that applies to other agents' claims applies
+to search results: a hit is a lead, not a finding.
+
+## Status of the EU/UK question
+
+**Open.** Closing it needs either direct register access (EUIPO and UK IPO both
+block automated requests from here) or a paid attorney search. **Do not treat the
+EU or UK as cleared on the basis of this addendum.**
+
