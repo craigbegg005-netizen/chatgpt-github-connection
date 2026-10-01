@@ -141,6 +141,10 @@ class Gateway:
     tokens: TokenStore | None = None
     enabled: bool = False
     host_origin_allowlisted: bool = False
+    #: Exact hostnames permitted to reach this gateway. Empty means serving is
+    #: refused outright rather than permitted-by-default -- an allow-list that
+    #: starts empty and permissive is not an allow-list.
+    allowed_hosts: tuple[str, ...] = ()
     approval_gate_configured: bool = False
     tools: list[ToolSpec] = field(default_factory=build_tool_surface)
 
@@ -150,11 +154,21 @@ class Gateway:
             unmet.append("gateway is not enabled (set enabled=True deliberately, not by default)")
         if self.tokens is None or not self.tokens.list_tokens():
             unmet.append(PRECONDITIONS[0])
-        if not self.host_origin_allowlisted:
+        if not self.host_origin_allowlisted or not self.allowed_hosts:
             unmet.append(PRECONDITIONS[2])
         if not self.approval_gate_configured:
             unmet.append(PRECONDITIONS[3])
         return unmet
+
+    def host_allowed(self, host: str | None) -> bool:
+        """Exact-match host check. No wildcards, no suffix matching.
+
+        Suffix matching is how `evil-example.com` passes a naive check for
+        `example.com`. The list is short and explicit on purpose.
+        """
+        if not host:
+            return False
+        return host.strip().lower() in {h.strip().lower() for h in self.allowed_hosts}
 
     def may_serve(self) -> bool:
         return not self.unmet_preconditions()
@@ -172,18 +186,31 @@ class Gateway:
             ),
         }
 
-    def call(self, tool_name: str, credential: str | None = None, **kwargs: Any) -> dict:
+    def call(
+        self,
+        tool_name: str,
+        credential: str | None = None,
+        host: str | None = None,
+        **kwargs: Any,
+    ) -> dict:
         """Refuse, or dispatch. There is no permissive default.
 
         Order matters: serving state, then the tool's existence, then the
-        credential, then the scope. A refusal always carries a status so a caller
-        cannot mistake it for success.
+        host, then the credential, then the scope. A refusal always carries a
+        status so a caller cannot mistake it for success.
         """
         if not self.may_serve():
             return self.refusal()
         spec = next((t for t in self.tools if t.name == tool_name), None)
         if spec is None:
             return {"ok": False, "error": "unknown_tool", "detail": f"unknown tool: {tool_name}", "status": 404}
+        if not self.host_allowed(host):
+            return {
+                "ok": False,
+                "error": "host_not_allowed",
+                "detail": f"host {host!r} is not on the allow-list",
+                "status": 403,
+            }
         try:
             assert self.tokens is not None  # guaranteed by may_serve()
             self.tokens.verify(credential, TOOL_SCOPES.get(tool_name))

@@ -353,10 +353,11 @@ def test_gateway_requires_a_credential_even_when_ready(store):
         tokens=tokens,
         enabled=True,
         host_origin_allowlisted=True,
+        allowed_hosts=("oddfellow.example",),
         approval_gate_configured=True,
     )
     assert g.may_serve() is True
-    refused = g.call("get_project_state", credential=None)
+    refused = g.call("get_project_state", credential=None, host="oddfellow.example")
     assert refused["ok"] is False
     assert refused["status"] == 401
 
@@ -382,7 +383,13 @@ def test_gateway_never_accepts_the_owner_master_token_as_a_connector_credential(
 def test_mutating_tool_requires_an_approval_gate(store):
     tokens = TokenStore(store._conn)
     tokens.issue("anthropic", {Scope.READ})
-    g = Gateway(store, tokens=tokens, enabled=True, host_origin_allowlisted=True)
+    g = Gateway(
+        store,
+        tokens=tokens,
+        enabled=True,
+        host_origin_allowlisted=True,
+        allowed_hosts=("oddfellow.example",),
+    )
     assert g.may_serve() is False  # no approval gate yet
 
 

@@ -50,6 +50,7 @@ from .schema import (
 from .store import Store
 from .store import ClaimRefused, SubmitRefused
 from .tokens import TOOL_SCOPES, AuthError, Scope, TokenRecord, TokenStore
+from .handoff import HandoffResult, apply_handoff, parse_handoff, render_handoff
 
 __all__ = [
     "APPROVAL_REQUIRED",
@@ -68,6 +69,10 @@ __all__ = [
     "Scope",
     "TokenRecord",
     "TokenStore",
+    "HandoffResult",
+    "apply_handoff",
+    "parse_handoff",
+    "render_handoff",
     "TRANSPORT_LADDER",
     "TaskKind",
     "ToolSpec",

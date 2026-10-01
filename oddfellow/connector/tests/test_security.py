@@ -367,6 +367,7 @@ def _ready_gateway(store, tokens, scopes=(Scope.READ,)):
         tokens=tokens,
         enabled=True,
         host_origin_allowlisted=True,
+        allowed_hosts=("oddfellow.example",),
         approval_gate_configured=True,
     )
     # Wire handlers so these tests exercise AUTHORIZATION, not the 501 that an
@@ -382,17 +383,20 @@ def _ready_gateway(store, tokens, scopes=(Scope.READ,)):
     return gw, plaintext, rec
 
 
+HOST = "oddfellow.example"
+
+
 def test_gateway_refuses_a_revoked_token(store, tokens):
     gw, plaintext, rec = _ready_gateway(store, tokens)
-    assert gw.call("list_jobs", credential=plaintext)["ok"] is True
+    assert gw.call("list_jobs", credential=plaintext, host=HOST)["ok"] is True
     tokens.revoke(rec.token_id)
-    refused = gw.call("list_jobs", credential=plaintext)
+    refused = gw.call("list_jobs", credential=plaintext, host=HOST)
     assert refused["ok"] is False and refused["status"] == 401
 
 
 def test_gateway_refuses_the_master_token(store, tokens):
     gw, _, _ = _ready_gateway(store, tokens)
-    refused = gw.call("list_jobs", credential=MASTER)
+    refused = gw.call("list_jobs", credential=MASTER, host=HOST)
     assert refused["ok"] is False
     assert refused["error"] == "master_token_rejected"
     assert refused["status"] == 403
@@ -400,8 +404,8 @@ def test_gateway_refuses_the_master_token(store, tokens):
 
 def test_gateway_enforces_per_tool_scope(store, tokens):
     gw, plaintext, _ = _ready_gateway(store, tokens, scopes=(Scope.READ,))
-    assert gw.call("list_jobs", credential=plaintext)["ok"] is True
-    escalated = gw.call("claim_job", credential=plaintext, job_id="job-x")
+    assert gw.call("list_jobs", credential=plaintext, host=HOST)["ok"] is True
+    escalated = gw.call("claim_job", credential=plaintext, host=HOST, job_id="job-x")
     assert escalated["ok"] is False
     assert escalated["error"] == "insufficient_scope"
     assert escalated["status"] == 403
@@ -410,7 +414,7 @@ def test_gateway_enforces_per_tool_scope(store, tokens):
 def test_gateway_has_no_permissive_default(store, tokens):
     gw, _, _ = _ready_gateway(store, tokens)
     for cred in (None, "", "anything-at-all"):
-        assert gw.call("list_jobs", credential=cred)["ok"] is False
+        assert gw.call("list_jobs", credential=cred, host=HOST)["ok"] is False
 
 
 def test_every_tool_declares_a_scope(store, tokens):
@@ -419,3 +423,45 @@ def test_every_tool_declares_a_scope(store, tokens):
 
     gw, _, _ = _ready_gateway(store, tokens)
     assert {t.name for t in gw.tools} == set(TOOL_SCOPES)
+
+
+# ------------------------------------------------- host / origin allow-listing
+
+
+def test_gateway_refuses_a_host_not_on_the_allow_list(store, tokens):
+    gw, plaintext, _ = _ready_gateway(store, tokens)
+    refused = gw.call("list_jobs", credential=plaintext, host="attacker.example")
+    assert refused["ok"] is False
+    assert refused["error"] == "host_not_allowed"
+    assert refused["status"] == 403
+
+
+def test_gateway_refuses_a_missing_host(store, tokens):
+    gw, plaintext, _ = _ready_gateway(store, tokens)
+    assert gw.call("list_jobs", credential=plaintext, host=None)["error"] == "host_not_allowed"
+    assert gw.call("list_jobs", credential=plaintext)["error"] == "host_not_allowed"
+
+
+def test_host_check_is_exact_not_suffix(store, tokens):
+    """Suffix matching is how evil-example.com passes a naive check for example.com."""
+    gw, plaintext, _ = _ready_gateway(store, tokens)
+    for host in ("evil-oddfellow.example", "oddfellow.example.evil.com",
+                 "sub.oddfellow.example", "ODDFELLOW.EXAMPLE."):
+        refused = gw.call("list_jobs", credential=plaintext, host=host)
+        assert refused["ok"] is False, f"{host} must not be allowed"
+
+
+def test_host_match_is_case_insensitive_for_the_exact_name(store, tokens):
+    gw, plaintext, _ = _ready_gateway(store, tokens)
+    assert gw.call("list_jobs", credential=plaintext, host="ODDFELLOW.EXAMPLE")["ok"] is True
+
+
+def test_an_empty_allow_list_refuses_serving(store, tokens):
+    """Permissive-by-default is the failure this prevents."""
+    tokens.issue("anthropic", {Scope.READ})
+    gw = Gateway(
+        store, tokens=tokens, enabled=True,
+        host_origin_allowlisted=True, allowed_hosts=(),
+        approval_gate_configured=True,
+    )
+    assert gw.may_serve() is False
