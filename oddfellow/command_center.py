@@ -48,19 +48,29 @@ from fastapi import APIRouter, Body, HTTPException, Request
 #   VERIFIED > LIVE > DEPLOYED > CONNECTED > TESTED > IMPLEMENTED > PENDING
 #   > BLOCKED > REVENUE
 # Nothing is promoted without evidence, and "LIVE" is never "VERIFIED".
+#
+# The docstring above says "these are claims with dates, and the date is part of
+# the claim" — but until 2026-10-01 no entry carried one, so the claims drifted
+# silently and two of them were wrong by the time anyone looked. This date is the
+# fix for that: it is returned by /api/command/status so a reader can see how old
+# the registry is before trusting it. It is not a substitute for per-entry dates.
+REGISTRY_AS_OF = "2026-10-01"
+
 DEPARTMENTS: list[dict[str, Any]] = [
     {"name": "Executive / AI CEO", "state": "RUNNING",
      "note": "Coordinating lanes; blocked on Render access for the deploy."},
     {"name": "Product", "state": "RUNNING",
      "note": "Oddfellow v0.20.6 is the active product; Command Center is its owner layer."},
     {"name": "Engineering", "state": "RUNNING",
-     "note": "84 tests, 39/39 fault injection, acceptance green on the rehearsal."},
+     "note": "109 tests, 39/39 fault injection, acceptance green on the rehearsal."},
     {"name": "QA / Verification", "state": "RUNNING",
      "note": "Every claim in this registry is dated; unverified items are marked."},
     {"name": "Security", "state": "RUNNING",
      "note": "Secret scan clean; owner token never persisted while a third-party SDK is loaded."},
     {"name": "Legal / Compliance / IP", "state": "PENDING",
-     "note": "No registration exists or is claimed. IP inventory not yet written."},
+     "note": "No registration exists or is claimed. IP inventory written; clearance search "
+             "run for US/AU — register clear in Classes 9/42, but an unregistered software "
+             "publisher uses the name. EU/UK still open."},
     {"name": "Finance", "state": "RUNNING",
      "note": "Spend ceiling $0. No paid service, subscription or billing without owner approval."},
     {"name": "Marketing", "state": "PENDING",
@@ -78,8 +88,13 @@ DEPARTMENTS: list[dict[str, Any]] = [
 LANES: list[dict[str, Any]] = [
     {"name": "Oddfellow deploy", "state": "BLOCKED",
      "blocker": "WAITING_CREDENTIAL", "owner": "Claude (Render access)",
-     "note": "Target returns no HTTP response. A 502 is not a credential problem: the app "
-             "starts with both secrets empty, so the fault is in the build or start."},
+     "note": "Target returns no HTTP response. The cause IS the missing secrets: Render's "
+             "own dashboard reading is build completed, app started, config check reported "
+             "both secrets missing, /healthz 503, deploy update_failed — the fail-closed "
+             "health check meeting Render's non-200 healthCheckPath contract. An earlier "
+             "note here said the opposite; it was wrong and is corrected. Fix: enter "
+             "LETTA_API_KEY and ODDFELLOW_OWNER_TOKEN, then trigger a deploy "
+             "(autoDeploy: false means saving them is not a deploy)."},
     {"name": "Oddfellow live rehearsal", "state": "LIVE",
      "note": "Self-healing; all acceptance gates green. Dies with the sandbox by design."},
     {"name": "Cloudflare Worker fallback", "state": "IMPLEMENTED",
@@ -204,13 +219,16 @@ class CommandCenter:
         pending = [r for r in self.list_approvals() if r["state"] == "WAITING_AUTHORIZATION"]
         return {
             "service": "begg_ai_command_center",
+            "registry_as_of": REGISTRY_AS_OF,
             "paused": self.is_paused(),
             "pause_reason": self._pause_reason,
             "departments": DEPARTMENTS,
             "lanes": LANES,
             "approvals_pending": len(pending),
             "state_persistence": "in-memory: this state does not survive a restart",
-            "note": "Statuses are claims with evidence, not live probes. LIVE is not VERIFIED.",
+            "note": "Statuses are claims with evidence, not live probes. LIVE is not VERIFIED. "
+                    "The claims are hand-maintained, so read registry_as_of before trusting "
+                    "them — two of them were already stale when this date was added.",
         }
 
 
