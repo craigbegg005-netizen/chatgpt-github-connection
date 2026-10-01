@@ -22,6 +22,14 @@ h1{font-size:18px;margin:0}.sub{font-size:12px;color:var(--muted);margin-top:2px
 .composer{position:fixed;bottom:0;left:0;right:0;padding:10px max(10px,env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));background:rgba(9,12,16,.96);border-top:1px solid var(--line);backdrop-filter:blur(12px)}
 .inner{max-width:920px;margin:auto}.row{display:flex;gap:8px;align-items:flex-end}textarea{flex:1;resize:none;min-height:48px;max-height:150px;background:#141a22;border:1px solid #303a48;border-radius:14px;color:#fff;padding:12px;font:inherit}
 button,select{background:#1b2330;color:#eef4fa;border:1px solid #344152;border-radius:11px;padding:10px 11px;font-weight:600}button:disabled{opacity:.45}.toolrow{display:flex;gap:7px;overflow-x:auto;padding:7px 0 0}.tiny{font-size:11px;padding:7px 9px;white-space:nowrap}.active{outline:1px solid #c7d4e4}
+.approvalbar{margin-top:8px;padding:10px;border:1px solid #7a5a1e;border-radius:12px;background:#241c0c}
+.approvalbar .txt{font-size:12px;color:#f0d79a;margin-bottom:8px}
+.approvalbar .btns{display:flex;gap:7px}
+.approvalbar button{flex:1}
+.vstate{position:relative}
+.vstate.live{border-color:#4f7f5f;background:#12241a}
+.vstate.busy{border-color:#7a6a1e;background:#241f0c}
+.vstate.talk{border-color:#3f6a86;background:#0f1e28}
 details{margin:10px 16px;border:1px solid var(--line);border-radius:12px;background:#111720}summary{padding:10px 12px;cursor:pointer;font-size:13px;color:#c8d2de}.settings{padding:0 12px 12px;display:grid;gap:8px}
 .settings input[type=url],.settings input[type=password]{flex:1;min-width:0;background:#141a22;border:1px solid #303a48;border-radius:9px;color:#fff;padding:7px 9px;font:inherit;font-size:12px}.setting{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;color:#b3becb}.notice{font-size:11px;color:#8f9baa;padding:0 16px 8px}.danger{color:#ffcccb}
 @media (max-width:640px){
@@ -51,7 +59,7 @@ details{margin:10px 16px;border:1px solid var(--line);border-radius:12px;backgro
     <span class="chip" id="memory">Memory: browser</span>
     <span class="chip" id="backend">Backend: off</span>
     <span class="chip" id="router">Router: discovering</span>
-    <span class="chip" id="voice">Voice: checking</span>
+    <span class="chip vstate" id="voice">Voice: checking</span>
     <span class="chip good">Spend ceiling: $0</span>
   </div>
   <details>
@@ -74,6 +82,10 @@ details{margin:10px 16px;border:1px solid var(--line);border-radius:12px;backgro
 <div class="composer"><div class="inner">
   <div class="row"><button id="mic" title="Voice input">🎙</button><textarea id="input" rows="1" placeholder="Talk to Oddfellow…"></textarea><button id="send">Send</button></div>
   <div class="toolrow"><button class="tiny" id="newchat">New chat</button><button class="tiny" id="export">Export</button><button class="tiny" id="stopvoice">Stop voice</button><span class="chip" id="plan">Planner idle</span></div>
+  <div class="approvalbar" id="approvalbar" hidden>
+    <div class="txt" id="approvaltxt"></div>
+    <div class="btns"><button id="approve">Approve</button><button id="reject" class="tiny">Reject</button></div>
+  </div>
 </div></div>
 </div>
 <script>
@@ -355,38 +367,134 @@ async function syntheticReply(text){
   }
   return {out,meta};
 }
-async function send(){
-  const input=$('input');const text=input.value.trim();if(!text||state.busy)return;
+// --- Durable approval gate ---------------------------------------------------
+// The planner's risk chip used to imply a consequence that did not exist: a
+// browser confirm() is a UX gate, not a security boundary, and anything that
+// talks to the API directly steps around it. With a backend configured, an
+// elevated-risk request now creates a REAL approval in the backend's command
+// centre and stops there. It proceeds only once that exact approval is decided --
+// which is what lets a spoken "approve" bind to one specific pending action, and
+// what leaves an audit trail (command_approval_created / _decided) behind it.
+//
+// Everything here fails closed: if the approval cannot be recorded, the action
+// does not run.
+state.pendingApproval=null;
+const APPROVAL_WORDS=/^(approve|approved|approve it|confirm|confirmed|yes approve|go ahead|do it|authorise|authorize)$/i;
 
-  // Approval gate. The planner has always classified risk and displayed it in
-  // the chip, which implies a consequence that did not exist -- a warning that
-  // gates nothing is decoration. A request the planner flags as elevated now
-  // needs an explicit confirmation before it is sent.
-  //
-  // This is a UX gate, NOT a security boundary: anything that talks to the API
-  // directly bypasses it. It is labelled as such rather than dressed up as
-  // enforcement, and the real gate belongs where the actions are -- with the
-  // agent's tools -- not in the page.
-  if(plan(text).risk==='elevated'){
-    const ok=confirm('Oddfellow\'s planner flagged this as elevated risk — it looks like it could change something outside this chat.\n\n'+text.slice(0,200)+'\n\nSend it anyway?');
-    if(!ok){
-      add('assistant','Not sent. You cancelled a request the planner flagged as elevated risk.','approval gate · nothing was sent');
-      return;
-    }
-  }
+function showApproval(rec){
+  const bar=$('approvalbar');if(!bar)return;
+  $('approvaltxt').textContent='WAITING_AUTHORIZATION · '+rec.id+' — approve this exact action? Nothing has been sent.';
+  bar.hidden=false;
+}
+function hideApproval(){const bar=$('approvalbar');if(bar)bar.hidden=true;state.pendingApproval=null}
 
-  state.busy=true;$('send').disabled=true;input.value='';add('user',text);
+async function requestApproval(text){
+  const rec=await backendCall('/api/command/approvals',{method:'POST',body:JSON.stringify({
+    title:'Elevated-risk command held for authorisation',
+    detail:text.slice(0,500),
+    risk:'high'
+  })});
+  state.pendingApproval={id:rec.id,text};
+  showApproval(rec);
+  return rec;
+}
+
+async function decideApproval(decision,note){
+  const p=state.pendingApproval;if(!p)return null;
+  return backendCall('/api/command/approvals/'+encodeURIComponent(p.id)+'/decide',
+    {method:'POST',body:JSON.stringify({decision,note:note||''})});
+}
+
+async function sendText(text){
+  state.busy=true;$('send').disabled=true;add('user',text);
+  // Tell the owner work is happening. A reply can take several seconds, and on a
+  // phone an unresponsive-looking screen after a tap reads as a failure.
+  setVoiceState('thinking','thinking');
   try{
     const {out,meta}=backendConfigured()?await lettaReply(text):await syntheticReply(text);add('assistant',out,meta);
     if($('speak').checked)speak(out);
   }catch(e){add('assistant','Stopped safely: '+(e?.message||String(e)),'fail-closed · no paid fallback')}
-  finally{state.busy=false;$('send').disabled=false;$('plan').textContent='Planner idle'}
+  finally{
+    state.busy=false;$('send').disabled=false;$('plan').textContent='Planner idle';
+    // Only clear if TTS did not take over the chip.
+    if(!('speechSynthesis'in window)||!speechSynthesis.speaking)setVoiceState(null);
+  }
 }
-function speak(t){if(!('speechSynthesis'in window))return; speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t.slice(0,4000));u.rate=1; speechSynthesis.speak(u)}
+
+async function send(){
+  const input=$('input');const text=input.value.trim();if(!text||state.busy)return;
+  input.value='';
+
+  if(plan(text).risk==='elevated'){
+    if(backendConfigured()){
+      try{
+        const rec=await requestApproval(text);
+        add('assistant','Held for authorisation as '+rec.id+'. Nothing has been sent. Approve it to proceed, or reject it.','WAITING_AUTHORIZATION · durable');
+      }catch(e){
+        add('assistant','Not sent: the approval service could not be reached, so this action could not be authorised. '+(e?.message||String(e)),'approval gate · fail-closed');
+      }
+      return;
+    }
+    // No backend configured: a local confirmation only, and labelled as one
+    // rather than dressed up as enforcement it is not.
+    const ok=confirm('Oddfellow\'s planner flagged this as elevated risk — it looks like it could change something outside this chat.\n\n'+text.slice(0,200)+'\n\nSend it anyway?\n\n(No backend is configured, so this is a local confirmation only, not the durable approval gate.)');
+    if(!ok){add('assistant','Not sent. You cancelled a request the planner flagged as elevated risk.','local confirm · nothing was sent');return}
+  }
+  await sendText(text);
+}
+
+$('approve').onclick=async()=>{
+  const p=state.pendingApproval;if(!p)return;
+  $('approve').disabled=true;
+  try{
+    await decideApproval('approve','approved by owner');
+    hideApproval();
+    add('assistant','Approved '+p.id+'. Sending now.','approval granted');
+    await sendText(p.text);
+  }catch(e){
+    add('assistant','Not sent: the approval could not be recorded, so it was not granted. '+(e?.message||String(e)),'approval gate · fail-closed');
+  }finally{$('approve').disabled=false}
+};
+$('reject').onclick=async()=>{
+  const p=state.pendingApproval;if(!p)return;
+  try{await decideApproval('reject','rejected by owner')}catch(e){}
+  hideApproval();
+  add('assistant','Rejected '+p.id+'. Nothing was sent.','approval denied');
+};
+// --- voice state ------------------------------------------------------------
+// The owner needs to be able to tell, at a glance and on a phone, whether
+// Oddfellow is listening, working, or talking. Without this, a reply that takes
+// several seconds is indistinguishable from a tap that did nothing -- and while
+// TTS is speaking, there is no signal that the mic is not hearing you.
+//
+// The chip carries capability when idle ("Voice: ready") and state while active,
+// so the one piece of UI that is always visible answers the question the owner
+// actually has at that moment, rather than a permanent description of the browser.
+const VOICE_CAP=()=>state.voiceCap||'Voice: ready';
+function setVoiceState(kind,label){
+  const el=$('voice');if(!el)return;
+  el.classList.remove('live','busy','talk');
+  if(!kind){el.textContent=VOICE_CAP();return}
+  el.textContent='Voice: '+label;
+  el.classList.add(kind==='listening'?'live':kind==='thinking'?'busy':'talk');
+}
+function speak(t){
+  if(!('speechSynthesis'in window))return;
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(t.slice(0,4000));u.rate=1;
+  // Safari fires neither reliably, so the state is also cleared on error and
+  // after a bounded delay -- a permanent "speaking" label would be worse than none.
+  const done=()=>setVoiceState(null);
+  u.onstart=()=>setVoiceState('speaking','speaking');
+  u.onend=done;u.onerror=done;
+  const guard=setTimeout(done,Math.min(60000,6000+String(t).length*22));
+  u.onend=()=>{clearTimeout(guard);done()};
+  speechSynthesis.speak(u);
+}
 function setupVoice(){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!SR){$('voice').textContent='Voice: unsupported';return}
-  $('voice').textContent='Voice: ready';$('voice').classList.add('good');
+  if(!SR){state.voiceCap='Voice: unsupported';$('voice').textContent=state.voiceCap;return}
+  state.voiceCap='Voice: ready';$('voice').textContent=state.voiceCap;$('voice').classList.add('good');
   const r=new SR();r.continuous=false;r.interimResults=false;r.lang='en-US';state.recognition=r;
   // The mic is a toggle, and it must never throw. Calling start() while already
   // listening raises InvalidStateError, and on a phone a second tap is the most
@@ -394,16 +502,49 @@ function setupVoice(){
   // no feedback at all. onend also has to reset the flag, or a recognition that
   // ends without a result leaves the button stuck in the "listening" state.
   let listening=false;
-  const setListening=v=>{listening=v;$('mic').classList.toggle('active',v)};
+  const setListening=v=>{listening=v;$('mic').classList.toggle('active',v);setVoiceState(v?'listening':null,'listening')};
   r.onstart=()=>setListening(true);
   r.onend=()=>setListening(false);
-  r.onresult=e=>{const t=Array.from(e.results).map(x=>x[0].transcript).join(' ');$('input').value=t;if($('hands').checked)send()};
+  r.onresult=e=>{
+    const t=Array.from(e.results).map(x=>x[0].transcript).join(' ').trim();
+    // A spoken approval is accepted ONLY when it can be bound to one exact
+    // pending action. We ask the backend how many are waiting rather than
+    // trusting the page's own idea, because a second approval could have been
+    // created from another surface -- and approving the wrong one silently is
+    // precisely the failure this gate exists to prevent.
+    if(state.pendingApproval&&APPROVAL_WORDS.test(t.replace(/[.!?,]+$/,''))){
+      add('user',t);spokenApproval();return;
+    }
+    $('input').value=t;if($('hands').checked)send();
+  };
   r.onerror=e=>{setListening(false);$('voice').textContent='Voice: '+e.error;$('voice').classList.add('warn')};
   $('mic').onclick=()=>{
     if(listening){try{r.stop()}catch{};return}
     try{r.start();setListening(true)}
     catch(e){setListening(false);$('voice').textContent='Voice: '+((e&&e.name)||'unavailable');$('voice').classList.add('warn')}
   };
+}
+async function spokenApproval(){
+  // Bind the spoken word to exactly one pending action, or refuse. Saying
+  // "approve" is not itself authorisation: it is authorisation for ONE action,
+  // and if that cannot be identified unambiguously then nothing is approved.
+  let pending;
+  try{
+    const r=await backendCall('/api/command/approvals?state=WAITING_AUTHORIZATION');
+    pending=(r&&r.approvals)||[];
+  }catch(e){
+    add('assistant','Spoken approval not applied: the pending approvals could not be read. '+(e?.message||String(e)),'approval gate · fail-closed');
+    return;
+  }
+  if(pending.length!==1){
+    add('assistant','There are '+pending.length+' actions awaiting authorisation, so I cannot tell which one you meant. Nothing was approved — use the buttons.','approval gate · ambiguous');
+    return;
+  }
+  if(!state.pendingApproval||state.pendingApproval.id!==pending[0].id){
+    add('assistant','The action awaiting authorisation is not the one I am holding, so nothing was approved.','approval gate · mismatch');
+    return;
+  }
+  $('approve').click();
 }
 function warnIfTokenExposed(){
   // The Puter SDK is a third-party script that runs in this origin, so it can
@@ -428,7 +569,7 @@ $('signin').onclick=async()=>{try{const p=await ensurePuter();warnIfTokenExposed
 $('send').onclick=send;$('input').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}});
 $('newchat').onclick=()=>{if(confirm('Start a new local conversation?')){state.history=[];saveLocal();saveCloud();render()}};
 $('export').onclick=()=>{const blob=new Blob([JSON.stringify({version:'0.20.0',exportedAt:new Date().toISOString(),history:state.history},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='oddfellow-synthetic-v020-history.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
-$('stopvoice').onclick=()=>{if('speechSynthesis'in window)speechSynthesis.cancel()};
+$('stopvoice').onclick=()=>{if('speechSynthesis'in window)speechSynthesis.cancel();setVoiceState(null)};
 loadLocal();render();setupVoice();accountRefresh();
 
 // --- Letta backend settings ---
