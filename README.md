@@ -71,19 +71,25 @@ branch name is historical; the served version is authoritative.
 ## What is live right now
 
 Status labels are strict: **VERIFIED > LIVE > DEPLOYED > CONNECTED > TESTED > IMPLEMENTED >
-PENDING > BLOCKED**. Nothing is upgraded without evidence. The Oddfellow rows were re-checked by
-actual requests on **2026-10-01 20:05 UTC**; the rest on 2026-09-30 between 04:00 and 06:10 UTC.
+PENDING > BLOCKED**. Nothing is upgraded without evidence. **Every row below was re-checked by an
+actual request on 2026-10-01 between 20:05 and 20:45 UTC.**
+
+⚠️ **Probe every one of these with at least a 90-second timeout.** Render's free tier cold-starts.
+On this sweep a 20-second probe returned `000` for **four** services that were in fact serving
+(`oddfellow-personal-staging-v017b`, `oddfellow-personal-secure`, `begg-ai-industries-v013`,
+`begg-ai-core-v010`); all four answered 200/303 on retry at 90 seconds. A negative reading from a
+too-short timeout is not evidence of absence — it is evidence of a short timeout.
 
 | Service | State |
 |---|---|
 | `oddfellow-letta-backend-v0206.onrender.com` | 🟢 **LIVE, current build** — `/livez` 200 in ~0.13s, version **0.20.6**, front end + manifest + icons + `sw.js` all 200. ⚠️ `ready:false`: `LETTA_API_KEY` and `ODDFELLOW_OWNER_TOKEN` are not set, so `/healthz` is 503. **This is the deploy target.** |
 | `oddfellow-letta-backend.onrender.com` | 🔴 **DEAD — do not use.** No HTTP response (000). This hostname is *not* the deploy target; probing it produced a 20-hour blind spot on 2026-10-01. |
 | `oddfellow-letta-poc.onrender.com` | 🟢 LIVE — `/livez` → 404 in 0.16s, i.e. the older v0.20.2 build that predates that route. |
-| `oddfellow-personal-staging-v017b.onrender.com` | 🟢 LIVE — 303 → `/setup`, unenrolled, no owner data. |
-| `oddfellow-personal-secure.onrender.com` | 🟢 LIVE — 303. |
-| `begg-ai-industries-v013.onrender.com` | 🟢 LIVE — 200. Begg AI Core v0.13.0. |
-| `begg-ai-core-v010.onrender.com` | 🟢 LIVE — 200. v0.12.1. |
-| `begg-ai-command-center.craigbegg005.chatgpt.site` | 🟢 LIVE — 401, auth-gated. |
+| `oddfellow-personal-staging-v017b.onrender.com` | 🟢 LIVE — 303 → `/setup` in 0.29s, unenrolled, no owner data. |
+| `oddfellow-personal-secure.onrender.com` | 🟢 LIVE — 303 in 0.33s. |
+| `begg-ai-industries-v013.onrender.com` | 🟢 LIVE — 200 in 0.54s. |
+| `begg-ai-core-v010.onrender.com` | 🟢 LIVE — 200 in 0.89s. |
+| `begg-ai-command-center.craigbegg005.chatgpt.site` | 🟢 LIVE — 401 in 1.31s, auth-gated. |
 
 **LIVE ≠ end-to-end verified.** Render's free tier cold-starts; allow 90s before calling a
 service dead. Full identifiers, service IDs and rollbacks: [`RESOURCES.md`](RESOURCES.md).
