@@ -102,8 +102,20 @@ const SAME_ORIGIN_BACKEND=location.origin;
 const FALLBACK_BACKEND_URL='https://oddfellow-letta-backend-v0206.onrender.com';
 let DEFAULT_BACKEND_URL=SAME_ORIGIN_BACKEND;
 async function chooseDefaultBackend(){
+  // Render's free tier idles the service down, and the first request after an idle
+  // period can take ~30s to wake it. Two consequences, both handled here:
+  //   * an un-timed fetch can hang the page with no explanation, which reads to the
+  //     owner as "broken" rather than "starting" -- so the probe is bounded;
+  //   * the owner deserves to see that it is waking, not that it is dead.
+  // The chip is set to "waking" only for the duration of the probe; the normal
+  // initialisation path below always overwrites it (backendStatus() when a backend
+  // is configured, "Backend: off" otherwise), so this cannot strand a stale label.
+  setBackendChip('Backend: waking...',false);
   try{
-    const r=await fetch(SAME_ORIGIN_BACKEND+'/livez',{method:'GET',cache:'no-store'});
+    const ctl=new AbortController();
+    const timer=setTimeout(()=>ctl.abort(),35000);
+    const r=await fetch(SAME_ORIGIN_BACKEND+'/livez',{method:'GET',cache:'no-store',signal:ctl.signal});
+    clearTimeout(timer);
     if(r.ok){DEFAULT_BACKEND_URL=SAME_ORIGIN_BACKEND;return 'same origin'}
   }catch{}
   DEFAULT_BACKEND_URL=FALLBACK_BACKEND_URL;
