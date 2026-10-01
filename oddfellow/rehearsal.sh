@@ -215,6 +215,30 @@ find_url() {
   return 1
 }
 
+# What code is the rehearsal actually serving?
+#
+# The backend runs from this checkout, so the rehearsal serves whatever branch
+# happens to be checked out -- and that changes under it whenever anyone switches
+# branches. Two people looking at "the rehearsal" an hour apart can be looking at
+# different code, and until this line existed neither of them could tell.
+#
+# Reported rather than fixed: pinning the rehearsal to a branch would change how
+# it is used, and reporting the fact is what makes the difference visible. A
+# dirty tree is called out separately, because uncommitted edits are served too.
+served_revision() {
+  local branch sha dirty
+  branch="$(git -C "$HERE" rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
+  sha="$(git -C "$HERE" rev-parse --short=8 HEAD 2>/dev/null || true)"
+  if [ -z "$branch" ] || [ -z "$sha" ]; then
+    echo "unknown (not a git checkout) -- serving the files on disk"
+    return 0
+  fi
+  dirty=""
+  [ -n "$(git -C "$HERE" status --porcelain 2>/dev/null)" ] && dirty=" + uncommitted changes"
+  echo "$branch @ $sha$dirty"
+  return 0
+}
+
 status() {
   local url
   # `|| true` matters: find_url returns non-zero when nothing answers, and under
@@ -225,6 +249,7 @@ status() {
   [ -n "$(backend_pids)" ] && echo "backend: UP" || echo "backend: DOWN"
   [ -n "$(tunnel_pids)" ]  && echo "tunnel:  UP" || echo "tunnel:  DOWN"
   [ -n "$(watchdog_pid || true)" ] && echo "watchdog: UP" || echo "watchdog: DOWN"
+  echo "code:    $(served_revision)"
   if [ -n "$url" ]; then
     echo "url:     $url"
     curl -s --max-time 20 "$url/livez" || true; echo
