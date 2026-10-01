@@ -1,6 +1,6 @@
 # CURRENT_STATE
 
-**Date:** 2026-10-01 23:10 UTC
+**Date:** 2026-10-01 23:40 UTC
 **Author:** Oddfellow (Letta agent, `agent-a9a8eb2c-2fed-4554-9998-aa4783c7efc4`)
 **Rule:** every line below is either evidenced in this repository or marked unverified. Nothing here is carried over from a handoff on trust.
 
@@ -111,6 +111,26 @@ cosmetic: a reply takes seconds, and without a thinking state a tap looks like i
 nothing.
 
 🛠 IMPLEMENTED · 🧪 BROWSER/BACKEND TESTED · ⚠️ **REAL PHONE MIC / STT UNVERIFIED.**
+
+### The rehearsal serves whatever branch is checked out
+
+### The connector is now integrated, not just present
+
+Merge `155dd3fc` brought `oddfellow/connector/` into canonical — purely additive,
+4184 insertions and **zero deletions**, changing no behaviour because nothing
+imported it. Then `ddd6d097` wired it in: **`GET /api/command/jobs`** exposes the
+queue and the dead-letter view to the owner, which is the "jobs" capability the
+architecture has carried as a target.
+
+Three choices worth knowing: it **degrades** rather than failing when no queue is
+configured (a control surface that 500s over an optional component teaches the
+owner to ignore it); the connector is imported **lazily**, so it cannot take down
+the backend; and it **reads, it does not decide** — approving, claiming and
+requeueing are state changes with their own gates.
+
+Verified against the live rehearsal: 3 jobs with status/risk/verified, one dead
+letter with its error, `?status=` filtering, `400` on an unknown status (not a
+silent empty list), and `401` for both a missing and a wrong token.
 
 ### The rehearsal serves whatever branch is checked out
 

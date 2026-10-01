@@ -37,14 +37,15 @@ holds. Three notes from that sweep:
 | Repo (only one this GitHub App can see) | `craigbegg005-netizen/chatgpt-github-connection` | ✅ VERIFIED — `installation/repositories` → `total_count: 1` |
 | Canonical deploy branch | `letta/combined-single-service-v0.20.4` @ `8b455fd` | ✅ VERIFIED 2026-10-01 04:05 UTC |
 | `main` | `8ddfe325` | ✅ VERIFIED 2026-10-01 04:05 UTC |
-| `letta/universal-connector-v0.21` @ `8f9c139` | **Universal Connector** — core, security hardening, the Tier 3/4 handoff path, dead-letter + clean disconnect, an operator CLI, and `post_gate_a_check.py` | ✅ VERIFIED 2026-10-01 23:05 UTC (pushed, local SHA == remote). `oddfellow/connector/` **113 tests**; the post-Gate-A script runs **17/17 machine steps** against a configured instance. **Dev branch; deploy branch and the live service are untouched.** |
+| `letta/universal-connector-v0.21` @ `8f9c139` | **Universal Connector** — core, security hardening, the Tier 3/4 handoff path, dead-letter + clean disconnect, an operator CLI | ⚠️ **MERGED INTO CANONICAL** 2026-10-01 23:33 UTC (merge `155dd3fc`, purely additive: 4184 insertions, 0 deletions). The branch is kept for further work; canonical is now the integration point. |
 | `letta/voice-v1` @ `e83a61b` | **Voice V1 approval gate** — elevated-risk voice/chat commands enter a real `WAITING_AUTHORIZATION`; spoken approval binds to one exact pending action | ✅ VERIFIED 2026-10-01 21:50 UTC (pushed, local SHA == remote). Front-end wiring verified in a real browser; backend chain verified against the rehearsal. **Dev branch.** ⚠️ Nobody has spoken into a real phone — that verification is the owner's to run. |
 | `letta/frontend-letta-backend` | `445e05c` | ✅ VERIFIED |
 | `letta/recovery-capture-2026-09-30` | `f27ec28` | ✅ VERIFIED |
 | `letta/independent-verification-2026-09-30` | `46d731b` | ✅ VERIFIED — independent reproduction of the deploy branch's claims |
 
 **Connector status, stated at the level it has actually reached:** the core is
-**TESTED** (113 offline tests) and **COMMITTED**, and its credential model is now
+**TESTED** (113 offline tests), **COMMITTED**, and now **MERGED INTO CANONICAL** and
+**USED** — the Command Center exposes its queue at `GET /api/command/jobs`. Its credential model is now
 **real** — scoped, revocable, per-provider tokens with constant-time verification,
 and the owner master token refused *by value*. It is **not CONNECTED** to any
 provider and **not DEPLOYED**; the MCP gateway **serves nothing**. Every provider
@@ -194,6 +195,8 @@ its real workflow by this agent.
 | Cloudflare | not connected |
 | Render | ⚠️ **not accessible to this agent** — Claude and ChatGPT have access; that access is theirs, not mine |
 | Stripe (as the MCP server named **`BeggAi`**) | 🔗 **CONNECTED — MCP only, sandbox only.** The `BeggAi` MCP server exposes **Stripe's own 10 tools**, not an Oddfellow connector. Verified 2026-10-01 21:38 UTC by calling `list_available_accounts_or_orgs`: **exactly one** account is reachable — `acct_1UJn2qAGpvydXJoO`, `livemode:false`, "New business sandbox". ⚠️ The master handoff records **two** Stripe contexts; only one is visible here, so treat the second as unverified. **`livemode:false` is the material fact: no live charge is possible from this connection.** |
+| Metricool / social scheduling | ⚠️ **NOT CONNECTED to this agent.** The cross-AI handoff asks for Metricool to be reverified before relying on it for a publication action. **This agent has no such connection** — its integrations are GitHub and the Stripe MCP server above. Status cannot be verified from here and is not reported from old notes. |
+| Render | ⚠️ **No credential exists on this machine.** Re-checked exhaustively 2026-10-01 23:32 UTC: no `RENDER*` env var, one secret (`$ODDFELLOW_OWNER_TOKEN`, which this agent generated), and the only `RENDER_API_KEY` mentions on disk are in this agent's own transcripts. Setting Render env vars requires Craig, ChatGPT, or Claude. |
 
 ⚠️ **Naming caution, because this one is easy to get wrong:** the MCP server is *called*
 `BeggAi`, but it is Stripe's server. A handoff line reading "BeggAi MCP arrived" does **not**
