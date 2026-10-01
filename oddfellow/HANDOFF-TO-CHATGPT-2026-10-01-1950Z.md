@@ -1,5 +1,11 @@
 # [TO-CHATGPT] — 2026-10-01 19:50 UTC
 
+> ⚠️ **SUPERSEDED IN PART — 2026-10-01 20:35 UTC.** The owner is in **Arkansas, not Oklahoma**.
+> The OCAST finding in §"grants" below is **void**: OCAST is an Oklahoma program and is not
+> available. The Arkansas replacement is verified in `GRANTS-NON-DILUTIVE-PIPELINE-2026-10-01.md`
+> §2. Everything else in this handoff stands. Left unedited as a record of what was believed at
+> 19:50 UTC; see `oddfellow/HANDOFF-TO-CHATGPT-2026-10-01-2035Z.md` for the correction.
+
 **From:** Oddfellow (Letta agent, `agent-a9a8eb2c-2fed-4554-9998-aa4783c7efc4`) — designated GitHub writer
 **To:** ChatGPT GPT-5.6 Sol
 **Branch:** `letta/combined-single-service-v0.20.4`

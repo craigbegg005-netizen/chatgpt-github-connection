@@ -2,6 +2,8 @@
 
 **Created:** 2026-10-01
 **Origin:** ChatGPT GPT-5.6 Sol cross-AI handoff, 2026-10-01 19:02 UTC, which could not commit this file (`403 — Resource not accessible by integration`). Written here by Oddfellow (Letta agent).
+**Corrected:** 2026-10-01 20:35 UTC — **the owner is in Arkansas, not Oklahoma.** All Oklahoma content (OCAST, OK Catalyst) removed and replaced with verified Arkansas lanes. See §2.
+**Canonical file:** this file. Claude's parallel pipeline draft belongs at `grants/CLAUDE-GRANTS-PIPELINE-2026-10-01.md` as a *source* document and is reconciled into this one — see `grants/README.md`.
 **Rule for this file:** a program's *terms* may be ✅ VERIFIED against its own primary source. Whether **Begg AI Industries qualifies** is a separate question and is almost never verified here. Do not collapse the two.
 
 Status vocabulary: `✅ VERIFIED` (checked against the program's own page) · `⚠️ LIKELY INELIGIBLE` · `⏳ LEAD` (named but not checked) · `❌ NOT CHECKED`
@@ -43,29 +45,57 @@ Status vocabulary: `✅ VERIFIED` (checked against the program's own page) · `�
 
 ---
 
-## 2. OCAST — Oklahoma Center for the Advancement of Science and Technology
+## 2. Arkansas state lanes — the state is Arkansas, not Oklahoma
 
-**Status:** ✅ **VERIFIED** (program terms, from oklahoma.gov) · ⚠️ **LIKELY INELIGIBLE for Oddfellow as currently framed**
+**Corrected 2026-10-01 (owner confirmation + Claude correlation).** The owner is in **Arkansas**.
+Every Oklahoma reference previously in this file — OCAST, OK Catalyst, the Oklahoma Secretary of
+State, the three-sector rule — is **void** and has been removed. A file that names the wrong state
+is worse than an empty one, because every downstream action inherits the error.
 
-### 2a. Industry Innovation Program — ⚠️ read the sector rule first
+### 2a. AEDC SBIR Matching Grant — ✅ VERIFIED (AEDC's own site + Code of Arkansas Rules + Act 2017 No. 166)
 
 | | |
 |---|---|
-| Award | **Up to $500,000** (some OCAST pages state a $50,000 floor) |
-| Match | **Mandatory 1:1 match** |
-| Residency | Must be an **Oklahoma-based** company — permanent office, registered with the Oklahoma Secretary of State |
-| Work location | **≥51%** of OCAST-funded project work must be performed in Oklahoma, with demonstrable state economic benefit |
-| Admin | Must register as a **State Supplier** before any funds can transfer |
+| Award | **Up to 50%** of the federal SBIR award — **Phase I cap $50,000**, Phase II cap $100,000 |
+| Nature | **Discretionary** — offered only on the approval of the AEDC Director |
+| 🔴 Timing | **Post-award only.** The applicant must **already hold** a federal SBIR award. This does **not** fund the NSF pitch; it reimburses part of it afterwards |
+| Payment | **Reimbursable** — paid when invoices and financial reports are submitted, never in advance |
+| Targeted sectors | Advanced materials & manufacturing · agriculture/food/environmental · biotech/bioengineering/life sciences · **information technology** · transportation logistics · bio-based products |
+| Residency | Arkansas business; **≥51% of grant funds must be spent in Arkansas** |
+| Cap | No more than **three** matching grants per business |
+| Contact | 501-682-5996 · info@arkansasedc.com · 1 Commerce Way, Ste. 601, Little Rock, AR 72202 |
 
-**🔴 The disqualifier ChatGPT's handoff did not mention:** the project **must have an end-user application within one of three targeted industries** — (1) aerospace, autonomous systems and defense; (2) biotechnology and life sciences; (3) energy diversification. A general-purpose personal-AI product does not sit in any of them.
+**Why this matters:** unlike the Oklahoma program it replaces, **information technology is a named
+eligible sector** — so Oddfellow does not have to be reframed into aerospace or biotech to fit. The
+real constraint is sequencing: this is money *after* an SBIR award, so it is a Phase I follow-on,
+not an entry point.
 
-**Read:** do not spend time here unless the project is genuinely reframed into a targeted sector, or unless OCAST confirms that "autonomous systems" is read to include agentic AI. **Confirm with OCAST before applying.** The 1:1 match is also a hard blocker while zero-spend is in force.
+### 2b. ASBTDC — ✅ VERIFIED as an entity (asbtdc.org); specific services ⏳ LEAD
 
-### 2b. Other OCAST lanes — ⏳ LEAD, not checked
+The **Arkansas Small Business and Technology Development Center** is funded in part through a
+cooperative agreement with the **U.S. Small Business Administration**, in partnership with **UA
+Little Rock** and other Arkansas institutions. It offers **free one-to-one confidential consulting
+and market research** plus affordable educational events, and runs a **"Develop a Tech-Based
+Business"** track for technology ventures with commercial potential.
 
-- **Small Business Research Assistance / OK Catalyst** — SBIR/STTR *proposal support*. Plausibly the highest-value OCAST lane for us, because it helps with the NSF pitch rather than requiring a matching spend. **Check this one first.**
-- **STEM Intern Partnership** — workforce funding; may require match and targeted-industry eligibility.
-- **Inventor Assistance / manufacturing resources** — preliminary patent searches, engineering support, prototyping, manufacturing referrals. Relevant to the IP lane.
+**Reported but NOT verified by me:** the phone number (501) 916-3700, SBIR/STTR proposal review,
+SAM.gov registration help, and a "Lab2Launch" accelerator. Claude reports these; I have not opened
+a page confirming any of them. **Treat them as a lead and confirm on first contact.**
+
+**Why this is the right first call:** it is free, it is the SBA's own Arkansas vehicle, and it can
+answer the entity question below without spending anything.
+
+### 2c. The entity gate — ⏳ OWNER DECISION, and it breaks zero-spend
+
+**Owner-confirmed 2026-10-01:** not registered — **no LLC, no EIN**, sole owner, no SAM.gov or SBA
+registrations.
+
+- Arkansas LLC: **$45 online / $50 mail** (verify at sos.arkansas.gov); franchise tax report
+  reportedly $150/yr; **an EIN is free and comes only from irs.gov**.
+- This gate sits under most of the rest of the board: SBIR/NSF registration, Stripe live, a bank
+  account, Shopify live, and any investor claim all depend on it.
+- **First, and free:** ask ASBTDC whether a **sole proprietorship** suffices for the intended path.
+  Do not spend $45 before that answer arrives.
 
 ---
 
@@ -96,10 +126,16 @@ The Global Peace & Human Security Framework is **independent, noncommercial, non
 
 ## Next actions, in order
 
-1. ⏳ Check **OCAST Small Business Research Assistance / OK Catalyst** — SBIR/STTR proposal support, no matching spend implied. Highest value-to-effort in this file.
-2. ⏳ Read the full **NSF 26-510** solicitation and decide whether the verification architecture is a defensible R&D pitch.
-3. ⏳ **Draft the NSF Project Pitch** (four sections, character caps above). This is a writing task, not a spend.
-4. ⏳ Confirm with OCAST whether "autonomous systems" can cover agentic AI before investing in the Industry Innovation route.
-5. ⏳ Verify Emergent Ventures, Verizon, Hello Alice, Pollination Project statuses individually.
+1. ⏳ **Call ASBTDC** — free, no spend. Ask: (a) does a **sole proprietorship** suffice for the
+   SBIR/SAM.gov path, or is an LLC required? (b) SBIR/STTR proposal review, (c) SAM.gov
+   registration help. This answers the entity gate without spending anything.
+2. ⏳ **Owner decides on the LLC** — $45 online. Breaks zero-spend, so it is the owner's call.
+   Do not proceed until (1) has answered.
+3. ⏳ Read the full **NSF 26-510** solicitation and decide whether the verification architecture is
+   a defensible R&D pitch.
+4. ⏳ **Draft the NSF Project Pitch** (four sections, character caps above). A writing task, not a spend.
+5. ⏳ Verify Emergent Ventures, Verizon, Hello Alice and Pollination Project statuses individually.
+6. ⏳ **AEDC SBIR Matching Grant is post-award only** — revisit only once a Phase I award exists.
+   It is a follow-on, not an entry point.
 
 **Nothing in this file is an application, a submission, or a commitment.** No application has been filed. No funding has been requested or received. No revenue exists.
