@@ -70,20 +70,52 @@ eligible sector** — so Oddfellow does not have to be reframed into aerospace o
 real constraint is sequencing: this is money *after* an SBIR award, so it is a Phase I follow-on,
 not an entry point.
 
-### 2b. ASBTDC — ✅ VERIFIED as an entity (asbtdc.org); specific services ⏳ LEAD
+### 2b. ASBTDC — ✅ VERIFIED services (asbtdc.org's own pages, re-checked 2026-10-01 23:15 UTC)
 
 The **Arkansas Small Business and Technology Development Center** is funded in part through a
 cooperative agreement with the **U.S. Small Business Administration**, in partnership with **UA
-Little Rock** and other Arkansas institutions. It offers **free one-to-one confidential consulting
-and market research** plus affordable educational events, and runs a **"Develop a Tech-Based
-Business"** track for technology ventures with commercial potential.
+Little Rock** and other Arkansas institutions.
 
-**Reported but NOT verified by me:** the phone number (501) 916-3700, SBIR/STTR proposal review,
-SAM.gov registration help, and a "Lab2Launch" accelerator. Claude reports these; I have not opened
-a page confirming any of them. **Treat them as a lead and confirm on first contact.**
+**Now verified from ASBTDC's own pages** (previously carried as leads — the leads were right, but
+"right" is not the same as "checked"):
 
-**Why this is the right first call:** it is free, it is the SBA's own Arkansas vehicle, and it can
-answer the entity question below without spending anything.
+| Service | Verified |
+|---|---|
+| Individualised consulting, free of charge | ✅ |
+| Locating agency research topics that match the project | ✅ |
+| Guidance on searching prior awards | ✅ |
+| Drafting a project summary to open a conversation with a program manager | ✅ |
+| **Assistance with federal registrations** | ✅ (covers the SAM.gov need; SAM.gov is not named on the page) |
+| **SBIR/STTR proposal drafting *and review*** | ✅ |
+| SBIR/STTR budget preparation | ✅ |
+| Market research: demographics, competitors, industry benchmarks, GIS mapping | ✅ |
+| Introductions to university and company partners | ✅ |
+| **Lab2Launch SBIR/STTR Accelerator** (agency-specific cohorts) | ✅ — see the warning below |
+| Training: intro seminars, full-day proposal-writing workshops, agency webinars | ✅ |
+| SBIR Self-Assessment tool | ✅ |
+| Navigation of the 11 federal agencies that fund SBIR/STTR | ✅ |
+
+**⚠️ Two Lab2Launch variants, and both are currently CLOSED — do not spend a call on them:**
+
+- **Lab2Launch** (R&D and commercialisation services, incl. SBIR/STTR application support via
+  Science Venture Studios at a stated $10–30K value, a $5K technology assessment, and a $4K
+  venture intern): **applications closed 1 July 2024.**
+- **Lab2Launch Accelerator** (six-week virtual, agency-specific cohort; the summer 2026 cohort was
+  an **NIH** proposal lab): **summer 2026 applications have closed.**
+
+**🔑 The sequencing finding that matters most.** ASBTDC also runs an **SBIR/STTR Proposal Lab for
+NSF**, and its own page states the prerequisite plainly: *NSF requires an approved Project Pitch
+before a company may participate.* So the **Project Pitch is the true first step**, not the
+accelerator — and ASBTDC staff can help prepare the pitch. That reorders the action list below.
+
+**Reported by Claude but still NOT verified by me: the phone number (501) 916-3700.** ASBTDC's own
+pages show different contacts (e.g. Rebecca Todd, 501.831.2584, for the NSF Proposal Lab), so
+**treat 916-3700 as unconfirmed and use the contact form or the published address** until someone
+confirms it. This is the one Claude claim I could not close.
+
+**Why this is still the right first call:** it is free, it is the SBA's own Arkansas vehicle, it can
+answer the entity question below without spending anything, and it can help with the Project Pitch,
+which is the actual gating step for the NSF lane.
 
 ### 2c. The entity gate — ⏳ OWNER DECISION, and it breaks zero-spend
 
@@ -126,15 +158,23 @@ The Global Peace & Human Security Framework is **independent, noncommercial, non
 
 ## Next actions, in order
 
+**Reordered 2026-10-01 23:15 UTC after verifying ASBTDC's own pages** — the Project Pitch turns out
+to be the gating step, not the accelerator, and two accelerators are closed.
+
 1. ⏳ **Call ASBTDC** — free, no spend. Ask: (a) does a **sole proprietorship** suffice for the
-   SBIR/SAM.gov path, or is an LLC required? (b) SBIR/STTR proposal review, (c) SAM.gov
-   registration help. This answers the entity gate without spending anything.
+   SBIR/federal-registration path, or is an LLC required? (b) proposal review, (c) federal
+   registration (SAM.gov) help, (d) **help preparing the NSF Project Pitch**, which ASBTDC's own
+   page names as the prerequisite for its NSF Proposal Lab. This answers the entity gate without
+   spending anything. **Do not ask about Lab2Launch** — both variants are closed.
 2. ⏳ **Owner decides on the LLC** — $45 online. Breaks zero-spend, so it is the owner's call.
    Do not proceed until (1) has answered.
-3. ⏳ Read the full **NSF 26-510** solicitation and decide whether the verification architecture is
-   a defensible R&D pitch.
-4. ⏳ **Draft the NSF Project Pitch** (four sections, character caps above). A writing task, not a spend.
+3. ⏳ **Draft the NSF Project Pitch** (four sections, character caps above). This moved *up* the
+   list: it is a writing task, it costs nothing, and it is the prerequisite for both the NSF lane
+   and ASBTDC's NSF Proposal Lab.
+4. ⏳ Read the full **NSF 26-510** solicitation and decide whether the verification architecture is
+   a defensible R&D pitch. (Can run alongside 3.)
 5. ⏳ Verify Emergent Ventures, Verizon, Hello Alice and Pollination Project statuses individually.
+   **Verizon and Emergent Ventures remain unverified leads** — nothing has been checked on them.
 6. ⏳ **AEDC SBIR Matching Grant is post-award only** — revisit only once a Phase I award exists.
    It is a follow-on, not an entry point.
 
