@@ -31,7 +31,15 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterator
 
-from .schema import Job, Status, canonical_json, result_hash
+from .schema import APPROVAL_REQUIRED, Job, Risk, Status, canonical_json, result_hash
+
+
+class ClaimRefused(Exception):
+    """A claim was refused. Distinct from an error: refusal is a normal outcome."""
+
+
+class SubmitRefused(Exception):
+    """A result submission was refused."""
 
 
 SCHEMA = """
@@ -59,6 +67,9 @@ CREATE TABLE IF NOT EXISTS jobs (
     result        TEXT,
     result_hash   TEXT,
     error         TEXT,
+    verified      INTEGER NOT NULL DEFAULT 0,
+    verified_by   TEXT,
+    verification_evidence TEXT,
     created_at    TEXT NOT NULL,
     updated_at    TEXT NOT NULL
 );
@@ -82,6 +93,15 @@ CREATE TABLE IF NOT EXISTS flags (
 );
 """
 
+#: Columns added after the first release. Applied idempotently so an existing
+#: connector database upgrades in place rather than needing to be deleted -- a
+#: queue that must be discarded to be upgraded is a queue that loses work.
+_ADDED_COLUMNS = (
+    ("jobs", "verified", "INTEGER NOT NULL DEFAULT 0"),
+    ("jobs", "verified_by", "TEXT"),
+    ("jobs", "verification_evidence", "TEXT"),
+)
+
 #: Detail keys the audit log refuses to store. A payload that reaches the log has
 #: escaped the approval gate and the scoping rules, so this is enforced centrally
 #: rather than trusted to each caller.
@@ -104,7 +124,17 @@ class Store:
         self._conn = sqlite3.connect(self.path)
         self._conn.row_factory = sqlite3.Row
         self._conn.executescript(SCHEMA)
+        self._migrate()
         self._conn.commit()
+
+    def _migrate(self) -> None:
+        """Add columns introduced after the first release, if they are missing."""
+        for table, column, decl in _ADDED_COLUMNS:
+            existing = {
+                r["name"] for r in self._conn.execute(f"PRAGMA table_info({table})")
+            }
+            if column not in existing:
+                self._conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {decl}")
 
     def close(self) -> None:
         self._conn.close()
@@ -247,6 +277,8 @@ class Store:
             "status=:status, provider=:provider, transport=:transport, "
             "depends_on=:depends_on, attempts=:attempts, max_attempts=:max_attempts, "
             "result=:result, result_hash=:result_hash, error=:error, "
+            "verified=:verified, verified_by=:verified_by, "
+            "verification_evidence=:verification_evidence, "
             "updated_at=:updated_at WHERE job_id=:job_id",
             row,
         )
@@ -260,17 +292,81 @@ class Store:
             job.error = error
         return self._update(job, actor, "job.status")
 
-    def claim_job(self, job_id: str, provider: str, transport: Any, actor: str) -> Job:
-        """Move a job to RUNNING under a chosen provider/transport."""
-        job = self._require(job_id)
-        job.status = Status.RUNNING
-        job.provider = provider
-        job.transport = transport
-        job.attempts += 1
-        return self._update(job, actor, "job.claim", provider=provider)
+    def claim_job(
+        self,
+        job_id: str,
+        provider: str,
+        transport: Any,
+        actor: str,
+        *,
+        paused: bool = False,
+        approved: bool = False,
+    ) -> Job:
+        """Claim a READY job for a provider, or refuse with a reason.
 
-    def submit_result(self, job_id: str, result: Any, actor: str) -> tuple[Job, bool]:
+        Refusals, each preventing a specific failure:
+
+          * **paused** -- the emergency stop blocks claims, not merely new work.
+          * **not READY** -- a RUNNING job must not be claimed twice, and a
+            COMPLETE one must not be quietly reopened by a second claim.
+          * **unapproved high/critical** -- approval is checked before the claim,
+            so gated work cannot be picked up and run first.
+
+        The state change is a *conditional* UPDATE, so two providers racing produce
+        one winner and one refusal rather than two RUNNING rows.
+        """
+        job = self._require(job_id)
+        if paused:
+            self.audit(actor, "job.claim.refused", job_id=job_id, reason="paused")
+            raise ClaimRefused("emergency pause is set")
+        if job.status is not Status.READY:
+            self.audit(actor, "job.claim.refused", job_id=job_id, reason=job.status.value)
+            raise ClaimRefused(f"job is {job.status.value}, not READY")
+        if job.risk in APPROVAL_REQUIRED and not approved:
+            self.audit(actor, "job.claim.refused", job_id=job_id, reason="unapproved")
+            raise ClaimRefused(
+                f"{job.risk.value}-risk work cannot be claimed before it is approved"
+            )
+
+        cur = self._conn.execute(
+            "UPDATE jobs SET status=?, provider=?, transport=?, attempts=attempts+1, "
+            "updated_at=? WHERE job_id=? AND status=?",
+            (
+                Status.RUNNING.value,
+                provider,
+                transport.value if transport else None,
+                _now(),
+                job_id,
+                Status.READY.value,
+            ),
+        )
+        self._conn.commit()
+        if cur.rowcount != 1:
+            # Lost the race between the read above and this update.
+            self.audit(actor, "job.claim.refused", job_id=job_id, reason="race")
+            raise ClaimRefused("job was claimed concurrently")
+
+        self.audit(actor, "job.claim", job_id=job_id, provider=provider)
+        return self._require(job_id)
+
+    def submit_result(
+        self,
+        job_id: str,
+        result: Any,
+        actor: str,
+        *,
+        provider: str | None = None,
+    ) -> tuple[Job, bool]:
         """Record a result. Returns ``(job, is_new_outcome)``.
+
+        Refusals:
+
+          * **not RUNNING** -- a result may only be submitted against work that was
+            actually claimed. Otherwise a provider could answer a job it never took.
+          * **wrong provider** -- only the provider holding the claim may submit.
+            This is what stops a second provider replaying a result into a job it
+            does not own, and it is checked *before* the idempotency comparison so
+            an unauthorised replay is refused rather than silently deduplicated.
 
         If the same job is retried and produces identical content, the hash matches
         and the submission is recorded as a duplicate rather than a second
@@ -278,6 +374,14 @@ class Store:
         providers producing the same answer is one answer.
         """
         job = self._require(job_id)
+        if job.status is not Status.RUNNING:
+            self.audit(actor, "job.result.refused", job_id=job_id, reason=job.status.value)
+            raise SubmitRefused(f"job is {job.status.value}, not RUNNING")
+        if provider is not None and job.provider != provider:
+            self.audit(actor, "job.result.refused", job_id=job_id, reason="not_claim_owner")
+            raise SubmitRefused(
+                f"job is claimed by {job.provider!r}; {provider!r} may not submit a result"
+            )
         digest = result_hash(result)
         if job.result_hash == digest:
             self.audit(actor, "job.result.duplicate", job_id=job_id)
@@ -287,6 +391,30 @@ class Store:
         job.status = Status.COMPLETE
         job.error = None
         return self._update(job, actor, "job.result", result_hash=digest), True
+
+    def verify_result(
+        self, job_id: str, verified_by: str, evidence: str
+    ) -> Job:
+        """Mark a COMPLETE result as VERIFIED. Separate from COMPLETE, on purpose.
+
+        COMPLETE means a result was submitted. It does not mean the result is true,
+        and a system that treats the two as the same will eventually act on an
+        unverified claim as though it were company state. So verification is its own
+        act, performed by someone other than the submitter, and it **requires
+        evidence** -- a bare "looks fine" is refused, because an unevidenced
+        verification is indistinguishable from no verification at all.
+        """
+        job = self._require(job_id)
+        if job.status is not Status.COMPLETE:
+            raise ValueError(f"cannot verify a job that is {job.status.value}")
+        if not (evidence or "").strip():
+            raise ValueError("verification requires evidence")
+        if verified_by == job.provider:
+            raise ValueError("a result cannot be verified by the provider that submitted it")
+        job.verified = True
+        job.verified_by = verified_by
+        job.verification_evidence = evidence.strip()
+        return self._update(job, verified_by, "job.verified", evidence=evidence)
 
     def fail_job(self, job_id: str, error: str, actor: str, retryable: bool = True) -> Job:
         """Record a failure, choosing retryable vs terminal from evidence."""

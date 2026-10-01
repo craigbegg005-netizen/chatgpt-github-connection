@@ -130,6 +130,13 @@ class Job:
     result: Any = None
     result_hash: str | None = None
     error: str | None = None
+    # COMPLETE means a result was SUBMITTED. It does not mean the result is true,
+    # and it must never be read as company state until someone has verified it.
+    # These three fields are the difference, kept explicit so the distinction
+    # cannot be lost by a reader who only checks `status`.
+    verified: bool = False
+    verified_by: str | None = None
+    verification_evidence: str | None = None
     created_at: str | None = None
     updated_at: str | None = None
 
@@ -145,6 +152,7 @@ class Job:
         data["depends_on"] = canonical_json(list(self.depends_on))
         data["payload"] = canonical_json(self.payload)
         data["result"] = canonical_json(self.result) if self.result is not None else None
+        data["verified"] = 1 if self.verified else 0
         return data
 
     @classmethod
@@ -164,6 +172,9 @@ class Job:
             result=json.loads(row["result"]) if row["result"] is not None else None,
             result_hash=row["result_hash"],
             error=row["error"],
+            verified=bool(row.get("verified", 0)),
+            verified_by=row.get("verified_by"),
+            verification_evidence=row.get("verification_evidence"),
             created_at=row["created_at"],
             updated_at=row["updated_at"],
         )

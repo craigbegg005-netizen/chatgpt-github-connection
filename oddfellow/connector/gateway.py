@@ -28,6 +28,7 @@ from dataclasses import dataclass, field
 from typing import Any, Callable
 
 from .store import Store
+from .tokens import TOOL_SCOPES, AuthError, TokenStore
 
 
 @dataclass
@@ -114,11 +115,11 @@ def build_tool_surface() -> list[ToolSpec]:
     ]
 
 
-#: What must be true before the gateway is allowed to serve. Each entry is a
-#: fact to establish, not a task to tick -- the scaffold reads this list at
-#: runtime and refuses while any entry is unmet.
+#: What must be true before the gateway is allowed to serve. Each entry is a fact
+#: to establish, not a task to tick -- the gateway reads this list at runtime and
+#: refuses while any entry is unmet.
 PRECONDITIONS = (
-    "a scoped, revocable connector token exists and is distinct from ODDFELLOW_OWNER_TOKEN",
+    "at least one scoped connector token has been issued",
     "token verification is implemented and rejects anything else",
     "host and origin allow-listing is configured",
     "an approval gate is wired for every mutating tool",
@@ -128,11 +129,17 @@ PRECONDITIONS = (
 
 @dataclass
 class Gateway:
-    """Scaffold. Refuses to serve unless explicitly enabled *and* fully preconditioned."""
+    """Refuses to serve unless explicitly enabled *and* fully preconditioned.
+
+    Credential validation is **real**: every call must present a token issued by the
+    TokenStore, carrying the scope the tool requires. An earlier version accepted any
+    non-empty string once the preconditions were marked ready, which is a formality
+    that reads as security in a review and provides none.
+    """
 
     store: Store
+    tokens: TokenStore | None = None
     enabled: bool = False
-    connector_token_configured: bool = False
     host_origin_allowlisted: bool = False
     approval_gate_configured: bool = False
     tools: list[ToolSpec] = field(default_factory=build_tool_surface)
@@ -141,7 +148,7 @@ class Gateway:
         unmet: list[str] = []
         if not self.enabled:
             unmet.append("gateway is not enabled (set enabled=True deliberately, not by default)")
-        if not self.connector_token_configured:
+        if self.tokens is None or not self.tokens.list_tokens():
             unmet.append(PRECONDITIONS[0])
         if not self.host_origin_allowlisted:
             unmet.append(PRECONDITIONS[2])
@@ -166,16 +173,34 @@ class Gateway:
         }
 
     def call(self, tool_name: str, credential: str | None = None, **kwargs: Any) -> dict:
-        """Refuse, or dispatch. There is no permissive default."""
+        """Refuse, or dispatch. There is no permissive default.
+
+        Order matters: serving state, then the tool's existence, then the
+        credential, then the scope. A refusal always carries a status so a caller
+        cannot mistake it for success.
+        """
         if not self.may_serve():
             return self.refusal()
-        if not credential:
-            return {"ok": False, "error": "missing connector credential"}
         spec = next((t for t in self.tools if t.name == tool_name), None)
         if spec is None:
-            return {"ok": False, "error": f"unknown tool: {tool_name}"}
+            return {"ok": False, "error": "unknown_tool", "detail": f"unknown tool: {tool_name}", "status": 404}
+        try:
+            assert self.tokens is not None  # guaranteed by may_serve()
+            self.tokens.verify(credential, TOOL_SCOPES.get(tool_name))
+        except AuthError as exc:
+            return {**exc.as_payload(), "status": exc.status}
         if spec.mutates and not self.approval_gate_configured:
-            return {"ok": False, "error": f"{tool_name} requires an approval gate"}
+            return {
+                "ok": False,
+                "error": "approval_gate_required",
+                "detail": f"{tool_name} requires an approval gate",
+                "status": 403,
+            }
         if spec.handler is None:
-            return {"ok": False, "error": f"{tool_name} has no handler wired"}
+            return {
+                "ok": False,
+                "error": "not_implemented",
+                "detail": f"{tool_name} has no handler wired",
+                "status": 501,
+            }
         return {"ok": True, "result": spec.handler(**kwargs)}

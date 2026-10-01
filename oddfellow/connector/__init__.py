@@ -48,6 +48,8 @@ from .schema import (
     result_hash,
 )
 from .store import Store
+from .store import ClaimRefused, SubmitRefused
+from .tokens import TOOL_SCOPES, AuthError, Scope, TokenRecord, TokenStore
 
 __all__ = [
     "APPROVAL_REQUIRED",
@@ -59,6 +61,13 @@ __all__ = [
     "Risk",
     "Status",
     "Store",
+    "ClaimRefused",
+    "SubmitRefused",
+    "TOOL_SCOPES",
+    "AuthError",
+    "Scope",
+    "TokenRecord",
+    "TokenStore",
     "TRANSPORT_LADDER",
     "TaskKind",
     "ToolSpec",

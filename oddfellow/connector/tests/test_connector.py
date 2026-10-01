@@ -21,12 +21,14 @@ import pytest
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from connector import (  # noqa: E402
+    Scope,
     Gateway,
     Job,
     Risk,
     Status,
     Store,
     TaskKind,
+    TokenStore,
     Transport,
     build_registry,
     choose_transport,
@@ -95,20 +97,25 @@ def test_identical_result_is_recognised_not_duplicated(store):
     j = job()
     store.create_job(j, actor="letta")
     store.claim_job(j.job_id, "letta", Transport.API, actor="letta")
-
     _, first_new = store.submit_result(j.job_id, {"answer": 42}, actor="letta")
-    _, second_new = store.submit_result(j.job_id, {"answer": 42}, actor="letta")
-
     assert first_new is True
-    assert second_new is False
     assert store.get_job(j.job_id).status is Status.COMPLETE
+
+    # A retry: the job goes back to READY, is claimed again, and produces the same
+    # content. That must be recognised as the SAME outcome, not a second one.
+    store.set_status(store.get_job(j.job_id), Status.READY, actor="letta")
+    store.claim_job(j.job_id, "letta", Transport.API, actor="letta")
+    _, second_new = store.submit_result(j.job_id, {"answer": 42}, actor="letta")
+    assert second_new is False
 
 
 def test_key_order_does_not_change_the_result_hash(store):
     j = job()
     store.create_job(j, actor="letta")
+    store.claim_job(j.job_id, "letta", Transport.API, actor="letta")
     _, a = store.submit_result(j.job_id, {"a": 1, "b": 2}, actor="x")
-    store.set_status(store.get_job(j.job_id), Status.RUNNING, actor="x")
+    store.set_status(store.get_job(j.job_id), Status.READY, actor="x")
+    store.claim_job(j.job_id, "letta", Transport.API, actor="x")
     _, b = store.submit_result(j.job_id, {"b": 2, "a": 1}, actor="y")
     assert a is True and b is False, "key order must not create a second outcome"
 
@@ -249,6 +256,7 @@ def test_job_with_unfinished_dependency_is_not_ready(store):
     store.create_job(second, actor="x")
     assert [j.job_id for j in store.ready_jobs()] == [first.job_id]
 
+    store.claim_job(first.job_id, "letta", Transport.API, actor="x")
     store.submit_result(first.job_id, {"done": True}, actor="x")
     assert {j.job_id for j in store.ready_jobs()} == {first.job_id, second.job_id} or (
         second.job_id in {j.job_id for j in store.ready_jobs()}
@@ -286,6 +294,7 @@ def test_audit_never_records_payload_or_result(store):
     secret = "OWNER-SECRET-VALUE"
     j = job(title="handle the thing", payload={"token": secret})
     store.create_job(j, actor="x")
+    store.claim_job(j.job_id, "letta", Transport.API, actor="x")
     store.submit_result(j.job_id, {"answer": secret}, actor="x")
 
     trail = store.audit_trail(limit=100)
@@ -337,15 +346,19 @@ def test_gateway_still_refuses_when_enabled_without_preconditions(store):
 
 
 def test_gateway_requires_a_credential_even_when_ready(store):
+    tokens = TokenStore(store._conn)
+    tokens.issue("anthropic", {Scope.READ})
     g = Gateway(
         store,
+        tokens=tokens,
         enabled=True,
-        connector_token_configured=True,
         host_origin_allowlisted=True,
         approval_gate_configured=True,
     )
     assert g.may_serve() is True
-    assert g.call("get_project_state", credential=None)["ok"] is False
+    refused = g.call("get_project_state", credential=None)
+    assert refused["ok"] is False
+    assert refused["status"] == 401
 
 
 def test_gateway_never_accepts_the_owner_master_token_as_a_connector_credential(store):
@@ -367,7 +380,9 @@ def test_gateway_never_accepts_the_owner_master_token_as_a_connector_credential(
 
 
 def test_mutating_tool_requires_an_approval_gate(store):
-    g = Gateway(store, enabled=True, connector_token_configured=True, host_origin_allowlisted=True)
+    tokens = TokenStore(store._conn)
+    tokens.issue("anthropic", {Scope.READ})
+    g = Gateway(store, tokens=tokens, enabled=True, host_origin_allowlisted=True)
     assert g.may_serve() is False  # no approval gate yet
 
 
