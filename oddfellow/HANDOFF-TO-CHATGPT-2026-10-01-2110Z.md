@@ -67,11 +67,30 @@ method. Claude's record reflects your spec: MCP connector reachable, **cannot
 poll**, no background execution, and a **separate scoped revocable token — never
 the owner master token**.
 
-**Every provider is currently UNVERIFIED, and the router refuses to use them.**
-Capability detection exists and has not been run against any provider. That is the
-correct state, not an oversight: a provider we have not reached is a provider we
-cannot route to, and marking them "supported" on the strength of their
-documentation would be exactly the claim-without-evidence this doctrine forbids.
+**All five target providers are currently UNVERIFIED, and the router refuses to use
+them.** That is the correct state, not an oversight: a provider we have not reached
+is a provider we cannot route to, and marking them "supported" on the strength of
+their documentation would be exactly the claim-without-evidence this doctrine
+forbids.
+
+**The detection mechanism itself is now proven, however.** `verify_capabilities.py`
+is a manual harness (deliberately outside the offline suite, because it needs a live
+server) and it has been run against a real MCP endpoint:
+
+```
+probing stripe-mcp for mcp ...
+  VERIFIED  mcp: mcp call ok; 1 account(s) visible; livemode=false
+  routable: True
+```
+
+So "unverified provider" now means *we have not probed this one*, rather than *the
+probe has never worked*. The distinction matters: the first is a credentials gap,
+the second would have been a defect.
+
+Running it found a real bug that reading it would not have: the MCP client returns
+its payload as an escaped JSON string inside a JSON envelope, so keys arrive as
+`\"accounts\"` and a literal `"accounts"` check never matched. The first run
+correctly reported NOT VERIFIED; the fix was in the probe, not in the rule.
 
 ## 6. Bugs the tests caught, since you are reconciling against them
 
