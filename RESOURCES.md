@@ -37,9 +37,17 @@ holds. Three notes from that sweep:
 | Repo (only one this GitHub App can see) | `craigbegg005-netizen/chatgpt-github-connection` | ✅ VERIFIED — `installation/repositories` → `total_count: 1` |
 | Canonical deploy branch | `letta/combined-single-service-v0.20.4` @ `8b455fd` | ✅ VERIFIED 2026-10-01 04:05 UTC |
 | `main` | `8ddfe325` | ✅ VERIFIED 2026-10-01 04:05 UTC |
+| `letta/universal-connector-v0.21` @ `1cd5288` | **Universal Connector core** — `oddfellow/connector/`, 35 tests | ✅ VERIFIED 2026-10-01 21:10 UTC (pushed, local SHA == remote). **Dev branch; deploy branch and the live service are untouched.** |
 | `letta/frontend-letta-backend` | `445e05c` | ✅ VERIFIED |
 | `letta/recovery-capture-2026-09-30` | `f27ec28` | ✅ VERIFIED |
 | `letta/independent-verification-2026-09-30` | `46d731b` | ✅ VERIFIED — independent reproduction of the deploy branch's claims |
+
+**Connector status, stated at the level it has actually reached:** the core is
+**TESTED** (35 offline tests) and **COMMITTED**. It is **not CONNECTED** to any
+provider, **not DEPLOYED**, and the MCP gateway **serves nothing**. Every provider
+record is UNVERIFIED and the router refuses to route to them — deliberately, since
+capability detection has not been run against a real provider. Do not read this
+row as "the connector works with Claude"; it does not, yet.
 
 **⚠️ Structural gap:** no Oddfellow or Begg AI codebase exists under version control anywhere
 this installation can reach. The recovered v0.16/v0.17 services can only be rebuilt from their
