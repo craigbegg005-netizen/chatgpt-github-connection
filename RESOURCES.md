@@ -37,19 +37,29 @@ holds. Three notes from that sweep:
 | Repo (only one this GitHub App can see) | `craigbegg005-netizen/chatgpt-github-connection` | ✅ VERIFIED — `installation/repositories` → `total_count: 1` |
 | Canonical deploy branch | `letta/combined-single-service-v0.20.4` @ `8b455fd` | ✅ VERIFIED 2026-10-01 04:05 UTC |
 | `main` | `8ddfe325` | ✅ VERIFIED 2026-10-01 04:05 UTC |
-| `letta/universal-connector-v0.21` @ `231718e` | **Universal Connector core + security hardening** — `oddfellow/connector/`, **66 tests** (was 35) + a manual capability-detection harness | ✅ VERIFIED 2026-10-01 22:05 UTC (pushed, local SHA == remote). **Dev branch; deploy branch and the live service are untouched.** |
+| `letta/universal-connector-v0.21` @ `d23e51c` | **Universal Connector** — core, security hardening, and the Tier 3/4 handoff path. `oddfellow/connector/`, **89 tests** (was 35) + a manual capability-detection harness | ✅ VERIFIED 2026-10-01 22:15 UTC (pushed, local SHA == remote). **Dev branch; deploy branch and the live service are untouched.** |
 | `letta/voice-v1` @ `e83a61b` | **Voice V1 approval gate** — elevated-risk voice/chat commands enter a real `WAITING_AUTHORIZATION`; spoken approval binds to one exact pending action | ✅ VERIFIED 2026-10-01 21:50 UTC (pushed, local SHA == remote). Front-end wiring verified in a real browser; backend chain verified against the rehearsal. **Dev branch.** ⚠️ Nobody has spoken into a real phone — that verification is the owner's to run. |
 | `letta/frontend-letta-backend` | `445e05c` | ✅ VERIFIED |
 | `letta/recovery-capture-2026-09-30` | `f27ec28` | ✅ VERIFIED |
 | `letta/independent-verification-2026-09-30` | `46d731b` | ✅ VERIFIED — independent reproduction of the deploy branch's claims |
 
 **Connector status, stated at the level it has actually reached:** the core is
-**TESTED** (66 offline tests) and **COMMITTED**, and its credential model is now
+**TESTED** (89 offline tests) and **COMMITTED**, and its credential model is now
 **real** — scoped, revocable, per-provider tokens with constant-time verification,
 and the owner master token refused *by value*. It is **not CONNECTED** to any
-provider, **not DEPLOYED**, and the MCP gateway **serves nothing**. Every provider
-record is UNVERIFIED and the router refuses to route to them — deliberately. Do not
-read this row as "the connector works with Claude"; it does not, yet.
+provider and **not DEPLOYED**; the MCP gateway **serves nothing**. Every provider
+record is UNVERIFIED and the router refuses to route to them — deliberately.
+
+**One path IS usable today, and it needs nothing:** the **Tier 3 structured
+handoff** (`oddfellow/connector/handoff.py`). It renders the claimable queue as a
+document a human can paste into any AI, and turns the reply back into results
+through the same claim/approval enforcement. So work *can* move between Oddfellow
+and Claude now, at zero cost, with no account and no key. Demonstrated end to end:
+a low-risk result accepted as `COMPLETE` (and correctly **not** verified), and a
+critical-risk attempt **refused** with the job left `READY`.
+
+⚠️ Do not read the above as "the connector is connected to Claude". The MCP and API
+rungs are still unconnected; only the handoff rung works, and only by hand.
 
 ⚠️ **The connector's own MCP gateway is NOT the `BeggAi` MCP server.** The gateway
 is `oddfellow/connector/gateway.py` and it is unexposed; `BeggAi` is Stripe's MCP
