@@ -22,9 +22,11 @@ holds. Three notes from that sweep:
 - **Command center content changed slightly** — 4361 B → **4233 B** — same app, same title
   ("Begg AI Industries Command Center"), still **401** auth-gated. Consistent with ChatGPT
   still working on it. Not a regression.
-- **`oddfellow-letta-backend` is still not serving.** No HTTP response on `/healthz` or
-  `/livez`. Cause established: missing secrets failing the health check, deploy marked
-  `update_failed` — see `oddfellow/CORRECTION-502-CAUSE-2026-09-30.md`.
+- **✅ CORRECTED 2026-10-01 20:05 UTC — the deploy target IS serving.** The earlier note here
+  said `oddfellow-letta-backend` was not serving, and that was true of the name it was probing.
+  **The live service is `oddfellow-letta-backend-v0206`** and it has been up: `/livez` → 200
+  `{"live":true,"ready":false,...}`, `/` → 200, 29513 B. See the name-discrepancy section under
+  Oddfellow below. **The blocker is unchanged and is still only the two secrets.**
 
 ---
 
@@ -56,18 +58,50 @@ assuming they are equivalent.
 | Resource | Value | Status |
 |---|---|---|
 | Oddfellow agent (this agent) | `agent-a9a8eb2c-2fed-4554-9998-aa4783c7efc4` | ✅ VERIFIED — `GET /v1/agents/{id}` → `"name":"Oddfellow"` |
-| Deploy target | `oddfellow-letta-backend` · `srv-dau6tgqd0e5s73egkocg` | ⚠️ **NOT RESPONDING** |
-| Deploy URL | `https://oddfellow-letta-backend.onrender.com` | ⚠️ `/livez`, `/healthz`, `/` all HTTP 000 at 60s and 120s — verified 06:05 UTC |
+| **Deploy target — THE LIVE ONE** | **`oddfellow-letta-backend-v0206`** | 🟢 **LIVE, ⚠️ NOT READY** — `/livez` → 200 `{"live":true,"ready":false,"checks_failed":["LETTA_API_KEY","ODDFELLOW_OWNER_TOKEN"],"version":"0.20.6"}`. Verified 2026-10-01 20:05 UTC |
+| **Deploy URL — THE LIVE ONE** | **`https://oddfellow-letta-backend-v0206.onrender.com`** | 🟢 `/` → 200, 29513 B (page + API + PWA on one origin). This is the phone URL. |
+| ⚠️ `oddfellow-letta-backend` (NO `-v0206`) | `https://oddfellow-letta-backend.onrender.com` · `srv-dau6tgqd0e5s73egkocg` | 🔴 **DEAD — do not probe, do not watch.** No HTTP response. **This name is what `render.yaml` defines, and it is NOT the live service.** |
 | Rehearsal (ephemeral) | `https://verbal-breaking-assumptions-amount.trycloudflare.com` | 🟢 LIVE — v0.20.6, all acceptance gates pass |
 | Render workspace | `tea-darhbk97lnhs73dd86qg` | ⚠️ reported by Claude; not independently verifiable from here |
 
-**Blocker: `WAITING_CREDENTIAL`.** `LETTA_API_KEY` and `ODDFELLOW_OWNER_TOKEN` must be entered
-by the owner directly in the Render dashboard. Render's own evidence: build completed, app
-started, startup config check reported **both secrets missing**, `/healthz` → **503**, deploy
-marked **`update_failed`**. That confirms the credential blocker, **not** a build failure.
+### 🔴 The name discrepancy that cost twenty hours — read this before probing anything
+
+**The live service is `oddfellow-letta-backend-v0206`. The service `render.yaml` defines is
+`oddfellow-letta-backend`, and that one is dead.** They are different services. Probing the
+name in the config file while the deployment was running under a different name produced a
+**twenty-hour blind spot** in which the deployment was reported as "still not serving" by
+everyone watching the wrong hostname. Corrected 2026-10-01 19:16 UTC.
+
+**Two lessons, both mine to own:**
+
+1. **A hostname inferred from a config file is a guess, not a fact.** `render.yaml` defines what
+   a *blueprint* would create; it does not describe what already exists. I read the name out of
+   the file, never questioned it, and probed it for twenty hours. This is the same failure as
+   the 2026-09-30 command-center false alarm — there I probed a guessed hostname and wrongly
+   called a live service down; here I probed a guessed hostname and wrongly called a live
+   deployment blocked. **Same mistake, opposite sign.**
+2. **A monitor pointed at a stale identifier reports silence, and silence looks like "still
+   blocked."** My monitor was watching the dead name and dutifully reported nothing for twenty
+   hours. A monitor that cannot distinguish "no change" from "watching the wrong thing" is not
+   a monitor. When a monitored service has been unchanged for far longer than its normal
+   cadence, **re-derive the identifier rather than trusting the one in the watch.**
+
+**Blocker: `WAITING_CREDENTIAL` — on `oddfellow-letta-backend-v0206`, the live service.**
+`LETTA_API_KEY` and `ODDFELLOW_OWNER_TOKEN` must be entered by the owner directly in the Render
+dashboard. The service **builds, starts and serves**; it is fail-closed on exactly these two.
+Render's own evidence for the earlier failed deploy: build completed, app started, startup
+config check reported both secrets missing, `/healthz` → **503**, deploy marked
+**`update_failed`**. That confirms the credential blocker, **not** a build failure.
+
+⚠️ **The typed `ODDFELLOW_OWNER_TOKEN` must equal the vault value**, or the phone gets a clean
+`401` after everything else works.
+
+⚠️ **Cold start:** the first request after an idle period can take ~30 s or appear to hang. Every
+subsequent request is fast. **Do not report the first phone load as a failure.**
 
 **Deploy ownership:** Claude deploys this service. One AI deploys at a time. Do not redeploy or
-change env vars on it until the owner confirms the secrets are saved.
+change env vars on it until the owner confirms the secrets are saved. **Do not redeploy now** —
+the branch is current and a redeploy would only risk a cold-start window during acceptance.
 
 ### Oddfellow — other services
 
