@@ -37,26 +37,35 @@ holds. Three notes from that sweep:
 | Repo (only one this GitHub App can see) | `craigbegg005-netizen/chatgpt-github-connection` | ✅ VERIFIED — `installation/repositories` → `total_count: 1` |
 | Canonical deploy branch | `letta/combined-single-service-v0.20.4` @ `8b455fd` | ✅ VERIFIED 2026-10-01 04:05 UTC |
 | `main` | `8ddfe325` | ✅ VERIFIED 2026-10-01 04:05 UTC |
-| `letta/universal-connector-v0.21` @ `56bd6c6` | **Universal Connector** — core, security hardening, the Tier 3/4 handoff path, dead-letter + clean disconnect, and `post_gate_a_check.py` | ✅ VERIFIED 2026-10-01 22:40 UTC (pushed, local SHA == remote). `oddfellow/connector/` **102 tests**; the post-Gate-A script runs **17/17 machine steps** against a configured instance. **Dev branch; deploy branch and the live service are untouched.** |
+| `letta/universal-connector-v0.21` @ `8f9c139` | **Universal Connector** — core, security hardening, the Tier 3/4 handoff path, dead-letter + clean disconnect, an operator CLI, and `post_gate_a_check.py` | ✅ VERIFIED 2026-10-01 23:05 UTC (pushed, local SHA == remote). `oddfellow/connector/` **113 tests**; the post-Gate-A script runs **17/17 machine steps** against a configured instance. **Dev branch; deploy branch and the live service are untouched.** |
 | `letta/voice-v1` @ `e83a61b` | **Voice V1 approval gate** — elevated-risk voice/chat commands enter a real `WAITING_AUTHORIZATION`; spoken approval binds to one exact pending action | ✅ VERIFIED 2026-10-01 21:50 UTC (pushed, local SHA == remote). Front-end wiring verified in a real browser; backend chain verified against the rehearsal. **Dev branch.** ⚠️ Nobody has spoken into a real phone — that verification is the owner's to run. |
 | `letta/frontend-letta-backend` | `445e05c` | ✅ VERIFIED |
 | `letta/recovery-capture-2026-09-30` | `f27ec28` | ✅ VERIFIED |
 | `letta/independent-verification-2026-09-30` | `46d731b` | ✅ VERIFIED — independent reproduction of the deploy branch's claims |
 
 **Connector status, stated at the level it has actually reached:** the core is
-**TESTED** (102 offline tests) and **COMMITTED**, and its credential model is now
+**TESTED** (113 offline tests) and **COMMITTED**, and its credential model is now
 **real** — scoped, revocable, per-provider tokens with constant-time verification,
 and the owner master token refused *by value*. It is **not CONNECTED** to any
 provider and **not DEPLOYED**; the MCP gateway **serves nothing**. Every provider
 record is UNVERIFIED and the router refuses to route to them — deliberately.
 
 **One path IS usable today, and it needs nothing:** the **Tier 3 structured
-handoff** (`oddfellow/connector/handoff.py`). It renders the claimable queue as a
-document a human can paste into any AI, and turns the reply back into results
-through the same claim/approval enforcement. So work *can* move between Oddfellow
-and Claude now, at zero cost, with no account and no key. Demonstrated end to end:
-a low-risk result accepted as `COMPLETE` (and correctly **not** verified), and a
-critical-risk attempt **refused** with the job left `READY`.
+handoff** (`oddfellow/connector/handoff.py`), driven by an operator CLI
+(`oddfellow/connector/cli.py`). It renders the claimable queue as a document a human
+can paste into any AI, and turns the reply back into results through the same
+claim/approval enforcement. So work *can* move between Oddfellow and Claude now, at
+zero cost, with no account and no key:
+
+```
+python -m connector.cli --db state.db handoff --provider claude > to-claude.md
+python -m connector.cli --db state.db apply --provider claude --file reply.md
+```
+
+Demonstrated end to end by running it: a low-risk result accepted as `COMPLETE` (and
+correctly **not** verified), and a critical-risk attempt **refused** with the job
+left `READY`. `apply` exits **non-zero** when anything was refused, because a
+refusal is not a success.
 
 ⚠️ Do not read the above as "the connector is connected to Claude". The MCP and API
 rungs are still unconnected; only the handoff rung works, and only by hand.
