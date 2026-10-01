@@ -10,7 +10,60 @@
 
 ---
 
-# ✅ LATEST CYCLE — 2026-09-30 02:00 UTC
+# ✅ LATEST CYCLE — 2026-10-01 12:05 UTC
+
+**This supersedes every contradicting line below it.** Written from commands re-run
+against the live services at 12:00–12:05 UTC. **The 2026-09-30 02:00 section that
+follows is 34 hours old and predates a large amount of work** — read it for history,
+not for current state.
+
+## The critical path is unchanged, and its cause is established
+
+| Item | Status | Evidence |
+|---|---|---|
+| `oddfellow-letta-backend` | 🔴 **NOT SERVING** | **No HTTP response** on `/healthz` or `/livez` (40 s windows, 12:00 UTC). Render's edge returns its own 502 page intermittently. |
+| `oddfellow-letta-poc` | 🟢 LIVE, ⚠️ **still NOT configured** | `/healthz` → 200 `{"ok":false}`; `/api/letta/status` → **503** naming `LETTA_API_KEY` and `ODDFELLOW_OWNER_TOKEN`. Still **v0.20.2** — `/livez` → **404**, and the OpenAPI `version` is `0.20.2`. |
+| Live PWA `oddfellow-letta-ui-v020-pwa` | 🟢 LIVE | `/` → 200, 20897 B |
+
+**The cause of the 502 is the missing secrets, not a build failure.** `RESOURCES.md`
+records Render's own dashboard reading for `oddfellow-letta-backend`: *build
+completed, app started, startup config check reported both secrets missing,
+`/healthz` → 503, deploy marked `update_failed`.* That is a line-for-line match for
+the health-check collision — `/healthz` fails closed with 503, and Render treats a
+non-200 `healthCheckPath` as a failed deploy. Full reasoning, including a correction
+to a claim that said otherwise: `oddfellow/CORRECTION-502-CAUSE-2026-09-30.md`.
+
+**Ruled out this cycle:** the secrets were *not* saved on the wrong service.
+`oddfellow-letta-poc` is still unconfigured and still running v0.20.2, so nothing
+was added there either.
+
+**The fix:** enter `LETTA_API_KEY` and `ODDFELLOW_OWNER_TOKEN` in the Render
+dashboard for `oddfellow-letta-backend`, then trigger a deploy. Note
+`autoDeploy: false` — **saving env vars is not a deploy.**
+
+## Read these instead of the sections below
+
+The deploy branch carries four handoffs written after the 02:00 section here, plus a
+resource registry and a cross-AI correlation record:
+
+- `oddfellow/HANDOFF-2026-09-30-0625Z.md` — the most recent handoff, with addenda
+- `RESOURCES.md` — the resource registry; **re-verified 2026-10-01 04:05 UTC**
+- `oddfellow/CORRECTION-502-CAUSE-2026-09-30.md` — the 502 cause
+- `oddfellow/SECURITY-2026-09-30.md` — including a 2026-10-01 addendum: the
+  vulnerable service worker **is deployed** but is latent, because the API is on a
+  different origin in the current two-service layout
+- `IP-CLEARANCE-SEARCH-2026-09-30.md` — the name "Oddfellow" is crowded; register
+  clear in Classes 9/42, but an **unregistered** Steam publisher uses it in software
+- `oddfellow/CORRELATION-2026-09-30.md` — what each AI did, chronologically
+
+**What has changed since the 02:00 section:** v0.20.6 (was v0.20.4), **109 tests**
+(was 45), a **Cloudflare Worker** deploy target verified with a real Letta key, a
+Command Center, a full acceptance rehearsal with every gate green, and the security
+and IP work above.
+
+---
+
+# ⚠️ PREVIOUS CYCLE — 2026-09-30 02:00 UTC
 
 **This section supersedes every contradicting line below it, including the
 01:12–01:35 cycle that follows.** It was written from commands re-run against
