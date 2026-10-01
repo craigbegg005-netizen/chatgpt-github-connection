@@ -90,8 +90,16 @@ const BKEY='oddfellow.backend.v020';
 // at a page with no backend wiring, once at a backend that CORS-rejected it. A
 // static-only deploy (the PWA service) shares no origin with the API, so fall
 // back to the known backend when this origin does not answer /livez.
+//
+// The fallback must name a backend that is actually SERVING. It previously named
+// `oddfellow-letta-backend`, which has returned HTTP 000 (no response at all)
+// since 2026-09-30 -- so on any static-only deploy the fallback silently aimed
+// the page at a dead host, which presents to the owner as "Failed to fetch",
+// indistinguishable from a dead backend. Verified 2026-10-01 20:05 UTC:
+// `oddfellow-letta-backend-v0206` answers /livez 200 in ~0.13 s and serves the
+// current build (v0.20.6); the old hostname still returns 000.
 const SAME_ORIGIN_BACKEND=location.origin;
-const FALLBACK_BACKEND_URL='https://oddfellow-letta-backend.onrender.com';
+const FALLBACK_BACKEND_URL='https://oddfellow-letta-backend-v0206.onrender.com';
 let DEFAULT_BACKEND_URL=SAME_ORIGIN_BACKEND;
 async function chooseDefaultBackend(){
   try{
