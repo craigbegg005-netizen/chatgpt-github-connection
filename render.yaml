@@ -1,5 +1,24 @@
 # Render Blueprint for the Oddfellow Letta backend.
 #
+# 🔴 READ THIS FIRST (2026-10-01 19:16 UTC): the service that is actually serving
+# Oddfellow is `oddfellow-letta-backend-v0206`, and THIS FILE DOES NOT DEFINE IT.
+# This blueprint defines a service named `oddfellow-letta-backend`, which is a
+# different service and is currently dead (/livez -> no HTTP response at all).
+# Roughly twenty hours were spent probing the service named here while the live
+# one went unnoticed, because nothing recorded that the two both existed. That is
+# the whole cost of this comment's absence.
+#
+# Verified 2026-10-01 19:14 UTC:
+#   GET https://oddfellow-letta-backend-v0206.onrender.com/livez
+#   -> 200 {"live":true,"ready":false,
+#           "checks_failed":["LETTA_API_KEY","ODDFELLOW_OWNER_TOKEN"],
+#           "service":"oddfellow_letta_backend","version":"0.20.6"}
+# i.e. RUNNING but NOT READY -- fail-closed on two missing environment variables.
+# The app builds and starts. The fix is the two secrets, not the build.
+#
+# Do NOT "fix" this by renaming the service here: a Blueprint sync could then act
+# on the live service. Record the discrepancy and let the owner decide.
+#
 # Why this exists: the currently-deployed service (oddfellow-letta-poc) was
 # materialised from a Render environment variable (ODDFELLOW_LETTA_SRC) rather
 # than built from a repository. Its Render metadata therefore reports
