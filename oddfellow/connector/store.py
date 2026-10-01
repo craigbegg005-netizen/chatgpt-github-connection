@@ -102,16 +102,42 @@ _ADDED_COLUMNS = (
     ("jobs", "verification_evidence", "TEXT"),
 )
 
-#: Detail keys the audit log refuses to store. A payload that reaches the log has
-#: escaped the approval gate and the scoping rules, so this is enforced centrally
-#: rather than trusted to each caller.
+#: Detail keys the audit log refuses to store verbatim. A payload that reaches the
+#: log has escaped the approval gate and the scoping rules, so this is enforced
+#: centrally rather than trusted to each caller.
 _REDACTED_KEYS = frozenset(
-    {"payload", "result", "token", "secret", "password", "key", "credential", "authorization"}
+    {
+        "payload", "result", "token", "secret", "password", "key", "credential",
+        "authorization", "value", "body", "content", "detail", "text",
+    }
 )
+
+#: Scalars longer than this are truncated. Long enough for a reason or an error
+#: message, short enough that a mis-typed key cannot dump a document into the log.
+_MAX_SCALAR = 200
 
 
 def _now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _summarise(key: str, value: Any) -> Any:
+    """Decide what an audit entry may keep for one detail value.
+
+    Returns the value itself for short, non-payload scalars; a type-and-length
+    placeholder for everything else.
+    """
+    if key.lower() in _REDACTED_KEYS:
+        return f"<{type(value).__name__} len={len(value)}>" if hasattr(value, "__len__") else f"<{type(value).__name__}>"
+    if isinstance(value, (list, tuple, set, dict)):
+        return f"<{type(value).__name__} len={len(value)}>"
+    if isinstance(value, str):
+        if len(value) > _MAX_SCALAR:
+            return value[:_MAX_SCALAR] + f"...<truncated, {len(value)} chars>"
+        return value
+    if isinstance(value, (int, float, bool)) or value is None:
+        return value
+    return f"<{type(value).__name__}>"
 
 
 class Store:
@@ -154,17 +180,21 @@ class Store:
         job_id: str | None = None,
         **detail: Any,
     ) -> None:
-        """Append an audit event. Payloads and results are stripped, not trusted.
+        """Append an audit event. Payload-class values are stripped, not trusted.
 
-        ``detail`` is filtered against a deny-list and each surviving value is
-        replaced by its type and length. The log therefore answers "did this
-        happen, and how big was it" without becoming a copy of the data.
+        Two rules, and the split between them matters:
+
+          * a key naming payload-class data (``payload``, ``result``, ``token``,
+            ``value``, ...) is replaced by its type and length, whatever it holds;
+          * anything else that is a short scalar is kept verbatim, because an audit
+            log that cannot say *why* something happened is not an audit log --
+            it is a counter. ``reason``, ``error`` and ``provider`` are the entries
+            someone reads when reconstructing an incident.
+
+        Containers are always summarised, and long scalars are truncated, so a
+        mis-typed key cannot dump a document into the log.
         """
-        safe = {
-            k: (f"<{type(v).__name__} len={len(v)}>" if hasattr(v, "__len__") else f"<{type(v).__name__}>")
-            for k, v in detail.items()
-            if k.lower() not in _REDACTED_KEYS
-        }
+        safe = {k: _summarise(k, v) for k, v in detail.items()}
         self._conn.execute(
             "INSERT INTO audit (at, actor, event, job_id, detail) VALUES (?,?,?,?,?)",
             (_now(), actor, event, job_id, canonical_json(safe)),
@@ -426,6 +456,22 @@ class Store:
         job.error = error
         return self._update(job, actor, "job.fail", error=error)
 
+    def release_claim(self, job_id: str, actor: str, reason: str) -> Job:
+        """Return a RUNNING job to READY, so another provider can take it.
+
+        This is what makes a provider disconnect clean rather than destructive.
+        Without it, disconnecting a provider strands every job it held in RUNNING
+        forever -- the work is not lost, but nothing can reach it either, which is
+        the same outcome from the owner's side.
+        """
+        job = self._require(job_id)
+        if job.status is not Status.RUNNING:
+            raise ValueError(f"job is {job.status.value}, not RUNNING")
+        job.status = Status.READY
+        job.provider = None
+        job.transport = None
+        return self._update(job, actor, "job.claim.released", reason=reason)
+
     def _require(self, job_id: str) -> Job:
         job = self.get_job(job_id)
         if job is None:
@@ -443,3 +489,53 @@ class Store:
                     break
             if deps_satisfied:
                 yield job
+
+    # ---------------------------------------------------------- dead letters
+
+    def terminal_failures(self) -> list[Job]:
+        """Jobs that have exhausted their retries.
+
+        A terminal failure that is merely a status is a job nobody will ever look
+        at again. Exposing them as a set is what makes "dead letter" a behaviour
+        rather than a label: they can be counted, shown to the owner, and
+        deliberately revived.
+        """
+        return self.jobs(Status.FAILED_TERMINAL)
+
+    def dead_letter_report(self) -> dict:
+        """A summary suitable for the Command Center or a handoff."""
+        dead = self.terminal_failures()
+        return {
+            "count": len(dead),
+            "jobs": [
+                {
+                    "job_id": j.job_id,
+                    "title": j.title,
+                    "risk": j.risk.value,
+                    "attempts": j.attempts,
+                    "max_attempts": j.max_attempts,
+                    "provider": j.provider,
+                    "error": j.error,
+                }
+                for j in dead
+            ],
+        }
+
+    def requeue(self, job_id: str, actor: str, reason: str) -> Job:
+        """Deliberately revive a terminal failure. Requires a stated reason.
+
+        Explicit and audited on purpose: silently retrying a job that has already
+        failed terminally is how a queue turns a permanent fault into an infinite
+        loop. Reviving is a decision someone makes and signs.
+        """
+        job = self._require(job_id)
+        if job.status is not Status.FAILED_TERMINAL:
+            raise ValueError(f"job is {job.status.value}, not FAILED_TERMINAL")
+        if not (reason or "").strip():
+            raise ValueError("requeue requires a reason")
+        job.status = Status.READY
+        job.attempts = 0
+        job.provider = None
+        job.transport = None
+        job.error = None
+        return self._update(job, actor, "job.requeued", reason=reason)
