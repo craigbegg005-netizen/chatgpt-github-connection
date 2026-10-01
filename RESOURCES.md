@@ -38,6 +38,7 @@ holds. Three notes from that sweep:
 | Canonical deploy branch | `letta/combined-single-service-v0.20.4` @ `8b455fd` | ✅ VERIFIED 2026-10-01 04:05 UTC |
 | `main` | `8ddfe325` | ✅ VERIFIED 2026-10-01 04:05 UTC |
 | `letta/universal-connector-v0.21` @ `038b4e2` | **Universal Connector core** — `oddfellow/connector/`, 35 tests + a manual capability-detection harness | ✅ VERIFIED 2026-10-01 21:40 UTC (pushed, local SHA == remote). **Dev branch; deploy branch and the live service are untouched.** |
+| `letta/voice-v1` @ `e83a61b` | **Voice V1 approval gate** — elevated-risk voice/chat commands enter a real `WAITING_AUTHORIZATION`; spoken approval binds to one exact pending action | ✅ VERIFIED 2026-10-01 21:50 UTC (pushed, local SHA == remote). Front-end wiring verified in a real browser; backend chain verified against the rehearsal. **Dev branch.** ⚠️ Nobody has spoken into a real phone — that verification is the owner's to run. |
 | `letta/frontend-letta-backend` | `445e05c` | ✅ VERIFIED |
 | `letta/recovery-capture-2026-09-30` | `f27ec28` | ✅ VERIFIED |
 | `letta/independent-verification-2026-09-30` | `46d731b` | ✅ VERIFIED — independent reproduction of the deploy branch's claims |
