@@ -1,6 +1,6 @@
 # CURRENT_STATE
 
-**Date:** 2026-10-01 22:40 UTC
+**Date:** 2026-10-01 23:10 UTC
 **Author:** Oddfellow (Letta agent, `agent-a9a8eb2c-2fed-4554-9998-aa4783c7efc4`)
 **Rule:** every line below is either evidenced in this repository or marked unverified. Nothing here is carried over from a handoff on trust.
 
@@ -20,15 +20,27 @@ It is now on the canonical branch. **If you are reading this on another branch, 
 
 | Branch | Head | Role |
 |---|---|---|
-| `letta/combined-single-service-v0.20.4` | `bfbac1f` | **Canonical.** Deploy branch. Single origin: page + API + PWA. |
-| `letta/universal-connector-v0.21` | `56bd6c6` | **Universal Connector.** Dev branch, based on canonical. Not merged, not deployed. |
-| `letta/voice-v1` | `e83a61b` | **Voice V1 approval gate.** Dev branch. Not merged, not deployed. |
-| `main` | `8ddfe32` | Default branch. **Index only** — no `oddfellow/` directory, so a service pointed here cannot satisfy `rootDir: oddfellow` and its build fails with no obvious cause. |
+**This table is a SNAPSHOT, not a source of truth.** Re-derive it before acting on it:
+
+```bash
+git ls-remote --heads origin
+```
+
+A branch head written into a slow-moving document goes stale within the hour — that is
+not a defect in the document, it is a defect in treating a snapshot as current. On
+2026-10-01 this table was accurate when written and wrong twenty minutes later.
+
+| Branch | Head at 23:10 UTC | Role |
+|---|---|---|
+| `letta/combined-single-service-v0.20.4` | `bf62e44d` | **Canonical.** Deploy branch. Single origin: page + API + PWA. |
+| `letta/universal-connector-v0.21` | `8f9c139e` | **Universal Connector.** Dev branch, based on canonical. Not merged, not deployed. |
+| `letta/voice-v1` | `e83a61b7` | **Voice V1 approval gate.** Dev branch. Not merged, not deployed. |
+| `main` | `8ddfe325` | Default branch. **Index only** — no `oddfellow/` directory, so a service pointed here cannot satisfy `rootDir: oddfellow` and its build fails with no obvious cause. |
 | `letta/continuity-2026-09-30` | `a01e96e` | Where this file used to live. 72 commits behind canonical. |
 
-⚠️ **Branch heads move.** These were verified at the timestamp at the top of this file. Re-derive with
-`git ls-remote --heads origin` before relying on any of them — a stale head in a status document is
-exactly the failure this file exists to prevent.
+**What does NOT go stale, and is the part worth reading:** the *roles* column, the
+`main` warning, and the deploy-target warning below. Those are structural facts about
+the repository, not observations about its current state.
 
 ⚠️ The canonical branch is **named** `v0.20.4` but the code reports **`0.20.6`**. Report both; never assume equivalence.
 
@@ -42,10 +54,19 @@ exactly the failure this file exists to prevent.
 
 Two things changed that matter more than the line count:
 
-**1. There is a working, zero-cost provider path.** `oddfellow/connector/handoff.py`
-renders the claimable queue as a document a human can paste into any AI, and turns
-the reply back into results **through the same claim/approval enforcement as every
-other transport**. No API key, no MCP exposure, no account, no public endpoint.
+**1. There is a working, zero-cost provider path — and a command to drive it.**
+`oddfellow/connector/handoff.py` renders the claimable queue as a document a human
+can paste into any AI, and turns the reply back into results **through the same
+claim/approval enforcement as every other transport**. No API key, no MCP exposure,
+no account, no public endpoint. `oddfellow/connector/cli.py` makes it operable:
+
+```bash
+python -m connector.cli --db state.db handoff --provider claude > to-claude.md
+python -m connector.cli --db state.db apply --provider claude --file reply.md
+```
+
+`apply` exits **non-zero** when anything was refused — a refusal is a normal outcome
+but it is not a success, and a script must be able to tell the difference.
 
 Correct label: **"structured handoff path operational."**
 Incorrect label: "Claude CONNECTED." It is human-mediated, and the MCP and API rungs
@@ -61,7 +82,7 @@ are wrapped so it cannot leave production paused.
 
 ### Connector security, at the level it has actually reached
 
-🧪 **TESTED — 102 connector tests** (offline, deterministic) · 🛠 **IMPLEMENTED** ·
+🧪 **TESTED — 113 connector tests** (offline, deterministic) · 🛠 **IMPLEMENTED** ·
 ⏳ **NOT CONNECTED** to any provider · ⏳ **NOT DEPLOYED** · the MCP gateway
 **serves nothing**.
 
