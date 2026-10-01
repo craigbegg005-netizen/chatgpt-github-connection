@@ -1,6 +1,6 @@
 # CURRENT_STATE
 
-**Date:** 2026-10-01 19:50 UTC
+**Date:** 2026-10-01 22:40 UTC
 **Author:** Oddfellow (Letta agent, `agent-a9a8eb2c-2fed-4554-9998-aa4783c7efc4`)
 **Rule:** every line below is either evidenced in this repository or marked unverified. Nothing here is carried over from a handoff on trust.
 
@@ -20,15 +20,82 @@ It is now on the canonical branch. **If you are reading this on another branch, 
 
 | Branch | Head | Role |
 |---|---|---|
-| `letta/combined-single-service-v0.20.4` | `cff1f7c` | **Canonical.** Deploy branch. Single origin: page + API + PWA. |
+| `letta/combined-single-service-v0.20.4` | `bfbac1f` | **Canonical.** Deploy branch. Single origin: page + API + PWA. |
+| `letta/universal-connector-v0.21` | `56bd6c6` | **Universal Connector.** Dev branch, based on canonical. Not merged, not deployed. |
+| `letta/voice-v1` | `e83a61b` | **Voice V1 approval gate.** Dev branch. Not merged, not deployed. |
 | `main` | `8ddfe32` | Default branch. **Index only** — no `oddfellow/` directory, so a service pointed here cannot satisfy `rootDir: oddfellow` and its build fails with no obvious cause. |
 | `letta/continuity-2026-09-30` | `a01e96e` | Where this file used to live. 72 commits behind canonical. |
+
+⚠️ **Branch heads move.** These were verified at the timestamp at the top of this file. Re-derive with
+`git ls-remote --heads origin` before relying on any of them — a stale head in a status document is
+exactly the failure this file exists to prevent.
 
 ⚠️ The canonical branch is **named** `v0.20.4` but the code reports **`0.20.6`**. Report both; never assume equivalence.
 
 ---
 
-# ✅ LATEST CYCLE — 2026-10-01 19:50 UTC
+# ✅ LATEST CYCLE — 2026-10-01 22:40 UTC
+
+**This supersedes every contradicting line below it.**
+
+## The connector is no longer only safety scaffolding
+
+Two things changed that matter more than the line count:
+
+**1. There is a working, zero-cost provider path.** `oddfellow/connector/handoff.py`
+renders the claimable queue as a document a human can paste into any AI, and turns
+the reply back into results **through the same claim/approval enforcement as every
+other transport**. No API key, no MCP exposure, no account, no public endpoint.
+
+Correct label: **"structured handoff path operational."**
+Incorrect label: "Claude CONNECTED." It is human-mediated, and the MCP and API rungs
+are still unconnected. Demonstrated end to end: a low-risk result accepted as
+`COMPLETE` and correctly **not** verified; a critical-risk attempt **refused**, with
+the job left `READY`.
+
+**2. The post-Gate-A sequence is one command.** `oddfellow/post_gate_a_check.py`
+runs all twenty steps in order and was verified against the rehearsal (a
+fully-configured instance, so every step executes): **17 machine steps pass, 0 fail,
+5 remain for a human.** It restores what it changes — the pause and approval steps
+are wrapped so it cannot leave production paused.
+
+### Connector security, at the level it has actually reached
+
+🧪 **TESTED — 102 connector tests** (offline, deterministic) · 🛠 **IMPLEMENTED** ·
+⏳ **NOT CONNECTED** to any provider · ⏳ **NOT DEPLOYED** · the MCP gateway
+**serves nothing**.
+
+Credential handling is real, not a placeholder: 256-bit tokens, SHA-256 stored,
+constant-time compare, per-provider scopes, durable revocation, and the owner master
+token **refused by value**. Claims are a conditional UPDATE, so a race yields one
+winner. `submit_result` checks claim ownership **before** idempotency, so an
+unauthorised replay is refused rather than silently deduplicated. **`COMPLETE` does
+not imply `VERIFIED`** — verification is separate and requires evidence.
+
+All five provider records remain **UNVERIFIED** and the router refuses to route to
+them. That is correct: no capability probe has been run against a real provider.
+One probe *has* been run against a real MCP server (Stripe's), which proves the
+detection mechanism works — it does not make any target provider verified.
+
+### Voice
+
+`letta/voice-v1` @ `e83a61b`. Elevated-risk commands now enter a **real**
+`WAITING_AUTHORIZATION` in the backend, and a spoken approval binds only to exactly
+one pending action — ambiguous or mismatched, and nothing is approved.
+🛠 IMPLEMENTED · 🧪 BROWSER/BACKEND TESTED · ⚠️ **REAL PHONE MIC / STT UNVERIFIED.**
+
+### Unchanged
+
+**Gate A.** `oddfellow-letta-backend-v0206` is 🟢 LIVE on the current build with
+`ready:false`, because `LETTA_API_KEY` and `ODDFELLOW_OWNER_TOKEN` are not set. That
+is the only thing between the owner and an authenticated Oddfellow, and it is the
+only thing between the owner and running the post-Gate-A script for real.
+
+💰 **Verified revenue: $0.** Nothing submitted, sent, charged, or deployed.
+
+---
+
+# ✅ PREVIOUS CYCLE — 2026-10-01 19:50 UTC
 
 **This supersedes every contradicting line below it.**
 
