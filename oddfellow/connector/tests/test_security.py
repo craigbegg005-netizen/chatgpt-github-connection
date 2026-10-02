@@ -10,6 +10,7 @@ Offline and deterministic: in-memory SQLite, no network, no real credentials.
 
 from __future__ import annotations
 
+import json
 import os
 import sys
 
@@ -185,11 +186,29 @@ def test_claim_is_refused_while_paused(store):
 
 
 def test_high_risk_cannot_be_claimed_before_approval(store):
+    """Rewritten 2026-10-02: the second half of this test used to be the bug.
+
+    It asserted that `claim_job(..., approved=True)` claims a CRITICAL job. That
+    was the documented behaviour and it was the finding: the refusal was real but
+    the enforcement was nominal, because the boolean came from the caller and
+    nothing recorded who approved what. Now the claim needs an approval record
+    bound to this job, so the test asserts the refusal and then the *recorded*
+    path that opens it.
+    """
     j = job(risk=Risk.CRITICAL)
     store.create_job(j, actor="x")
     with pytest.raises(ClaimRefused):
         store.claim_job(j.job_id, "letta", Transport.API, actor="letta")
-    claimed = store.claim_job(j.job_id, "letta", Transport.API, actor="letta", approved=True)
+
+    rec = store.request_approval(j.job_id, actor="owner", note="please run this")
+    assert rec["state"] == "WAITING_AUTHORIZATION"
+    with pytest.raises(ClaimRefused):
+        store.claim_job(j.job_id, "letta", Transport.API, actor="letta",
+                        approval_id=rec["approval_id"])
+
+    store.decide_approval(rec["approval_id"], "approve", actor="owner", note="ok")
+    claimed = store.claim_job(j.job_id, "letta", Transport.API, actor="letta",
+                              approval_id=rec["approval_id"])
     assert claimed.status is Status.RUNNING
 
 
@@ -587,3 +606,146 @@ def test_the_worker_refuses_a_traversal_provider_before_writing(store, tmp_path)
     with pytest.raises(ValueError):
         tick(store, "../../../tmp/pwn", out_dir=str(out))
     assert not out.exists() or not list(out.iterdir())
+
+
+# ------------------------------- 6: approval is a record, not a caller's boolean
+#
+# SECURITY-REVIEW-2026-10-02.md finding 2. `claim_job(..., approved: bool)` based
+# its refusal on a value the caller supplied. The refusal was real; the
+# enforcement was nominal. These tests assert the four conditions that replaced
+# it, and each one is a way the boolean could not have been checked.
+
+
+def _gated(store, risk=Risk.CRITICAL, title="t"):
+    """A gated job. `title` must differ between jobs: ids are content-addressed,
+    so two jobs built from the same title and payload are deliberately ONE job."""
+    j = job(title=title, risk=risk)
+    store.create_job(j, actor="x")
+    return j
+
+
+def test_the_old_boolean_is_gone_not_deprecated(store):
+    """A deprecated flag would keep the hole open for every existing caller."""
+    j = _gated(store)
+    with pytest.raises(TypeError):
+        store.claim_job(j.job_id, "letta", Transport.API, actor="letta", approved=True)
+
+
+def test_a_gated_job_cannot_be_claimed_without_an_approval_id(store):
+    j = _gated(store)
+    with pytest.raises(ClaimRefused) as exc:
+        store.claim_job(j.job_id, "letta", Transport.API, actor="letta")
+    assert "approval id" in str(exc.value)
+    assert store.get_job(j.job_id).status is Status.READY
+
+
+def test_an_unknown_approval_id_is_refused(store):
+    j = _gated(store)
+    with pytest.raises(ClaimRefused):
+        store.claim_job(j.job_id, "letta", Transport.API, actor="letta",
+                        approval_id="apr-doesnotexist")
+
+
+def test_a_pending_approval_does_not_open_the_gate(store):
+    j = _gated(store)
+    rec = store.request_approval(j.job_id, actor="owner")
+    with pytest.raises(ClaimRefused) as exc:
+        store.claim_job(j.job_id, "letta", Transport.API, actor="letta",
+                        approval_id=rec["approval_id"])
+    assert "WAITING_AUTHORIZATION" in str(exc.value)
+
+
+def test_a_rejected_approval_does_not_open_the_gate(store):
+    j = _gated(store)
+    rec = store.request_approval(j.job_id, actor="owner")
+    store.decide_approval(rec["approval_id"], "reject", actor="owner", note="no")
+    with pytest.raises(ClaimRefused) as exc:
+        store.claim_job(j.job_id, "letta", Transport.API, actor="letta",
+                        approval_id=rec["approval_id"])
+    assert "REJECTED" in str(exc.value)
+
+
+def test_an_approval_for_one_job_cannot_claim_another(store):
+    """The binding a boolean cannot express."""
+    approved_job = _gated(store, title="approved work")
+    other_job = _gated(store, title="other work")
+    rec = store.request_approval(approved_job.job_id, actor="owner")
+    store.decide_approval(rec["approval_id"], "approve", actor="owner")
+    with pytest.raises(ClaimRefused) as exc:
+        store.claim_job(other_job.job_id, "letta", Transport.API, actor="letta",
+                        approval_id=rec["approval_id"])
+    assert "authorises" in str(exc.value)
+    assert store.get_job(other_job.job_id).status is Status.READY
+
+
+def test_an_approval_does_not_transfer_across_risk_levels(store):
+    j = _gated(store, risk=Risk.HIGH)
+    rec = store.request_approval(j.job_id, actor="owner")
+    store.decide_approval(rec["approval_id"], "approve", actor="owner")
+    # Same job id, but the stored risk no longer matches the approval's.
+    store._conn.execute("UPDATE jobs SET risk=? WHERE job_id=?", (Risk.CRITICAL.value, j.job_id))
+    store._conn.commit()
+    with pytest.raises(ClaimRefused) as exc:
+        store.claim_job(j.job_id, "letta", Transport.API, actor="letta",
+                        approval_id=rec["approval_id"])
+    assert "risk" in str(exc.value)
+
+
+def test_an_approval_can_only_be_decided_once(store):
+    """An outcome that can be edited afterwards is not a record of a decision."""
+    j = _gated(store)
+    rec = store.request_approval(j.job_id, actor="owner")
+    store.decide_approval(rec["approval_id"], "approve", actor="owner")
+    with pytest.raises(ValueError):
+        store.decide_approval(rec["approval_id"], "reject", actor="owner")
+
+
+def test_the_decision_records_who_and_when(store):
+    j = _gated(store)
+    rec = store.request_approval(j.job_id, actor="requester")
+    assert rec["requested_by"] == "requester"
+    assert rec["decided_by"] is None
+    decided = store.decide_approval(rec["approval_id"], "approve", actor="owner", note="go")
+    assert decided["decided_by"] == "owner"
+    assert decided["decided_at"]
+    assert decided["state"] == "APPROVED"
+
+
+def test_approval_state_for_job_is_the_planner_input(store):
+    j = _gated(store)
+    assert store.approval_state_for_job(j.job_id) == "NONE"
+    rec = store.request_approval(j.job_id, actor="owner")
+    assert store.approval_state_for_job(j.job_id) == "WAITING_AUTHORIZATION"
+    store.decide_approval(rec["approval_id"], "approve", actor="owner")
+    assert store.approval_state_for_job(j.job_id) == "APPROVED"
+
+
+def test_one_approval_does_not_cover_a_whole_handoff_batch(store):
+    """The old `approved: bool` applied to every job in the reply.
+
+    One flag for a batch meant approving any gated job in it approved all of
+    them. `approval_ids` is per job, and this is the test that says so.
+    """
+    from connector.handoff import apply_handoff
+
+    a = _gated(store, title="work a")
+    b = _gated(store, title="work b")
+    rec = store.request_approval(a.job_id, actor="owner")
+    store.decide_approval(rec["approval_id"], "approve", actor="owner")
+
+    reply = (
+        "```json\n"
+        + json.dumps({"job_id": a.job_id, "result": {"text": "a"}, "evidence": "ran it"})
+        + "\n```\n\n```json\n"
+        + json.dumps({"job_id": b.job_id, "result": {"text": "b"}, "evidence": "ran it"})
+        + "\n```\n"
+    )
+    report = apply_handoff(
+        store, reply, provider="letta", actor="letta",
+        approval_ids={a.job_id: rec["approval_id"]},
+    )
+    accepted = {r["job_id"] for r in report["accepted"]}
+    refused = {r["job_id"] for r in report["refused"]}
+    assert a.job_id in accepted, report
+    assert b.job_id in refused, "the approval leaked to a second job"
+    assert store.get_job(b.job_id).status is Status.READY

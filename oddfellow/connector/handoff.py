@@ -142,14 +142,21 @@ def apply_handoff(
     provider: str,
     actor: str,
     *,
-    approved: bool = False,
+    approval_ids: dict[str, str] | None = None,
 ) -> dict:
     """Claim and submit each parsed result, through the normal enforcement.
 
     Returns a report naming what was accepted, what was refused and why. Nothing
     here bypasses `claim_job` or `submit_result` -- a handoff is an untrusted
     channel like any other, and it must not be a way around the gate.
+
+    ``approval_ids`` maps a job id to the approval that covers it. It replaces a
+    single `approved: bool` that was applied to the whole batch: one flag for
+    every job in the reply, so approving any gated job in a batch approved all of
+    them. An approval is per job, and this signature is what makes that true
+    rather than merely intended.
     """
+    approval_ids = approval_ids or {}
     results, problems = parse_handoff(text)
     accepted, refused = [], []
 
@@ -160,7 +167,10 @@ def apply_handoff(
             continue
         try:
             if job.status is Status.READY:
-                store.claim_job(r.job_id, provider, None, actor=actor, approved=approved)
+                store.claim_job(
+                    r.job_id, provider, None, actor=actor,
+                    approval_id=approval_ids.get(r.job_id),
+                )
             store.submit_result(r.job_id, r.result, actor=actor, provider=provider)
             accepted.append({
                 "job_id": r.job_id,

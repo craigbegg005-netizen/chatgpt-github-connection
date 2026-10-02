@@ -25,6 +25,7 @@ retried, including across a provider failover.
 from __future__ import annotations
 
 import json
+import secrets
 import sqlite3
 from contextlib import closing
 from datetime import datetime, timezone
@@ -93,6 +94,21 @@ CREATE TABLE IF NOT EXISTS audit (
     job_id      TEXT,
     detail      TEXT NOT NULL DEFAULT '{}'
 );
+
+CREATE TABLE IF NOT EXISTS approvals (
+    approval_id  TEXT PRIMARY KEY,
+    job_id       TEXT NOT NULL,
+    risk         TEXT NOT NULL,
+    state        TEXT NOT NULL,
+    requested_by TEXT NOT NULL,
+    requested_at TEXT NOT NULL,
+    decided_by   TEXT,
+    decided_at   TEXT,
+    note         TEXT NOT NULL DEFAULT '',
+    evidence     TEXT NOT NULL DEFAULT ''
+);
+
+CREATE INDEX IF NOT EXISTS approvals_job ON approvals(job_id);
 
 CREATE TABLE IF NOT EXISTS flags (
     key    TEXT PRIMARY KEY,
@@ -352,6 +368,155 @@ class Store:
             job.error = error
         return self._update(job, actor, "job.status")
 
+    # ------------------------------------------------------------ approvals
+
+    def request_approval(self, job_id: str, actor: str, note: str = "") -> dict:
+        """Open a pending approval for one job. Asks; it never grants.
+
+        Bound to a job id at creation, so an approval can never be re-pointed at
+        different work later. That binding is the whole difference between this
+        and the boolean it replaces.
+        """
+        job = self._require(job_id)
+        record = {
+            "approval_id": "apr-" + secrets.token_hex(8),
+            "job_id": job.job_id,
+            "risk": job.risk.value,
+            "state": "WAITING_AUTHORIZATION",
+            "requested_by": actor,
+            "requested_at": _now(),
+            "decided_by": None,
+            "decided_at": None,
+            "note": (note or "").strip(),
+            "evidence": "",
+        }
+        self._conn.execute(
+            "INSERT INTO approvals (approval_id, job_id, risk, state, requested_by, "
+            "requested_at, decided_by, decided_at, note, evidence) VALUES (?,?,?,?,?,?,?,?,?,?)",
+            (
+                record["approval_id"], record["job_id"], record["risk"], record["state"],
+                record["requested_by"], record["requested_at"], None, None,
+                record["note"], "",
+            ),
+        )
+        self._conn.commit()
+        self.audit(actor, "job.approval.requested", job_id=job_id,
+                   approval_id=record["approval_id"], risk=record["risk"])
+        return record
+
+    def decide_approval(
+        self,
+        approval_id: str,
+        decision: str,
+        actor: str,
+        note: str = "",
+        evidence: str = "",
+    ) -> dict:
+        """Grant or refuse a pending approval. Once decided, it is decided.
+
+        Re-deciding is refused rather than overwritten: an approval whose outcome
+        can be edited after the fact is not a record of a decision, and the audit
+        trail would show two different truths for one id.
+        """
+        if decision not in ("approve", "reject"):
+            raise ValueError("decision must be approve or reject")
+        row = self._conn.execute(
+            "SELECT * FROM approvals WHERE approval_id=?", (approval_id,)
+        ).fetchone()
+        if row is None:
+            raise KeyError(approval_id)
+        if row["state"] != "WAITING_AUTHORIZATION":
+            raise ValueError(f"approval is already {row['state']}")
+
+        state = "APPROVED" if decision == "approve" else "REJECTED"
+        self._conn.execute(
+            "UPDATE approvals SET state=?, decided_by=?, decided_at=?, note=?, evidence=? "
+            "WHERE approval_id=? AND state='WAITING_AUTHORIZATION'",
+            (state, actor, _now(), (note or "").strip(), (evidence or "").strip(), approval_id),
+        )
+        self._conn.commit()
+        self.audit(actor, "job.approval.decided", job_id=row["job_id"],
+                   approval_id=approval_id, decision=decision)
+        return self.get_approval(approval_id)
+
+    def get_approval(self, approval_id: str) -> dict | None:
+        row = self._conn.execute(
+            "SELECT * FROM approvals WHERE approval_id=?", (approval_id,)
+        ).fetchone()
+        return dict(row) if row is not None else None
+
+    def approvals_for_job(self, job_id: str) -> list[dict]:
+        rows = self._conn.execute(
+            "SELECT * FROM approvals WHERE job_id=? ORDER BY requested_at", (job_id,)
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+    def approval_state_for_job(self, job_id: str) -> str:
+        """``APPROVED`` if any live approval for this job is granted, else the latest state.
+
+        This is the value a *planner* should route on. It is not enforcement --
+        `claim_job` re-checks the record itself, because a decision read now and
+        acted on later is a decision that can change in between.
+        """
+        rows = self.approvals_for_job(job_id)
+        if any(r["state"] == "APPROVED" for r in rows):
+            return "APPROVED"
+        return rows[-1]["state"] if rows else "NONE"
+
+    def _require_approval(self, job: Job, approval_id: str | None, actor: str) -> None:
+        """Refuse a gated claim unless a live approval covers *this* job.
+
+        Until 2026-10-02 this was `if job.risk in APPROVAL_REQUIRED and not
+        approved:` -- a boolean the caller passed in. The refusal was real, but
+        the enforcement was nominal: `claim_job(..., approved=True)` claimed any
+        gated job, and `handoff.apply_handoff` and the CLI passed the flag
+        straight through from an argument. Nothing recorded who approved what.
+
+        Four conditions, all required:
+
+        1. an ``approval_id`` was supplied;
+        2. it names a record that exists;
+        3. it is ``APPROVED``;
+        4. it is bound to this job, at this risk level.
+
+        Condition 4 is what a boolean cannot express. An approval is for one
+        piece of work, and re-pointing it at different work is the failure this
+        exists to prevent.
+        """
+        def refuse(reason: str, message: str) -> None:
+            self.audit(actor, "job.claim.refused", job_id=job.job_id, reason=reason)
+            raise ClaimRefused(message)
+
+        if not approval_id:
+            refuse(
+                "unapproved",
+                f"{job.risk.value}-risk work cannot be claimed without an approval id; "
+                "request one with Store.request_approval and have the owner decide it",
+            )
+
+        record = self.get_approval(approval_id)
+        if record is None:
+            refuse("unknown_approval", f"no approval {approval_id!r} exists")
+
+        if record["state"] != "APPROVED":
+            refuse(
+                "not_approved",
+                f"approval {approval_id!r} is {record['state']}, not APPROVED",
+            )
+
+        if record["job_id"] != job.job_id:
+            refuse(
+                "approval_for_other_job",
+                f"approval {approval_id!r} authorises {record['job_id']!r}, not {job.job_id!r}",
+            )
+
+        if record["risk"] != job.risk.value:
+            refuse(
+                "approval_risk_mismatch",
+                f"approval {approval_id!r} was granted for {record['risk']} risk, "
+                f"but this job is {job.risk.value}",
+            )
+
     def claim_job(
         self,
         job_id: str,
@@ -360,7 +525,7 @@ class Store:
         actor: str,
         *,
         paused: bool = False,
-        approved: bool = False,
+        approval_id: str | None = None,
     ) -> Job:
         """Claim a READY job for a provider, or refuse with a reason.
 
@@ -370,7 +535,9 @@ class Store:
           * **not READY** -- a RUNNING job must not be claimed twice, and a
             COMPLETE one must not be quietly reopened by a second claim.
           * **unapproved high/critical** -- approval is checked before the claim,
-            so gated work cannot be picked up and run first.
+            so gated work cannot be picked up and run first. The check reads a
+            persisted approval record bound to *this* job; it does not trust a
+            boolean the caller supplied. See `_require_approval`.
 
         The state change is a *conditional* UPDATE, so two providers racing produce
         one winner and one refusal rather than two RUNNING rows.
@@ -391,11 +558,8 @@ class Store:
         if job.status is not Status.READY:
             self.audit(actor, "job.claim.refused", job_id=job_id, reason=job.status.value)
             raise ClaimRefused(f"job is {job.status.value}, not READY")
-        if job.risk in APPROVAL_REQUIRED and not approved:
-            self.audit(actor, "job.claim.refused", job_id=job_id, reason="unapproved")
-            raise ClaimRefused(
-                f"{job.risk.value}-risk work cannot be claimed before it is approved"
-            )
+        if job.risk in APPROVAL_REQUIRED:
+            self._require_approval(job, approval_id, actor)
 
         cur = self._conn.execute(
             "UPDATE jobs SET status=?, provider=?, transport=?, attempts=attempts+1, "

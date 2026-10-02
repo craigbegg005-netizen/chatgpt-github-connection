@@ -72,7 +72,7 @@ def route(
     *,
     paused: bool = False,
     pause_reason: str = "",
-    approved: bool = False,
+    approval_granted: bool = False,
     allow_paid: bool = False,
     preferred: tuple[str, ...] = (),
     exclude: tuple[str, ...] = (),
@@ -82,6 +82,13 @@ def route(
     Order of checks matters and is deliberate: the emergency stop is consulted
     before anything else, and approval before capability, so a high-risk job can
     never slip through on the strength of a provider being available.
+
+    **``approval_granted`` is a planning input, not enforcement.** This function
+    is pure and has no store, so it cannot verify anything -- it can only be told.
+    The caller should derive it from ``Store.approval_state_for_job(job_id)``, and
+    ``Store.claim_job`` re-checks the approval record itself before any work runs.
+    A decision read now and acted on later is a decision that can change in
+    between, so the check that matters is the one at the claim, not this one.
     """
     # 1. Emergency stop. Nothing runs while it is pressed, including safe work --
     #    a stop button with exceptions is not a stop button.
@@ -92,7 +99,7 @@ def route(
         )
 
     # 2. Approval. High and critical work never runs unapproved.
-    if job.risk in APPROVAL_REQUIRED and not approved:
+    if job.risk in APPROVAL_REQUIRED and not approval_granted:
         return Decision(
             Status.WAITING_AUTHORIZATION,
             f"{job.risk.value}-risk work requires explicit owner approval",

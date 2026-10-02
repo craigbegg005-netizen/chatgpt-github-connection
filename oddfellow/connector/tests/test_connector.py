@@ -134,7 +134,7 @@ def test_high_risk_does_not_route_without_approval(risk):
 @pytest.mark.parametrize("risk", [Risk.HIGH, Risk.CRITICAL])
 def test_high_risk_routes_once_approved(risk):
     reg = verified_registry("letta")
-    d = route(job(risk=risk), reg, approved=True)
+    d = route(job(risk=risk), reg, approval_granted=True)
     assert d.runnable
     assert d.provider == "letta"
 

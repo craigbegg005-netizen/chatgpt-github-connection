@@ -83,13 +83,48 @@ def cmd_apply(store, tokens, args) -> int:
             text = fh.read()
     else:
         text = sys.stdin.read()
+    approval_ids: dict[str, str] = {}
+    for pair in args.approval_id:
+        if "=" not in pair:
+            print(f"--approval-id expects JOB_ID=APR_ID, got {pair!r}", file=sys.stderr)
+            return 2
+        job_id, apr_id = pair.split("=", 1)
+        approval_ids[job_id.strip()] = apr_id.strip()
     report = apply_handoff(
-        store, text, provider=args.provider, actor=args.provider, approved=args.approved
+        store, text, provider=args.provider, actor=args.provider,
+        approval_ids=approval_ids,
     )
     _emit(report)
     # A refusal is a normal outcome, but it is not a success: exit non-zero so a
     # script cannot treat "nothing was accepted" as "done".
     return 0 if report["accepted"] and not report["refused"] else 1
+
+
+def cmd_approvals(store, tokens, args) -> int:
+    rows = store.approvals_for_job(args.job_id) if args.job_id else [
+        store.get_approval(r["approval_id"])
+        for r in store._conn.execute(
+            "SELECT approval_id FROM approvals ORDER BY requested_at"
+        ).fetchall()
+    ]
+    if args.state:
+        rows = [r for r in rows if r and r["state"] == args.state]
+    _emit([r for r in rows if r])
+    return 0
+
+
+def cmd_request_approval(store, tokens, args) -> int:
+    """Open a pending approval. This asks; it does not grant."""
+    _emit(store.request_approval(args.job_id, actor=args.actor, note=args.note))
+    return 0
+
+
+def cmd_decide_approval(store, tokens, args) -> int:
+    _emit(store.decide_approval(
+        args.approval_id, args.decision, actor=args.actor,
+        note=args.note, evidence=args.evidence,
+    ))
+    return 0
 
 
 def cmd_dead_letters(store, tokens, args) -> int:
@@ -175,8 +210,9 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("apply", help="apply a provider's reply")
     p.add_argument("--provider", required=True)
     p.add_argument("--file", help="read the reply from a file instead of stdin")
-    p.add_argument("--approved", action="store_true",
-                   help="the owner has approved high/critical work in this batch")
+    p.add_argument("--approval-id", action="append", default=[], metavar="JOB_ID=APR_ID",
+                   help="bind an approval to one job: --approval-id job-abc=apr-123. "
+                        "Repeat per gated job. An approval covers one job, never a batch.")
     p.set_defaults(fn=cmd_apply)
 
     p = sub.add_parser("dead-letters", help="show jobs that exhausted their retries")
@@ -215,6 +251,25 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("reset-tick", help="forget the last handoff fingerprint")
     p.set_defaults(fn=cmd_reset_tick)
+
+    p = sub.add_parser("approvals", help="list approvals, optionally for one job")
+    p.add_argument("--job-id")
+    p.add_argument("--state", help="WAITING_AUTHORIZATION | APPROVED | REJECTED")
+    p.set_defaults(fn=cmd_approvals)
+
+    p = sub.add_parser("request-approval", help="open a pending approval for a job (asks, never grants)")
+    p.add_argument("--job-id", required=True)
+    p.add_argument("--actor", default="owner")
+    p.add_argument("--note", default="")
+    p.set_defaults(fn=cmd_request_approval)
+
+    p = sub.add_parser("decide-approval", help="grant or refuse a pending approval")
+    p.add_argument("--approval-id", required=True)
+    p.add_argument("--decision", required=True, choices=["approve", "reject"])
+    p.add_argument("--actor", default="owner")
+    p.add_argument("--note", default="")
+    p.add_argument("--evidence", default="")
+    p.set_defaults(fn=cmd_decide_approval)
 
     return ap
 
