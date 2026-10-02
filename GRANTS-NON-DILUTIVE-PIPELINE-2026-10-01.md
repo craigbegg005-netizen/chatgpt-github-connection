@@ -194,11 +194,35 @@ start from them rather than from the misconception that the whole gate costs $45
 
 ---
 
-## 3. Emergent Ventures — ⏳ LEAD, not checked
+## 3. Emergent Ventures — ✅ VERIFIED OPEN (2026-10-02, primary source)
 
 Private/founder grant lane. Proposed framing: *"Oddfellow: A Verification-First Personal AI Operating Layer."* Core proposition: an affordable persistent AI operating layer that coordinates models, tools, memory, verification, and external actions for individuals and small businesses without requiring a large engineering staff.
 
-**Not verified:** current application status, award size, or fit.
+**Verified 2026-10-02 against the program's own pages, not a search hit:**
+
+| Question | Answer | Source |
+|---|---|---|
+| Is it open? | **Yes** — the application form is live and accepting submissions | `mercatus.tfaforms.net/5099527` (Mercatus's own FormAssembly tenant) |
+| Award size | **Deliberately unspecified.** The form's own words: *"There is NO typical grant range or average award amount – funding is project specific."* | same |
+| Small grants? | **Explicitly in scope:** *"we also will consider very small grants if they might change the trajectory of your life"* | same |
+| For-profit allowed? | **Yes, explicitly:** *"we do not mind if you make a profit from your project. (Indeed, a quick path to revenue self-sufficiency is a feature not a bug!)"* | same |
+| Eligibility | 13+, all ages, all parts of the world | both pages |
+| Cost to apply | **$0** | — |
+
+**"Award size" is not a gap to close — the program does not publish one.** An earlier revision of this file listed it as unverified. It is now *answered*: funding is project-specific, and the honest status is "the program declines to state a range", not "we have not found it".
+
+**What the application actually asks for** (1500 words max, no PDFs):
+1. About you — personal story, and how it relates to the idea. Credentials explicitly de-emphasised.
+2. **"What is one mainstream or 'consensus' view that you absolutely agree with?"** — the form calls this *"our version of a 'trick' question, reversing the now-fashionable contrarianism."* This is unusual and needs a real answer, not filler.
+3. The idea — what is new or unusual, and what problem it solves.
+4. Ballpark budget (revenue and expenses), not binding.
+5. Project duration, full/part-time, existing partnerships or supporters.
+
+Teams: one point of contact completes it; other names and emails go at the end of the proposal.
+
+**Fit — assessed, and stated honestly as an assessment rather than a finding.** The programme funds *"zero to one"* ideas that advance prosperity, opportunity, liberty and well-being, and it welcomes the unorthodox. A personal AI operating layer is **not obviously "zero to one"** — the space is crowded and a reviewer could reasonably read it as another assistant. The parts that are genuinely unusual are the *verification-first* discipline (a system that refuses to claim unverified results) and the affordability target for individuals and small businesses with no engineering staff. **Those are the parts worth leading with; the generic "AI assistant" framing is the part most likely to read as unremarkable.** The second question is the one that will take real thought.
+
+**Not verified:** whether a reviewer would fund it. That is not knowable from outside, and this file should not imply otherwise.
 
 ---
 
@@ -236,8 +260,13 @@ to be the gating step, not the accelerator, and two accelerators are closed.
    and ASBTDC's NSF Proposal Lab.
 4. ⏳ Read the full **NSF 26-510** solicitation and decide whether the verification architecture is
    a defensible R&D pitch. (Can run alongside 3.)
-5. ⏳ Verify Emergent Ventures, Verizon, Hello Alice and Pollination Project statuses individually.
-   **Verizon and Emergent Ventures remain unverified leads** — nothing has been checked on them.
+5. ✅ **Emergent Ventures — VERIFIED OPEN 2026-10-02** (section 3). It moved *out* of the
+   unverified list. **It is the only lane here that is unblocked by both the entity gate and
+   Gate A**: it takes individuals from age 13, needs no LLC, no SAM.gov registration, no
+   institutional affiliation, and costs nothing to apply. Everything else in this file is
+   waiting on the entity decision, on a credential, or on a closed window.
+   ⏳ Still to verify: **Verizon Small Business Digital Ready** and **Hello Alice** (leads,
+   nothing checked), and **The Pollination Project** (Peace lane, separate).
 6. ⏳ **AEDC SBIR Matching Grant is post-award only** — revisit only once a Phase I award exists.
    It is a follow-on, not an entry point.
 
