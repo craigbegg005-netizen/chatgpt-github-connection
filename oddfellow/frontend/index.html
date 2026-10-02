@@ -349,7 +349,7 @@ function plan(text){
   // classified normal and forwarded with no approval at all.
   // Checked BEFORE the question exemption, so a command containing a "?" cannot
   // use the exemption as a bypass.
-  const destructive=/(?:\brm\s+-[a-z]*[rf]|\brm\s+.*\s-[a-z]*[rf]|\bdrop\s+(?:table|database|schema|index)\b|\btruncate\s+table\b|\bdelete\s+from\b|\bupdate\s+\w+\s+set\b|\bgit\s+push\b[^\n]*--force\b|\bgit\s+reset\s+--hard\b|\bgit\s+clean\s+-[a-z]*[fd]|\bgit\s+branch\s+-d\b|\bmkfs(?:\.\w+)?\b|\bdd\b[^\n]*\bof=\/dev\/|\bchmod\s+(?:-r\s+)?777\b|\bchown\s+(?:-r\s+)?root\b|\b(?:shutdown|reboot|halt|poweroff)\b|\b(?:curl|wget)\b[^\n|]*\|\s*(?:ba|z|k|da)?sh\b|:\(\)\s*\{.*\}\s*;\s*:|\btruncate\s+-s\s*0\b|>\s*\/dev\/sd[a-z]|\bkill\s+-9\s+-1\b|\bsudo\s+rm\b)/;
+  const destructive=/(?:\brm\s+-[a-z]*[rf]|\brm\s+.*\s-[a-z]*[rf]|\bdrop\s+(?:table|database|schema|index)\b|\btruncate\s+table\b|\bdelete\s+from\b|\bupdate\s+\w+\s+set\b|\bgit\s+push\b[^\n]*--force\b|\bgit\s+reset\s+--hard\b|\bgit\s+clean\s+-[a-z]*[fd]|\bgit\s+branch\s+-d\b|\bmkfs(?:\.\w+)?\b|\bdd\b[^\n]*\bof=\/dev\/|\bchmod\s+(?:-r\s+)?777\b|\bchown\s+(?:-r\s+)?root\b|\b(?:shutdown|reboot|halt|poweroff)\b|\b(?:curl|wget)\b[^\n|]*\|\s*(?:ba|z|k|da)?sh\b|:\(\)\s*\{.*\}\s*;\s*:|\btruncate\s+-s\s*0\b|>\s*\/dev\/sd[a-z]|\bkill\s+-9\s+-1\b|\bsudo\s+rm\b)/.test(t);
   const risk=(destructive&&!askingLead)||(risky&&!asking)?'elevated':'normal';
   return {task,risk};
 }

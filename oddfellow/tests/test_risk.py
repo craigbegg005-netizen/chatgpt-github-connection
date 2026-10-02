@@ -208,6 +208,28 @@ def _client_classifier():
     assert destructive, "no regex literals found in the client's `destructive` rule"
     assert len(scrub) >= 2, "expected two scrub patterns in the client"
 
+    # The page must actually TEST each regex. This test used to extract the
+    # literals and apply `.search()` itself, which meant it verified its own
+    # re-implementation rather than the shipped code -- and it passed for a long
+    # time while the page assigned `destructive` as a REGEX OBJECT with no
+    # `.test()`. A regex object is always truthy, so `destructive && !askingLead`
+    # was true for every non-question and the browser flagged everything as
+    # elevated. The server was correct, so nothing server-side failed; only the
+    # page was wrong, and the test that existed to compare them could not see it.
+    #
+    # Asserting the call is present is what makes this test about the shipped code.
+    for label, line in (
+        ("askingLead", lead_line.group(0)),
+        ("asking", asking_line.group(0)),
+        ("risky", risky_line.group(0)),
+        ("destructive", destructive_line.group(0)),
+    ):
+        assert ".test(" in line, (
+            f"the client's `{label}` rule extracts a regex but never calls .test() "
+            f"on it -- the regex object itself is truthy, so the rule would always "
+            f"fire. Line: {line.strip()[:120]}"
+        )
+
     def client_is_elevated(text: str) -> bool:
         lowered = text.lower()
         scrubbed = lowered
