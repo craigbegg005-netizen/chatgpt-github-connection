@@ -95,7 +95,7 @@ assuming they are equivalent.
 | **Deploy target — THE LIVE ONE** | **`oddfellow-letta-backend-v0206`** | 🟢 **LIVE, ⚠️ NOT READY** — `/livez` → 200 `{"live":true,"ready":false,"checks_failed":["LETTA_API_KEY","ODDFELLOW_OWNER_TOKEN"],"version":"0.20.6"}`. Verified 2026-10-01 20:05 UTC |
 | **Deploy URL — THE LIVE ONE** | **`https://oddfellow-letta-backend-v0206.onrender.com`** | 🟢 `/` → 200, 29513 B (page + API + PWA on one origin). This is the phone URL. |
 | ⚠️ `oddfellow-letta-backend` (NO `-v0206`) | `https://oddfellow-letta-backend.onrender.com` · `srv-dau6tgqd0e5s73egkocg` | 🔴 **DEAD — do not probe, do not watch.** No HTTP response. **This name is what `render.yaml` defines, and it is NOT the live service.** |
-| Rehearsal (ephemeral) | `https://verbal-breaking-assumptions-amount.trycloudflare.com` | 🟢 LIVE — v0.20.6, all acceptance gates pass |
+| Rehearsal (ephemeral) | ⚠️ **do not record a URL here** — read it live | 🟢 LIVE when the watchdog is up, but **the URL changes on every restart**. Re-read it: `cat /root/.oddfellow/url.txt`, or `./rehearsal.sh status`. |
 | Render workspace | `tea-darhbk97lnhs73dd86qg` | ⚠️ reported by Claude; not independently verifiable from here |
 
 ### 🔴 The name discrepancy that cost twenty hours — read this before probing anything
@@ -223,6 +223,9 @@ be a publication decision for the owner.
 | Slack | not connected |
 | Linear | not connected |
 | Cloudflare | not connected |
+| Cloudflare (Developer Platform) | 🔗 **CONNECTED — in Claude, not here.** Claude reports a verified Cloudflare connector with tools for **D1, KV, R2 and Hyperdrive**; account has **0 Workers**, and its tools **cannot create or deploy a Worker**. So the Worker fallback is not available from Claude either — deploying there needs the owner or an agent with Worker capability. ⚠️ Reported by Claude; **not verifiable from here** (this agent has no Cloudflare connection). |
+| Shopify | 🛠 **SET UP, NO SALES.** Reported **14 draft products**, **0 orders**, **$0 verified revenue**. ⚠️ Reported by ChatGPT/Claude; this agent has no Shopify connection and cannot confirm. **Draft products are not sales** — do not read this row as traction. |
+| Resend | ⚠️ **No sending domain configured** (reported by Claude). Not usable for outbound mail yet. |
 | Render | ⚠️ **not accessible to this agent** — Claude and ChatGPT have access; that access is theirs, not mine |
 | Stripe (as the MCP server named **`BeggAi`**) | 🔗 **CONNECTED — MCP only, sandbox only.** The `BeggAi` MCP server exposes **Stripe's own 10 tools**, not an Oddfellow connector. Verified 2026-10-01 21:38 UTC by calling `list_available_accounts_or_orgs`: **exactly one** account is reachable — `acct_1UJn2qAGpvydXJoO`, `livemode:false`, "New business sandbox". ⚠️ The master handoff records **two** Stripe contexts; only one is visible here, so treat the second as unverified. **`livemode:false` is the material fact: no live charge is possible from this connection.** |
 | Metricool / social scheduling | 🔗 **CONNECTED — but not to this agent.** The cross-AI handoff reports it independently verified (brand `embrooks.home`, brand ID `7110582`; Instagram `embrooks.home`, TikTok `emmabrooks400`; publishing active; Jordan Blake reel published 2026-10-01; Planner promotion scheduled 2026-10-10 10:00 CT). ⚠️ **Those are ChatGPT's observations, not mine.** This agent has no Metricool connection — its integrations are GitHub and the Stripe MCP server above — so I cannot confirm them and have recorded them as reported, not verified. ⚠️ The handoff also warns a **second, empty Metricool brand** exists; do not confuse it with the active one. **Social connection is not verified sales: revenue remains $0.** |
