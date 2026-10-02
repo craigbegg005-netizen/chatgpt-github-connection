@@ -332,7 +332,17 @@ function plan(text){
   // uses askingLead only; the verb layer uses both.
   const askingLead=/^\s*(what|how|why|when|where|who|which|is|are|does|do|can|could|should|explain|tell me|describe|show me)\b/.test(t);
   const asking=askingLead||/\?\s*$/.test(t);
-  const risky=/\b(delete|remove|erase|publish|post to|send (an? )?(email|message|money|payment)|spend|buy|purchase|pay|transfer|deploy to production|production deploy|password|credential|api key|payment|wipe|exfiltrate|destroy|drain|revoke|terminate|overwrite|uninstall|wire (the )?(money|funds)|empty (the )?(account|table))\b/.test(t);
+  // The project's own doctrine term is not an instruction to spend. `zero-spend`
+  // is the rule this system runs on, and matching `spend` inside it meant the
+  // owner could not state his own operating rule without the gate firing.
+  //
+  // Scrubbed rather than excluded with a lookbehind, deliberately: JS lookbehind
+  // is unsupported before Safari 16.4, and a syntax error in a regex literal is a
+  // parse-time failure that would break the whole page on an older phone. The
+  // server can use a lookbehind because Python supports it; the browser cannot be
+  // allowed to bet the page on it.
+  const scrubbed=t.replace(/\bzero[-_ ]spend\b/g,' ').replace(/\bspend\s+(rule|ceiling|limit|policy|cap)\b/g,' ');
+  const risky=/\b(delete|remove|erase|publish|post to|send (an? )?(email|message|money|payment)|spend|buy|purchase|pay|transfer|deploy to production|production deploy|password|credential|api key|payment|wipe|exfiltrate|destroy|drain|revoke|terminate|overwrite|uninstall|wire (the )?(money|funds)|empty (the )?(account|table))\b/.test(scrubbed);
   // Structural layer: input that is *code*, not prose. A verb allowlist cannot
   // see these, because the destructive part is a flag, a pipe or a keyword
   // rather than an English verb. QA found `rm -rf / --no-preserve-root` being

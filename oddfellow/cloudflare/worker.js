@@ -597,12 +597,28 @@ const RISK_RISKY = /\b(delete|remove|erase|publish|post to|send (an? )?(email|me
 // exemption, so a command containing a "?" cannot use it as a bypass.
 const RISK_DESTRUCTIVE = /(?:\brm\s+-[a-z]*[rf]|\brm\s+.*\s-[a-z]*[rf]|\bdrop\s+(?:table|database|schema|index)\b|\btruncate\s+table\b|\bdelete\s+from\b|\bupdate\s+\w+\s+set\b|\bgit\s+push\b[^\n]*--force\b|\bgit\s+reset\s+--hard\b|\bgit\s+clean\s+-[a-z]*[fd]|\bgit\s+branch\s+-d\b|\bmkfs(?:\.\w+)?\b|\bdd\b[^\n]*\bof=\/dev\/|\bchmod\s+(?:-r\s+)?777\b|\bchown\s+(?:-r\s+)?root\b|\b(?:shutdown|reboot|halt|poweroff)\b|\b(?:curl|wget)\b[^\n|]*\|\s*(?:ba|z|k|da)?sh\b|:\(\)\s*\{.*\}\s*;\s*:|\btruncate\s+-s\s*0\b|>\s*\/dev\/sd[a-z]|\bkill\s+-9\s+-1\b|\bsudo\s+rm\b)/;
 
+// Stripped from the text before the verb layer, so the doctrine term and policy
+// references are not read as instructions to spend. See the note in
+// `isElevatedRisk`.
+const RISK_SCRUB = [/\bzero[-_ ]spend\b/g, /\bspend\s+(rule|ceiling|limit|policy|cap)\b/g];
+
 function isElevatedRisk(text) {
   if (typeof text !== "string") return false;
   const lowered = text.toLowerCase();
   if (RISK_DESTRUCTIVE.test(lowered)) return !RISK_ASKING_LEAD.test(lowered);
   if (RISK_ASKING.test(lowered) || RISK_QUESTION_TAIL.test(lowered)) return false;
-  return RISK_RISKY.test(lowered);
+  // The project's own doctrine term is not an instruction to spend. `zero-spend`
+  // is the rule this system runs on; matching `spend` inside it meant the owner
+  // could not state his own operating rule without the gate firing.
+  //
+  // Scrubbed rather than excluded with a lookbehind, so this file, risk.py and
+  // frontend/index.html stay the same shape. The page cannot use a lookbehind at
+  // all (Safari before 16.4 fails to parse the regex literal and the whole page
+  // dies), and three copies that differ in *technique* as well as content is how
+  // the next divergence gets missed.
+  let scrubbed = lowered;
+  for (const r of RISK_SCRUB) scrubbed = scrubbed.replace(r, " ");
+  return RISK_RISKY.test(scrubbed);
 }
 
 async function handleMessage(env, request, token, payload) {

@@ -108,6 +108,17 @@ NORMAL_CASES = [
     "how do I drop a table?",
     "",
     "   ",
+    # Added 2026-10-02 with the `zero-spend` fix. The agreement test only checks
+    # this corpus, and the corpus did not contain the project's own doctrine term
+    # -- which is precisely why a real client/server divergence shipped without
+    # being caught. A corpus that omits the vocabulary the product is built around
+    # will keep missing the bugs that vocabulary causes.
+    "zero-spend",
+    "confirm the zero-spend rule",
+    "One short sentence: state your name and confirm the zero-spend rule.",
+    "zero spend policy",
+    "confirm the spend ceiling",
+    "what is the spend limit?",
 ]
 
 
@@ -174,10 +185,12 @@ def _client_classifier():
     asking_line = re.search(r"^\s*const asking=.*$", html, re.M)
     risky_line = re.search(r"^\s*const risky=.*$", html, re.M)
     destructive_line = re.search(r"^\s*const destructive=.*$", html, re.M)
+    scrub_line = re.search(r"^\s*const scrubbed=.*$", html, re.M)
     assert lead_line, "could not find the client's `askingLead` rule in index.html"
     assert asking_line, "could not find the client's `asking` rule in index.html"
     assert risky_line, "could not find the client's `risky` rule in index.html"
     assert destructive_line, "could not find the client's `destructive` rule in index.html"
+    assert scrub_line, "could not find the client's `scrubbed` step in index.html"
 
     lead = [re.compile(p) for p in _js_regex_literals(lead_line.group(0))]
     # The page composes `asking` as `askingLead || /\?\s*$/`, so the extraction
@@ -185,19 +198,28 @@ def _client_classifier():
     asking = lead + [re.compile(p) for p in _js_regex_literals(asking_line.group(0))]
     risky = [re.compile(p) for p in _js_regex_literals(risky_line.group(0))]
     destructive = [re.compile(p) for p in _js_regex_literals(destructive_line.group(0))]
+    # The page strips the doctrine term and policy references before the verb
+    # layer, so the extraction has to strip them too -- otherwise this test would
+    # keep passing while the shipped page behaved differently, which is the exact
+    # failure it exists to catch.
+    scrub = [re.compile(p) for p in _js_regex_literals(scrub_line.group(0))]
     assert lead, "no regex literals found in the client's `askingLead` rule"
     assert risky, "no regex literals found in the client's `risky` rule"
     assert destructive, "no regex literals found in the client's `destructive` rule"
+    assert len(scrub) >= 2, "expected two scrub patterns in the client"
 
     def client_is_elevated(text: str) -> bool:
         lowered = text.lower()
+        scrubbed = lowered
+        for r in scrub:
+            scrubbed = r.sub(" ", scrubbed)
         # Mirrors index.html exactly: the structural layer consults only the
         # leading interrogative, the verb layer consults both.
         if any(r.search(lowered) for r in destructive):
             return not any(r.search(lowered) for r in lead)
         if any(r.search(lowered) for r in asking):
             return False
-        return any(r.search(lowered) for r in risky)
+        return any(r.search(scrubbed) for r in risky)
 
     return client_is_elevated
 
