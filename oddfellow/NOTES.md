@@ -1,5 +1,12 @@
 # Oddfellow Letta backend v0.20.3
 
+> 🔴 **HISTORICAL — superseded. Do not use this as current state.** Written 2026-09-29/30 about
+> v0.20.3, when v0.20.2 was the only deployed build. Since then: the code reports **0.20.6**,
+> the live service is **`oddfellow-letta-backend-v0206`** (`/livez` → 200, `ready:false`), and
+> the test count is **109 backend + 123 connector**. This file is kept for the v0.20.3 design
+> notes (conversation rotation, SSE parsing, `/healthz` fail-closed); it is not current status.
+> See `README.md` and `CURRENT_STATE.md`.
+
 Written and tested by Oddfellow (Letta agent), 2026-09-29 → 2026-09-30.
 
 **Status:** v0.20.2 is 🚀 **DEPLOYED** at

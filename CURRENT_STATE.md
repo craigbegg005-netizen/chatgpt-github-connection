@@ -38,6 +38,13 @@ not a defect in the document, it is a defect in treating a snapshot as current. 
 | `main` | `8ddfe325` | Default branch. **Index only** — no `oddfellow/` directory, so a service pointed here cannot satisfy `rootDir: oddfellow` and its build fails with no obvious cause. |
 | `letta/continuity-2026-09-30` | `a01e96e` | Where this file used to live. 72 commits behind canonical. |
 
+**🔴 RE-DERIVED 2026-10-02 02:5x UTC — the canonical head in the snapshot above is stale.**
+`git ls-remote --heads origin` this cycle returned `letta/combined-single-service-v0.20.4` @
+**`adcd481`**, not `bf62e44d`; the branch moved again *during* this session. The other rows
+(connector `8f9c139`, voice `9becaa8`, `main` `8ddfe32`, continuity `a01e96e`) still matched.
+This is exactly the failure the snapshot label warns about, so the value above is left as a
+snapshot and the live head is **re-derived, never trusted from this file**.
+
 **🔴 CORRECTED 2026-10-02 — the roles column was wrong, and the claim that it "does not go stale" was the error.**
 
 An earlier revision of this table said both dev branches were **"Not merged, not deployed"**, and

@@ -1,5 +1,12 @@
 # Cross-AI correlation — Oddfellow / Begg AI — 2026-09-30
 
+> 🔴 **HISTORICAL RECORD — corrected 2026-10-02.** This correlation was written 2026-09-30,
+> before the `oddfellow-letta-backend` (dead) vs `oddfellow-letta-backend-v0206` (live)
+> confusion was found. Its "Open items, by owner" section tells the owner to deploy and branch-check
+> `oddfellow-letta-backend`, which is **DEAD** (`/livez` → 000). The **live** service is
+> **`oddfellow-letta-backend-v0206`**. The chronology is preserved; the actionable items below
+> are void and the live owner action is in `README.md` and `oddfellow/ACCEPTANCE.md`.
+
 **Purpose:** one chronological record of what each AI did, when, and how the simultaneous
 workstreams relate. Built from commit timestamps on the canonical branch, the handoff files, and
 my own verified probes. Times are **UTC**; Central Time (CDT = UTC−5) is given where a handoff
@@ -138,9 +145,12 @@ rebase-not-force.
 ## Open items, by owner
 
 **Owner (Craig) — the only person who can do these**
-1. Confirm which **branch** `oddfellow-letta-backend` is set to. If `main`, that is the bug.
-2. Trigger a **manual deploy** (Render → Deploy → Deploy latest commit). `autoDeploy: false` means
-   nothing deploys automatically.
+1. ~~Confirm which **branch** `oddfellow-letta-backend` is set to. If `main`, that is the bug.~~
+   🔴 **VOID — corrected 2026-10-02.** `oddfellow-letta-backend` is dead and was never the
+   deploy target. The live service is `oddfellow-letta-backend-v0206`.
+2. ~~Trigger a **manual deploy** (Render → Deploy → Deploy latest commit).~~
+   🔴 **VOID — corrected 2026-10-02.** The live service already serves; the remaining action is
+   the two secrets on `oddfellow-letta-backend-v0206`, not a deploy of the dead name.
 3. Ensure `ODDFELLOW_OWNER_TOKEN` is the **same string** in Render and in the Letta agent secret.
 
 **Claude** — holds Render access. Read Events/Logs after the manual deploy; run the acceptance

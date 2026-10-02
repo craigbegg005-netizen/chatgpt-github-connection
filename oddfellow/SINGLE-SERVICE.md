@@ -1,8 +1,17 @@
 # Single-service deploy option — one URL serves the page and the API
 
-Status: 🛠 IMPLEMENTED · 🧪 TESTED LOCALLY · ⚠️ NOT DEPLOYED
+Status: 🚀 **DEPLOYED** (as `oddfellow-letta-backend-v0206`) · 🧪 TESTED · ⚠️ NOT READY
 Branch: `letta/combined-single-service-v0.20.4`
 Verified by: Oddfellow (Letta agent), 2026-09-30 01:40–01:45 UTC
+
+> **Updated 2026-10-02 02:5x UTC.** The status line above previously read
+> "🛠 IMPLEMENTED · 🧪 TESTED LOCALLY · ⚠️ NOT DEPLOYED". **That is no longer true:** this
+> single-service build *is* deployed, as **`oddfellow-letta-backend-v0206`**, serving page +
+> API + PWA on one origin (`/livez` → 200, version 0.20.6). It is ⚠️ **NOT READY** only because
+> `LETTA_API_KEY` and `ODDFELLOW_OWNER_TOKEN` are unset (`/healthz` → 503). The "Deploying it"
+> section below still describes how to create the service; note that **the service already
+> exists under the name `-v0206`**, so the correct next step is to set the two secrets on it,
+> not to create a new one.
 
 ## Why this exists
 
@@ -73,17 +82,25 @@ fail-closed behaviour working.
 > secrets need entering. This is the single most likely way for an otherwise correct
 > deploy to fail confusingly.
 
-Render → New → Blueprint → this repo → branch `letta/combined-single-service-v0.20.4`.
-Supply `LETTA_API_KEY` and `ODDFELLOW_OWNER_TOKEN` when prompted (`sync: false`, so
-Render asks and never writes them into the file). Then:
+⚠️ **The service already exists.** The live single-service deploy is
+**`oddfellow-letta-backend-v0206`** (`https://oddfellow-letta-backend-v0206.onrender.com`),
+not a service to be created. Set `LETTA_API_KEY` and `ODDFELLOW_OWNER_TOKEN` on *that*
+service in the Render dashboard (service → Environment → Save); Render restarts on an env
+change, so no separate deploy click is needed. Then:
 
 ```
-curl -s https://<service>.onrender.com/healthz
-# {"ok": true, "checks_failed": [], "service": "oddfellow_letta_backend", "version": "0.20.4"}
+curl -s https://oddfellow-letta-backend-v0206.onrender.com/healthz
+# {"ok": true, "checks_failed": [], "service": "oddfellow_letta_backend", "version": "0.20.6"}
 ```
 
-Open `https://<service>.onrender.com/` — that single URL is the page, the API, and
-the PWA install target. No origin configuration is involved.
+Open `https://oddfellow-letta-backend-v0206.onrender.com/` — that single URL is the page,
+the API, and the PWA install target. No origin configuration is involved.
+
+The original create-from-Blueprint path (Render → New → Blueprint → this repo → branch
+`letta/combined-single-service-v0.20.4`, supplying both secrets when prompted) is retained
+only for reference; **do not run it now**, because `render.yaml` defines a *different*
+service name (`oddfellow-letta-backend`) and a Blueprint sync would target the wrong one.
+See the warning at the top of `render.yaml`.
 
 ## Not decided here
 

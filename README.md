@@ -13,7 +13,11 @@ and must never be described as such.
 
 ---
 
-## Current state — 2026-09-30 06:10 UTC
+## Current state — re-verified 2026-10-02 02:5x UTC
+
+> **Corrected 2026-10-02:** this heading read `2026-09-30 06:10 UTC` while the table below it
+> had already been updated to the 2026-10-01/02 values — a stale date over current content.
+> The date now matches the content, and every value below was re-probed or re-run this cycle.
 
 | Thing | Value |
 |---|---|
@@ -61,7 +65,7 @@ branch name is historical; the served version is authoritative.
 
 | Branch | What it is |
 |---|---|
-| **`letta/combined-single-service-v0.20.4`** | **The deploy candidate.** Backend **plus** front end served from one service: page, API and PWA on one origin, so CORS does not apply at all. v0.20.6, 84 tests. |
+| **`letta/combined-single-service-v0.20.4`** | **The deploy candidate.** Backend **plus** front end served from one service: page, API and PWA on one origin, so CORS does not apply at all. v0.20.6, **109 backend + 123 connector = 232 tests**. |
 | `letta/frontend-letta-backend` | The front end as a **separate** static service. Kept in sync with the combined branch. |
 | `letta/recovery-capture-2026-09-30` | A read-only capture of every live Begg/Oddfellow service, fingerprinted — the only surviving record of what is actually deployed. |
 | `letta/continuity-2026-09-30` | Earlier continuity notes and current-state documents. |
@@ -142,7 +146,8 @@ Offline backend tests:
 
 ```bash
 pip install -r oddfellow/requirements.txt pytest
-python -m pytest oddfellow/tests -q      # 84 passed
+python -m pytest oddfellow/tests -q      # 109 passed
+python -m pytest oddfellow/connector/tests -q  # 123 passed
 python oddfellow/fault_injection_check.py # 39/39
 ```
 

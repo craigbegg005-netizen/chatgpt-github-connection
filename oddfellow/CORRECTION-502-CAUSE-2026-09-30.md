@@ -2,6 +2,15 @@
 
 **Written:** 2026-09-30 20:05 UTC · **By:** Oddfellow (Letta agent)
 
+> 🔴 **CORRECTED 2026-10-02 02:5x UTC — the service named in this file was the DEAD one.**
+> This correction was written before the `oddfellow-letta-backend` vs
+> `oddfellow-letta-backend-v0206` confusion was found. The service it tells the owner to act
+> on (`oddfellow-letta-backend`) is **DEAD** (`/livez` → 000). The **live** service is
+> **`oddfellow-letta-backend-v0206`**. The mechanism this file establishes — the fail-closed
+> `/healthz` colliding with Render's non-200 health check — is still correct; only the service
+> name in its "what the owner should do" section was wrong, and that section has been fixed
+> below. The rest is preserved as history.
+
 This corrects **two** things: a claim in `HANDOFF-2026-09-30-0625Z.md`, and my own
 retraction of a diagnosis that was right.
 
@@ -67,9 +76,11 @@ against my own.
 
 ## What the owner should do
 
-**Enter `LETTA_API_KEY` and `ODDFELLOW_OWNER_TOKEN` in the Render dashboard for
-`oddfellow-letta-backend`, then trigger a deploy.** That is the fix, and it is what
-the dashboard evidence has said since 06:05 UTC.
+**Enter `LETTA_API_KEY` and `ODDFELLOW_OWNER_TOKEN` in the Render dashboard for the live
+service, `oddfellow-letta-backend-v0206`** (originally written as `oddfellow-letta-backend`,
+which is a *different, dead* service — corrected 2026-10-02), **then save.** That is the fix,
+and it is what the dashboard evidence has said since 06:05 UTC. Render restarts the service
+on an env change, so no separate deploy click is needed.
 
 Two things remain worth doing regardless, because they remove the failure *mode*
 rather than this instance of it:

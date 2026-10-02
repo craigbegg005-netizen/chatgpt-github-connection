@@ -1,6 +1,16 @@
 # Oddfellow front end — Letta backend integration
 
-**Status: 🛠 IMPLEMENTED + 🧪 TESTED against a local backend. NOT DEPLOYED.**
+**Status: 🚀 DEPLOYED (as part of the single-service build) + 🧪 TESTED.**
+
+> **Corrected 2026-10-02 02:5x UTC.** This line previously read
+> "🛠 IMPLEMENTED + 🧪 TESTED against a local backend. NOT DEPLOYED." **That is no longer
+> true.** This front end is now served by the live service
+> **`oddfellow-letta-backend-v0206`** (`https://oddfellow-letta-backend-v0206.onrender.com/`),
+> page + API + PWA on one origin. The page defaults to its own origin (`SAME_ORIGIN_BACKEND`)
+> and only falls back to `FALLBACK_BACKEND_URL = https://oddfellow-letta-backend-v0206.onrender.com`
+> (line 114 of `index.html`). ⚠️ It is still **NOT READY** end-to-end: the two secrets are
+> unset, so `/healthz` is 503. The separate static site at `oddfellow-synthetic-v020` is a
+> *different, older* deployment and still does not call a backend.
 
 The deployed site at `oddfellow-synthetic-v020.onrender.com` does not call the
 backend. This directory holds a patched copy that does.
@@ -65,6 +75,11 @@ The backend URL is now **pre-filled** with `https://oddfellow-letta-poc.onrender
 so a first-time visitor only has to paste **one** thing: the owner token. The URL
 stays editable and a stored value always wins over the default.
 
+> ⚠️ **Superseded 2026-10-02:** the pre-filled/fallback URL is no longer
+> `oddfellow-letta-poc`. The page now prefers its own origin and falls back to
+> **`https://oddfellow-letta-backend-v0206.onrender.com`** (`index.html:114`). This
+> paragraph is kept as history.
+
 Pressing **Test connection** with no token now says exactly what is missing and
 focuses the token field, instead of a generic failure.
 
@@ -88,7 +103,9 @@ Served on `127.0.0.1:8080`, backend on `127.0.0.1:8092`, driven in Chrome:
 
 ## Not verified
 
-- Against the real deployed backend (it is not deployed yet)
+- ~~Against the real deployed backend (it is not deployed yet)~~ — **no longer accurate.**
+  The front end is deployed on `oddfellow-letta-backend-v0206`; what remains unverified is the
+  **authenticated** path, because the two secrets are unset. Corrected 2026-10-02.
 - On a phone
 - The Puter fallback path was re-exercised 2026-09-30: with no backend
   configured, the router chip read **"Router: 22 free routes"** — discovery ran
