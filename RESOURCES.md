@@ -223,7 +223,8 @@ be a publication decision for the owner.
 | Slack | not connected |
 | Linear | not connected |
 | Cloudflare | not connected |
-| Cloudflare (Developer Platform) | 🔗 **CONNECTED — in Claude, not here.** Claude reports a verified Cloudflare connector with tools for **D1, KV, R2 and Hyperdrive**; account has **0 Workers**, and its tools **cannot create or deploy a Worker**. So the Worker fallback is not available from Claude either — deploying there needs the owner or an agent with Worker capability. ⚠️ Reported by Claude; **not verifiable from here** (this agent has no Cloudflare connection). |
+| Cloudflare (Developer Platform) | 🔗 **CONNECTED — in Claude. NOT usable here.** Verified from this side 2026-10-02 00:56 UTC: an MCP server named `Cloudflare` **is registered to this agent but has an empty URL and exposes 0 tools** — it is a placeholder, not a working connection. Do not read "Cloudflare (0 tools)" in a status line as "connected"; a registered name with no endpoint is not an integration. Claude's side is real: tools for **D1, KV, R2, Hyperdrive**, account has **0 Workers**, and its tools **cannot create or deploy a Worker**. So the Worker fallback needs the owner, or a genuinely connected Cloudflare MCP here. |
+| Sentry | ⚠️ **NOT connected.** Registered as an MCP server to this agent with an **empty URL and 0 tools** — same placeholder state as Cloudflare. Verified 2026-10-02 00:56 UTC. |
 | Shopify | 🛠 **SET UP, NO SALES.** Reported **14 draft products**, **0 orders**, **$0 verified revenue**. ⚠️ Reported by ChatGPT/Claude; this agent has no Shopify connection and cannot confirm. **Draft products are not sales** — do not read this row as traction. |
 | Resend | ⚠️ **No sending domain configured** (reported by Claude). Not usable for outbound mail yet. |
 | Render | ⚠️ **not accessible to this agent** — Claude and ChatGPT have access; that access is theirs, not mine |
