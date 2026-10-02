@@ -154,6 +154,44 @@ registrations.
 - **First, and free:** ask ASBTDC whether a **sole proprietorship** suffices for the intended path.
   Do not spend $45 before that answer arrives.
 
+### 2d. ⚠️ Correction: this gate is NOT entirely blocked by zero-spend
+
+**Added 2026-10-02 00:05 UTC, verified against irs.gov and sam.gov.** The heading above calls this
+gate "OWNER DECISION, and it breaks zero-spend". That is true of the **LLC** and false of
+**everything else in it** — and the two were being treated as one gate. They are not one gate.
+
+**VERIFIED — the free steps, which need no money and no LLC:**
+
+| Step | Cost | Time | Source |
+|---|---|---|---|
+| **EIN** | **$0** — IRS states it plainly: *"You never have to pay a fee for an EIN"* and *"Beware of websites that charge"* | **Immediate** online for U.S. applicants | irs.gov |
+| **SAM.gov entity registration** | **$0** | **up to 10 business days** to become active | sam.gov |
+
+**A sole proprietor can obtain an EIN.** The IRS lists sole proprietors among the entities an EIN is
+assigned to, and states a sole proprietor files one Form SS-4 and needs only one EIN. The IRS note
+about forming with the secretary of state *first* applies to corporations and LLCs — **it does not
+apply to a sole proprietorship, which needs to form nothing.**
+
+**Why this matters, concretely:** NSF requires SAM.gov registration to apply as a prime awardee, and
+SAM takes **up to 10 business days**. Against the **March 4 2027** deadline that is nothing. It
+would have been a real problem against November 2026 — which the parallel session already ruled out.
+So the sequencing is now unambiguous and **the first two steps cost nothing**:
+
+```
+EIN (free, immediate)  →  SAM.gov registration (free, ≤10 business days)
+   →  Research.gov  →  Project Pitch  →  March 4 2027 deadline
+```
+
+**What still costs money, and is still the owner's call:** the Arkansas **LLC**, $45. Nothing in the
+NSF or SAM path above requires it, so **the LLC is no longer on the critical path** — it is a
+separate question about legal form, which ASBTDC can answer for free.
+
+**What I am NOT saying.** I am not advising on tax or legal form. An EIN for a sole proprietor has
+tax implications I am not qualified to judge, and the responsible party's **SSN or ITIN is required
+to apply** — which is owner personal data, so **this is an owner action, not an agent action.** I
+cannot and will not apply on his behalf. The verified facts are recorded so the ASBTDC call can
+start from them rather than from the misconception that the whole gate costs $45.
+
 ---
 
 ## 3. Emergent Ventures — ⏳ LEAD, not checked
