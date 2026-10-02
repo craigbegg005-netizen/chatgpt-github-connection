@@ -17,11 +17,12 @@ and must never be described as such.
 
 | Thing | Value |
 |---|---|
-| Canonical deploy branch | `letta/combined-single-service-v0.20.4` @ `50d90ff` |
+| Canonical deploy branch | `letta/combined-single-service-v0.20.4` — **re-derive, do not trust this line:** `git ls-remote --heads origin letta/combined-single-service-v0.20.4` |
 | Backend version the code reports | **`0.20.6`** |
-| Tests | **84 passed** · fault injection **39/39 passed** |
-| Deploy target | `oddfellow-letta-backend` (`srv-dau6tgqd0e5s73egkocg`) |
-| Deploy status | ⚠️ **`WAITING_CREDENTIAL`** — not serving |
+| Tests | **109 backend + 123 connector = 232 passed** · fault injection **39/39 passed** |
+| **Deploy target — THE LIVE ONE** | **`oddfellow-letta-backend-v0206`** — `https://oddfellow-letta-backend-v0206.onrender.com` |
+| Deploy status | ⚠️ **`WAITING_CREDENTIAL`** — serving, but `ready:false` on `LETTA_API_KEY` + `ODDFELLOW_OWNER_TOKEN` |
+| ⚠️ `oddfellow-letta-backend` (no `-v0206`) | 🔴 **DEAD. Do not act on it, do not watch it.** It is what `render.yaml` defines and it is *not* the live service. |
 
 ### ⚠️ The one blocker
 
@@ -49,7 +50,7 @@ branch name is historical; the served version is authoritative.
 | If you want… | Read |
 |---|---|
 | **The chronological cross-AI correlation** | [`oddfellow/CORRELATION-2026-09-30.md`](oddfellow/CORRELATION-2026-09-30.md) — what each AI did, when, and how the simultaneous workstreams relate |
-| The latest cross-AI handoff | [`oddfellow/HANDOFF-2026-09-30-0625Z.md`](oddfellow/HANDOFF-2026-09-30-0625Z.md) |
+| The latest cross-AI handoff | [`oddfellow/HANDOFF-TO-CHATGPT-2026-10-01-2330Z.md`](oddfellow/HANDOFF-TO-CHATGPT-2026-10-01-2330Z.md) — **re-derive, do not trust this line:** `ls oddfellow/ \| grep HANDOFF \| sort \| tail -1` |
 | Every resource, service ID and URL | [`RESOURCES.md`](RESOURCES.md) |
 | The deploy steps | [`oddfellow/SINGLE-SERVICE.md`](oddfellow/SINGLE-SERVICE.md) |
 | The acceptance checklist | [`oddfellow/ACCEPTANCE.md`](oddfellow/ACCEPTANCE.md) |
@@ -101,8 +102,14 @@ Workers is the fallback.
 
 ### Render — the primary path
 
-Claude holds Render access and drives this deploy. The service already exists
-(`oddfellow-letta-backend`), so this is an env-var + redeploy step, not a new service.
+Claude holds Render access and drives this deploy. **The live service is
+`oddfellow-letta-backend-v0206`** — so this is an env-var + redeploy step on *that*
+service, not a new one.
+
+🔴 **`oddfellow-letta-backend` (no `-v0206`) is a DIFFERENT, DEAD service.** It is the name
+`render.yaml` defines. Acting on it does nothing and watching it reports silence — which is
+how a running deployment was mistaken for a blocked one for twenty hours on 2026-10-01.
+**Verify before acting:** `curl -s -o /dev/null -w '%{http_code}' https://oddfellow-letta-backend-v0206.onrender.com/livez` → `200`.
 
 ### Cloudflare Workers — one command, no dashboard
 

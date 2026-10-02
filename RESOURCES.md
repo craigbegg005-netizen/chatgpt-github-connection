@@ -35,10 +35,10 @@ holds. Three notes from that sweep:
 | Resource | Value | Status |
 |---|---|---|
 | Repo (only one this GitHub App can see) | `craigbegg005-netizen/chatgpt-github-connection` | ✅ VERIFIED — `installation/repositories` → `total_count: 1` |
-| Canonical deploy branch | `letta/combined-single-service-v0.20.4` @ `8b455fd` | ✅ VERIFIED 2026-10-01 04:05 UTC |
-| `main` | `8ddfe325` | ✅ VERIFIED 2026-10-01 04:05 UTC |
+| Canonical deploy branch | `letta/combined-single-service-v0.20.4` | ⚠️ **Re-derive; do not trust a SHA written here.** `git ls-remote --heads origin letta/combined-single-service-v0.20.4`. A recorded SHA went stale within a day and a deploy pinned to it would have shipped old code. |
+| `main` | `8ddfe325` | ✅ VERIFIED 2026-10-01 04:05 UTC — re-derive if it matters |
 | `letta/universal-connector-v0.21` @ `8f9c139` | **Universal Connector** — core, security hardening, the Tier 3/4 handoff path, dead-letter + clean disconnect, an operator CLI | ⚠️ **MERGED INTO CANONICAL** 2026-10-01 23:33 UTC (merge `155dd3fc`, purely additive: 4184 insertions, 0 deletions). The branch is kept for further work; canonical is now the integration point. |
-| `letta/voice-v1` @ `e83a61b` | **Voice V1 approval gate** — elevated-risk voice/chat commands enter a real `WAITING_AUTHORIZATION`; spoken approval binds to one exact pending action | ✅ VERIFIED 2026-10-01 21:50 UTC (pushed, local SHA == remote). Front-end wiring verified in a real browser; backend chain verified against the rehearsal. **Dev branch.** ⚠️ Nobody has spoken into a real phone — that verification is the owner's to run. |
+| `letta/voice-v1` | **Voice V1 approval gate** — dev branch, **✅ MERGED into canonical** (verified 2026-10-02: `git merge-base --is-ancestor` → true, 0 commits ahead). ⚠️ **The gate it adds is client-side only** — see `oddfellow/SECURITY-REVIEW-2026-10-02.md` finding 1. ⚠️ Nobody has spoken into a real phone — that verification is the owner's to run. |
 | `letta/frontend-letta-backend` | `445e05c` | ✅ VERIFIED |
 | `letta/recovery-capture-2026-09-30` | `f27ec28` | ✅ VERIFIED |
 | `letta/independent-verification-2026-09-30` | `46d731b` | ✅ VERIFIED — independent reproduction of the deploy branch's claims |
