@@ -312,3 +312,100 @@ def test_29_security_regression_tests_exist():
         assert os.path.exists(path), f"missing regression suite: {rel} ({purpose})"
         body = open(path, encoding="utf-8").read()
         assert body.count("def test_") >= 10, f"{rel} has too few tests to be a suite"
+
+
+# --------------------------------------------------------------------------- #
+# Persistence, verified across a real process boundary
+# --------------------------------------------------------------------------- #
+#
+# §29 requires *persisted* approvals. The test that closed this item created a
+# second CommandCenter in the same process, which proves in-process readability
+# and not persistence -- a test named for a property it does not exercise is the
+# same shape as the five false controls. These run the store in a child
+# interpreter each time, so "survives a restart" means a restart.
+
+_CHILD = r'''
+import os, sys, json
+sys.path.insert(0, {app_dir!r})
+os.environ["ODDFELLOW_APPROVAL_JOURNAL"] = {journal!r}
+import command_center as cc
+cc.APPROVAL_JOURNAL_PATH = {journal!r}
+center = cc.CommandCenter()
+step = sys.argv[1]
+if step == "create":
+    rec = center.add_approval("t", "d", "high", binding_text="delete the old branch")
+    center.decide(rec["id"], "approve", note="ok", actor="owner")
+    print(json.dumps({{"id": rec["id"], "state": center.get_approval(rec["id"])["state"]}}))
+elif step == "consume":
+    rows = list(center._approvals.values())
+    assert rows, "the journal replayed nothing"
+    r = rows[0]
+    assert r["state"] == "APPROVED", f"state is {{r['state']}}"
+    assert r["decided_by"] == "owner", f"actor lost: {{r['decided_by']!r}}"
+    assert r["binding"], "binding lost"
+    print(json.dumps({{"id": r["id"], "state": center.consume_approval(r["id"])["state"]}}))
+elif step == "recheck":
+    rows = list(center._approvals.values())
+    assert rows, "the journal replayed nothing"
+    r = rows[0]
+    assert r["state"] == "CONSUMED", f"CONSUMED resurrected as {{r['state']}}"
+    try:
+        center.consume_approval(r["id"])
+        raise SystemExit("a consumed approval was consumable again")
+    except ValueError:
+        pass
+    print(json.dumps({{"id": r["id"], "state": r["state"]}}))
+'''
+
+
+def _child(step, journal):
+    import json
+    import subprocess
+
+    app_dir = os.path.dirname(HERE)
+    src = _CHILD.format(app_dir=app_dir, journal=journal)
+    proc = subprocess.run(
+        [sys.executable, "-c", src, step],
+        capture_output=True, text=True, timeout=60, cwd=app_dir,
+    )
+    assert proc.returncode == 0, f"child {step} failed:\n{proc.stdout}\n{proc.stderr}"
+    return json.loads(proc.stdout.strip().splitlines()[-1])
+
+
+def test_29_an_approved_approval_survives_a_real_restart(tmp_path):
+    journal = str(tmp_path / "approvals.jsonl")
+    created = _child("create", journal)
+    assert created["state"] == "APPROVED"
+    # A different interpreter, reading only the journal.
+    consumed = _child("consume", journal)
+    assert consumed["id"] == created["id"]
+    assert consumed["state"] == "CONSUMED"
+    # And a third: CONSUMED must not resurrect on replay.
+    assert _child("recheck", journal)["state"] == "CONSUMED"
+
+
+def test_29_a_corrupt_journal_does_not_break_the_gate(tmp_path):
+    """Fail-open on the journal is fail-closed on the gate.
+
+    A record that cannot be parsed cannot be found, and an approval that cannot
+    be found cannot be consumed. The gate must still start.
+    """
+    import subprocess
+
+    journal = tmp_path / "approvals.jsonl"
+    journal.write_text('{"id": "apr-orphan"}\n{not json at all\n\n', encoding="utf-8")
+    app_dir = os.path.dirname(HERE)
+    src = (
+        "import os, sys\n"
+        f"sys.path.insert(0, {app_dir!r})\n"
+        f"os.environ['ODDFELLOW_APPROVAL_JOURNAL'] = {str(journal)!r}\n"
+        "import command_center as cc\n"
+        f"cc.APPROVAL_JOURNAL_PATH = {str(journal)!r}\n"
+        "c = cc.CommandCenter()\n"
+        "print(len(c._approvals))\n"
+    )
+    proc = subprocess.run([sys.executable, "-c", src], capture_output=True, text=True,
+                          timeout=60, cwd=app_dir)
+    assert proc.returncode == 0, proc.stderr
+    # The orphan parses; the garbage line does not. Neither may crash startup.
+    assert proc.stdout.strip().splitlines()[-1] == "1"
