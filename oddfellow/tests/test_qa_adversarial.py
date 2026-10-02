@@ -183,23 +183,54 @@ def test_c1_nfc_approval_does_not_authorise_nfd_text(fake):
     assert r.json()["detail"]["reason"] == "approval_mismatch"
 
 
-def test_c1_trailing_whitespace_is_not_authorised(fake):
+def test_c1_a_whitespace_variant_is_the_same_command(fake):
+    """REVERSED 2026-10-02, deliberately. This test used to assert the opposite.
+
+    It was `test_c1_trailing_whitespace_is_not_authorised` and it required a
+    trailing space to invalidate an approval. A parallel session then made
+    bindings normalize whitespace, on the reasoning that two spellings of one
+    command must not be two different bindings -- and that over-normalising
+    (case, punctuation, wording) is what would be dangerous, not collapsing
+    whitespace.
+
+    The reversal is recorded rather than quietly applied, because a test that
+    flips its assertion is exactly the kind of change that should be visible.
+    The property that still holds is the one that matters: a *different* command
+    is refused, and the zero-width case below still is.
+    """
     m, f, client = fake
-    aid = _approve(client, "delete the branch")
-    for variant in ("delete the branch ", "delete the branch\n", "delete the branch\t"):
+    for variant in ("delete the branch ", "delete the branch\n", "delete the branch\t",
+                    "delete  the   branch"):
+        aid = _approve(client, "delete the branch")
         r = client.post("/api/letta/message", headers=auth(),
                         json={"input": variant, "approval_id": aid})
-        assert r.status_code == 403, variant
+        assert r.status_code == 200, f"{variant!r} should be the same command: {r.text}"
+
+
+def test_c1_whitespace_normalisation_does_not_reach_case_or_wording(fake):
+    """The guard against over-normalising.
+
+    Normalisation collapses whitespace and nothing else. If it ever grew to
+    case-fold or stem, a binding for one command would authorise a near-miss
+    variant -- which is the exact failure the binding exists to prevent.
+    """
+    m, f, client = fake
+    for variant in ("Delete the branch", "delete the branches", "delete the branch!",
+                    "delete the branch and more"):
+        aid = _approve(client, "delete the branch")
+        r = client.post("/api/letta/message", headers=auth(),
+                        json={"input": variant, "approval_id": aid})
+        assert r.status_code == 403, f"{variant!r} must not be authorised: {r.text}"
         assert r.json()["detail"]["reason"] == "approval_mismatch"
 
 
-def test_c1_crlf_variant_is_not_authorised(fake):
+def test_c1_crlf_is_the_same_command_as_lf(fake):
+    """Reversed 2026-10-02 for the same reason as the whitespace case above."""
     m, f, client = fake
     aid = _approve(client, "delete the branch\nnext")
     r = client.post("/api/letta/message", headers=auth(),
                     json={"input": "delete the branch\r\nnext", "approval_id": aid})
-    assert r.status_code == 403
-    assert r.json()["detail"]["reason"] == "approval_mismatch"
+    assert r.status_code == 200, r.text
 
 
 def test_c1_zero_width_variant_is_not_authorised(fake):
