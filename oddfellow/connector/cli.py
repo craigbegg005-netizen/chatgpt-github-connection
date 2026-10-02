@@ -37,6 +37,7 @@ from .lifecycle import connect_provider, disconnect_provider
 from .schema import Status
 from .store import Store
 from .tokens import Scope, TokenStore
+from .worker import reset_fingerprint, tick
 
 
 def _open(path: str) -> tuple[Store, TokenStore]:
@@ -140,6 +141,22 @@ def cmd_audit(store, tokens, args) -> int:
     return 0
 
 
+def cmd_tick(store, tokens, args) -> int:
+    """One idempotent queue pass. Safe to schedule; does nothing if nothing changed."""
+    report = tick(store, provider=args.provider, out_dir=args.out, limit=args.limit)
+    _emit(report)
+    # Exit 0 whether or not work was rendered: "nothing to do" is a successful tick,
+    # and a scheduled job that reports failure for an idle queue trains people to
+    # ignore its failures.
+    return 0
+
+
+def cmd_reset_tick(store, tokens, args) -> int:
+    reset_fingerprint(store)
+    _emit({"fingerprint": "cleared", "effect": "the next tick will render even if the queue is unchanged"})
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(prog="connector", description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -189,6 +206,15 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("audit", help="show the audit trail")
     p.add_argument("--limit", type=int, default=30)
     p.set_defaults(fn=cmd_audit)
+
+    p = sub.add_parser("tick", help="one idempotent queue pass; safe to schedule")
+    p.add_argument("--provider", default="claude")
+    p.add_argument("--out", default=".", help="directory to write the handoff into")
+    p.add_argument("--limit", type=int, default=20)
+    p.set_defaults(fn=cmd_tick)
+
+    p = sub.add_parser("reset-tick", help="forget the last handoff fingerprint")
+    p.set_defaults(fn=cmd_reset_tick)
 
     return ap
 

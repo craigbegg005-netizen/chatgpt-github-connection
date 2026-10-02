@@ -52,6 +52,7 @@ from .store import ClaimRefused, SubmitRefused
 from .tokens import TOOL_SCOPES, AuthError, Scope, TokenRecord, TokenStore
 from .handoff import HandoffResult, apply_handoff, parse_handoff, render_handoff
 from .lifecycle import DisconnectReport, connect_provider, disconnect_provider
+from .worker import reset_fingerprint, tick
 
 __all__ = [
     "APPROVAL_REQUIRED",
@@ -77,6 +78,8 @@ __all__ = [
     "DisconnectReport",
     "connect_provider",
     "disconnect_provider",
+    "reset_fingerprint",
+    "tick",
     "TRANSPORT_LADDER",
     "TaskKind",
     "ToolSpec",

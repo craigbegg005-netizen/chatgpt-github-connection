@@ -230,6 +230,28 @@ class Store:
             return ""
         return str(json.loads(row["value"]).get("reason", ""))
 
+    # ---------------------------------------------------------------- flags
+
+    def flag_get(self, key: str, default: str | None = None) -> str | None:
+        """Read a durable key/value flag. Survives a restart, like the pause flag.
+
+        Generic because a worker needs to remember what it last did: without a
+        place to record "I already rendered a handoff for this exact set of jobs",
+        every tick either repeats identical work forever or does nothing at all.
+        """
+        row = self._conn.execute(
+            "SELECT value FROM flags WHERE key=?", (key,)
+        ).fetchone()
+        return row["value"] if row else default
+
+    def flag_set(self, key: str, value: str) -> None:
+        self._conn.execute(
+            "INSERT INTO flags (key, value, at) VALUES (?, ?, ?) "
+            "ON CONFLICT(key) DO UPDATE SET value=excluded.value, at=excluded.at",
+            (key, value, _now()),
+        )
+        self._conn.commit()
+
     # ---------------------------------------------------------------- state
 
     def set_state(self, project: str, key: str, value: Any, actor: str) -> None:
