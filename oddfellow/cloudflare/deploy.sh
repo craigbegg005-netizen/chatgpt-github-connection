@@ -111,6 +111,23 @@ deploy_remote() {
   [ -n "${LETTA_API_KEY:-}" ] || die "LETTA_API_KEY is not set in the environment"
   [ -n "${ODDFELLOW_OWNER_TOKEN:-}" ] || die "ODDFELLOW_OWNER_TOKEN is not set in the environment"
 
+  # Credentials, checked here so a missing token fails with a sentence rather
+  # than a wrangler stack trace. Either an API token or an existing `wrangler
+  # login` session works; wrangler picks up the token from the environment on its
+  # own, so this is a precondition check and not a hand-off of the value.
+  if [ -z "${CLOUDFLARE_API_TOKEN:-}" ] && [ ! -f "$HOME/.config/.wrangler/config/default.toml" ]; then
+    die "No Cloudflare credential. Set CLOUDFLARE_API_TOKEN, or run 'npx wrangler login' once.
+  A token needs, at minimum, the 'Workers Scripts: Edit' permission for the target account."
+  fi
+
+  # wrangler.toml deliberately carries no account_id. That works when the token
+  # sees exactly one account, and fails with a clear wrangler error when it sees
+  # more than one -- so name the fix here instead of letting it surprise someone
+  # at the end of a deploy.
+  if [ -z "${CLOUDFLARE_ACCOUNT_ID:-}" ]; then
+    say "CLOUDFLARE_ACCOUNT_ID is not set; wrangler will infer it. If the token can see more than one account, set it (Cloudflare dashboard -> account -> Account ID) and re-run."
+  fi
+
   say "Deploying to Cloudflare Workers"
   ( cd "$HERE" && npx --yes wrangler@latest deploy ) | tee /tmp/oddfellow-deploy.log
 
