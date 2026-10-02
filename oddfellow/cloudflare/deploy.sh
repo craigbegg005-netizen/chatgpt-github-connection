@@ -58,6 +58,29 @@ verify_local() {
   cleanup() {
     [ -n "${pid:-}" ] || return 0
     kill -- -"$pid" 2>/dev/null || kill "$pid" 2>/dev/null || true
+    # The kill above can miss entirely, and this is the third time it has.
+    #
+    # `pid` is the PID of the SUBSHELL, but `setsid` puts the real tree
+    # (npx -> node -> workerd) into a NEW session with a different process-group
+    # id -- so `kill -- -$pid` targets a group that no longer contains it, and
+    # `workerd` keeps holding the port. The comment above used to claim this was
+    # handled; it was not, and the evidence was a live listener on 8799 after the
+    # script had already exited.
+    #
+    # So: verify rather than assume. Whatever is still listening on the port we
+    # chose gets killed, which is correct regardless of how the process tree is
+    # shaped.
+    local holder i
+    for i in 1 2 3 4 5; do
+      # ${port:-} not $port: this runs from an EXIT trap, by which point the
+      # function's `local port` is gone and `set -u` would abort the cleanup --
+      # turning a fix for a leaked port into a crash during cleanup.
+      holder="$(ss -ltnp 2>/dev/null | awk -v p=":${port:-}" '$4 ~ p' \
+                | grep -o 'pid=[0-9]*' | cut -d= -f2 | head -1)"
+      [ -n "$holder" ] || break
+      kill "$holder" 2>/dev/null || true
+      sleep 1
+    done
     wait "$pid" 2>/dev/null || true
     pid=""
   }
