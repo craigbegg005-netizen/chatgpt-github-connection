@@ -31,6 +31,31 @@ Status vocabulary: `✅ VERIFIED` (checked against the program's own page) · `�
 | Equity | **None.** Standard grant; the company retains full ownership of its IP |
 | Current solicitation | NSF 26-510 |
 | Gate | **A Project Pitch is mandatory.** No invitation, no proposal |
+| **Live status** | ✅ **OPEN** — verified against nsf.gov 2026-10-02 00:05 UTC |
+| **Deadlines (VERIFIED)** | **July 27 2026** (passed) · **November 4 2026** · **March 4 2027** · **July 7 2027** — all 5:00 p.m. submitter's local time |
+| **Next realistic target** | ⚠️ **March 4 2027** — see the timing note below |
+
+### ⚠️ The timing note that changes the plan — pitch now, aim at March
+
+**Verified:** a Project Pitch is answered in **1–2 months**, and an invitation is valid for the
+**next two deadlines** only.
+
+**Therefore (this part is my inference, not a program term):** today is 2026-10-02. The next
+deadline is **November 4 2026 — 33 days away.** A pitch submitted today would be answered
+somewhere between roughly 2026-11-02 and 2026-12-02, which lands **at or after** that deadline.
+So November 4 is not a realistic target from a standing start, and the honest plan is:
+
+- **Submit the Project Pitch now**, aiming at the **March 4 2027** deadline. That gives the
+  1–2 month response window comfortable room, and the invitation would still be valid for
+  March 4 and the following deadline.
+- **Do not** plan against November 4. It invites a rushed pitch, and a rushed pitch is judged on
+  technical risk — the one thing that cannot be faked at short notice.
+
+**Also verified and not previously in this file:** Phase II is up to **$1,250,000** (typically 24
+months) and Phase IIB Supplements run **$50,000–$500,000**; there is a **second solicitation,
+NSF 26-511**, a pilot emphasis on scientific instrumentation. Registration on **SAM.gov,
+Research.gov and SBA.gov** is required before submission, and SAM registration is not instant —
+start it well before any deadline.
 
 **Verified process facts:**
 - Project Pitch may be submitted at any time; NSF typically responds in **1–2 months**.
