@@ -38,7 +38,19 @@ _QUESTION_TAIL = re.compile(r"\?\s*$")
 # "normal" and forwarded to Letta with no approval at all.
 _RISKY = re.compile(
     r"\b(delete|remove|erase|publish|post to|send (an? )?(email|message|money|payment)"
-    r"|spend|buy|purchase|pay|transfer|deploy to production|production deploy"
+    # `spend` must not fire on the project's OWN doctrine term. "zero-spend" is
+    # the core rule this system runs on, and the question exemption does not save
+    # it: "what is the zero-spend rule?" is normal, but "confirm the zero-spend
+    # rule" was classified ELEVATED and refused with a 403. That broke the
+    # acceptance harness and would have broken real use -- the owner could not
+    # state his own operating rule without an approval gate firing.
+    #
+    # So: not when preceded by "zero", and not when followed by a policy word
+    # (rule/ceiling/limit/policy/cap), because those name the policy rather than
+    # instructing a spend. A real instruction -- "spend money on ads" -- still
+    # matches, and there is a regression test for each direction.
+    r"|(?<!zero[-_ ])spend(?!\s+(?:rule|ceiling|limit|policy|cap))"
+    r"|buy|purchase|pay|transfer|deploy to production|production deploy"
     r"|password|credential|api key|payment"
     # Added 2026-10-02 after QA showed these were classified normal:
     r"|wipe|exfiltrate|destroy|drain|revoke|terminate|overwrite|uninstall"

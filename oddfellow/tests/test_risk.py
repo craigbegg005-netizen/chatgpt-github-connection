@@ -463,3 +463,58 @@ class ApprovalPersistenceTests(unittest.TestCase):
             cc._journal_path = journal
             cc._journal_load()  # must not raise
             self.assertIsNotNone(cc.get_approval("apr-good"))
+
+
+class TestDoctrineTermIsNotElevated(unittest.TestCase):
+    """`zero-spend` is the project's own doctrine term, not a spend instruction.
+
+    Found 2026-10-02 by running the acceptance harness, which failed with a 403 on
+    its own harmless probe. The cause was not the harness: the server's risk
+    classifier matched `spend` inside `zero-spend`, so the owner could not state
+    his own operating rule without an approval gate firing.
+
+    The question exemption hid it. "what is the zero-spend rule?" was already
+    normal because it is a question -- but "confirm the zero-spend rule" is not a
+    question, so it was refused. A rule that only holds for interrogative phrasing
+    is not a rule about the doctrine, it is a rule about punctuation.
+
+    Both directions are asserted, because the cheap fix for a false positive is to
+    broaden an exemption until real instructions slip through, and that would be a
+    worse bug than the one being fixed.
+    """
+
+    def test_the_doctrine_term_alone_is_normal(self):
+        assert classify("zero-spend") == "normal"
+
+    def test_stating_the_rule_is_not_a_spend(self):
+        for text in (
+            "One short sentence: state your name and confirm the zero-spend rule.",
+            "confirm the zero-spend rule",
+            "zero spend policy",
+            "restate the zero-spend rule please",
+        ):
+            assert classify(text) == "normal", text
+
+    def test_policy_references_are_not_spends(self):
+        for text in (
+            "confirm the spend ceiling",
+            "what is the spend limit?",
+            "check the spend cap",
+        ):
+            assert classify(text) == "normal", text
+
+    def test_real_spend_instructions_are_still_elevated(self):
+        """The half that matters: the fix must not open a hole."""
+        for text in (
+            "spend money on ads",
+            "spend $500 on hosting",
+            "spend 200 dollars on a subscription",
+            "buy a subscription",
+            "purchase a server",
+            "send payment to the vendor",
+        ):
+            assert classify(text) == "elevated", text
+
+    def test_destructive_patterns_are_unaffected(self):
+        for text in ("rm -rf /", "DROP TABLE users", "delete the staging database"):
+            assert classify(text) == "elevated", text
