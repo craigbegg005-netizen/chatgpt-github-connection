@@ -63,6 +63,20 @@ def binding_hash(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
+def normalized_binding_text(text: str) -> str:
+    """The canonical form an approval binds to.
+
+    The enforcement path binds to the *exact* text, but two spellings of the
+    same command must not become two different bindings: whitespace runs are
+    collapsed and stripped, so ``"delete   the  branch"`` and
+    ``"delete the branch"`` hash identically. Everything else -- case,
+    punctuation, wording -- is left alone: over-normalising would let a
+    binding for one command authorise a near-miss variant, which is the
+    exact failure the exact-match binding exists to prevent.
+    """
+    return " ".join((text or "").split())
+
+
 # --------------------------------------------------------------------------- #
 # Registry
 # --------------------------------------------------------------------------- #
@@ -78,6 +92,12 @@ def binding_hash(text: str) -> str:
 # fix for that: it is returned by /api/command/status so a reader can see how old
 # the registry is before trusting it. It is not a substitute for per-entry dates.
 REGISTRY_AS_OF = "2026-10-01"
+
+# How long an APPROVED approval stays valid, counted from the decision. An
+# owner decision must not be bankable indefinitely: 15 minutes is enough to
+# read the result of the command the approval was made for, and short enough
+# that a decision made before a change of mind cannot be executed after it.
+APPROVAL_TTL_SECONDS = 15 * 60
 
 DEPARTMENTS: list[dict[str, Any]] = [
     {"name": "Executive / AI CEO", "state": "RUNNING",
@@ -195,7 +215,8 @@ class CommandCenter:
             "decided_at": None,
             "decision": None,
             "note": "",
-            "binding": binding_hash(binding_text) if binding_text is not None else None,
+            "binding": binding_hash(normalized_binding_text(binding_text))
+                       if binding_text is not None else None,
         }
         with self._lock:
             self._approvals[record["id"]] = record
@@ -222,9 +243,31 @@ class CommandCenter:
                 raise KeyError(approval_id)
             if record["state"] != "APPROVED":
                 raise ValueError(f"approval is {record['state']}, not APPROVED")
+            if self.approval_expired(record):
+                record["state"] = "EXPIRED"
+                raise ValueError(
+                    "approval expired: decided more than "
+                    f"{APPROVAL_TTL_SECONDS // 60} minutes ago"
+                )
             record["state"] = "CONSUMED"
             record["consumed_at"] = time.time()
             return dict(record)
+
+    def approval_expired(self, record: dict[str, Any]) -> bool:
+        """True when an APPROVED approval has outlived its validity window.
+
+        An approval that never expires is an approval that can be banked:
+        decide today, execute in a month, against a decision the owner no
+        longer remembers making. The window runs from the *decision*, not
+        creation -- an approval that sat WAITING_AUTHORIZATION for a week
+        must not be born half-expired.
+        """
+        if record.get("state") != "APPROVED":
+            return False
+        decided_at = record.get("decided_at")
+        if not decided_at:
+            return False
+        return (time.time() - decided_at) > APPROVAL_TTL_SECONDS
 
     def list_approvals(self, state: Optional[str] = None) -> list[dict[str, Any]]:
         with self._lock:

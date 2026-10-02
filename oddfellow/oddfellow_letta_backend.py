@@ -218,7 +218,12 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from command_center import CommandCenter, binding_hash, build_router
+from command_center import (
+    CommandCenter,
+    binding_hash,
+    build_router,
+    normalized_binding_text,
+)
 from risk import classify as classify_risk
 
 # --------------------------------------------------------------------------- #
@@ -559,7 +564,9 @@ def require_approval_if_elevated(
             "so it authorises nothing.",
         )
 
-    if not hmac.compare_digest(record["binding"], binding_hash(text)):
+    if not hmac.compare_digest(
+        record["binding"], binding_hash(normalized_binding_text(text))
+    ):
         refuse(
             "approval_mismatch",
             "That approval authorises a different command. An approval binds to "

@@ -22,6 +22,7 @@ APP_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, APP_DIR)
 
 from risk import classify, is_elevated  # noqa: E402
+import command_center  # noqa: E402
 from command_center import CommandCenter  # noqa: E402
 
 FRONTEND = os.path.join(APP_DIR, "frontend", "index.html")
@@ -274,3 +275,60 @@ class ApprovalSingleUseTests(unittest.TestCase):
             center.consume_approval(waiting["id"])  # still WAITING_AUTHORIZATION
         with self.assertRaises(KeyError):
             center.consume_approval("apr-doesnotexist")
+
+
+class ApprovalExpiryAndNormalizationTests(unittest.TestCase):
+    """Security regression tests for the §29 release gate.
+
+    Expiration: an APPROVED approval must die after its TTL, counted from the
+    decision. Normalization: whitespace variants of one command share a
+    binding, but near-miss wording must NOT.
+    """
+
+    def test_expired_approval_cannot_be_consumed(self):
+        center = CommandCenter()
+        rec = center.add_approval("Deploy", "d", "high", binding_text="delete the branch")
+        center.decide(rec["id"], "approve")
+        # Age the decision past the TTL
+        with center._lock:
+            center._approvals[rec["id"]]["decided_at"] = (
+                __import__("time").time() - command_center.APPROVAL_TTL_SECONDS - 1
+            )
+        with self.assertRaises(ValueError) as ctx:
+            center.consume_approval(rec["id"])
+        self.assertIn("expired", str(ctx.exception))
+        self.assertEqual(center.get_approval(rec["id"])["state"], "EXPIRED")
+
+    def test_fresh_approval_is_not_expired(self):
+        center = CommandCenter()
+        rec = center.add_approval("Deploy", "d", "high", binding_text="delete the branch")
+        center.decide(rec["id"], "approve")
+        self.assertFalse(center.approval_expired(center.get_approval(rec["id"])))
+        retired = center.consume_approval(rec["id"])
+        self.assertEqual(retired["state"], "CONSUMED")
+
+    def test_whitespace_variants_share_a_binding(self):
+        from command_center import binding_hash, normalized_binding_text
+        self.assertEqual(
+            binding_hash(normalized_binding_text("delete   the  branch")),
+            binding_hash(normalized_binding_text(" delete the branch ")),
+        )
+
+    def test_near_miss_wording_does_not_share_a_binding(self):
+        from command_center import binding_hash, normalized_binding_text
+        self.assertNotEqual(
+            binding_hash(normalized_binding_text("delete the branch")),
+            binding_hash(normalized_binding_text("delete the branch and transfer the balance")),
+        )
+
+    def test_expiry_runs_from_decision_not_creation(self):
+        import time as _time
+        center = CommandCenter()
+        rec = center.add_approval("Deploy", "d", "high", binding_text="delete the branch")
+        # Sat WAITING_AUTHORIZATION for longer than the TTL, then decided now
+        with center._lock:
+            center._approvals[rec["id"]]["created_at"] = (
+                _time.time() - command_center.APPROVAL_TTL_SECONDS * 10
+            )
+        center.decide(rec["id"], "approve")
+        self.assertFalse(center.approval_expired(center.get_approval(rec["id"])))
