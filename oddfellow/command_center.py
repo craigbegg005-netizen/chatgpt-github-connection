@@ -38,6 +38,7 @@ import threading
 import time
 import uuid
 import os
+import json
 from typing import Any, Callable, Optional
 
 from fastapi import APIRouter, Body, HTTPException, Request
@@ -111,6 +112,14 @@ REGISTRY_AS_OF = "2026-10-01"
 # read the result of the command the approval was made for, and short enough
 # that a decision made before a change of mind cannot be executed after it.
 APPROVAL_TTL_SECONDS = 15 * 60
+
+# Where the approval store persists across restarts, when persistence is on.
+# Render's free disk is ephemeral across *deploys* but survives ordinary
+# restarts and idle spins; a journal there extends approval lifetime from
+# "until the next process death" to "across restarts", which is the §29
+# requirement that in-memory storage could not meet. Empty string / unset
+# disables persistence (tests, rehearsal); the status endpoint reports which.
+APPROVAL_JOURNAL_PATH = os.environ.get("ODDFELLOW_APPROVAL_JOURNAL", "").strip()
 
 DEPARTMENTS: list[dict[str, Any]] = [
     {"name": "Executive / AI CEO", "state": "RUNNING",
@@ -195,6 +204,61 @@ class CommandCenter:
         self._audit_ring = audit_ring
         self._paused = False
         self._pause_reason = ""
+        self._journal_path = APPROVAL_JOURNAL_PATH
+        if self._journal_path:
+            self._journal_load()
+
+    # -- persistence -------------------------------------------------------- #
+
+    def _journal_load(self) -> None:
+        """Replay the approval journal at startup. Never raises.
+
+        A corrupt or unreadable journal is logged and skipped: persistence is
+        an extension of lifetime, not a dependency the gate cannot run
+        without. Fail-open on the *journal* is fail-closed on the *gate* --
+        an approval that cannot be found cannot be consumed, and a missing
+        journal leaves exactly the pre-persistence behaviour.
+        """
+        try:
+            with open(self._journal_path, "r", encoding="utf-8") as fh:
+                for line in fh:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        record = json.loads(line)
+                    except ValueError:
+                        continue  # corrupt line: skip, do not crash the gate
+                    if isinstance(record, dict) and record.get("id"):
+                        self._approvals[record["id"]] = record
+        except OSError:
+            pass  # no journal yet, or unreadable: start empty, as before
+
+    def _journal_append(self, record: dict[str, Any]) -> None:
+        """Write one record to the journal. Never raises."""
+        if not self._journal_path:
+            return
+        try:
+            with open(self._journal_path, "a", encoding="utf-8") as fh:
+                fh.write(json.dumps(record, separators=(",", ":")) + "\n")
+        except OSError:
+            pass  # persistence is best-effort; the gate still holds in memory
+
+    def _journal_flush(self) -> None:
+        """Rewrite the journal from the live store. Never raises.
+
+        Compaction: the journal is append-only for durability, but the live
+        store drops nothing, so a rewrite is a faithful snapshot and keeps the
+        file bounded.
+        """
+        if not self._journal_path:
+            return
+        try:
+            with open(self._journal_path, "w", encoding="utf-8") as fh:
+                for record in self._approvals.values():
+                    fh.write(json.dumps(record, separators=(",", ":")) + "\n")
+        except OSError:
+            pass
 
     # -- approvals ---------------------------------------------------------- #
 
@@ -234,6 +298,7 @@ class CommandCenter:
         }
         with self._lock:
             self._approvals[record["id"]] = record
+            self._journal_append(record)
         return record
 
     def get_approval(self, approval_id: str) -> Optional[dict[str, Any]]:
@@ -259,12 +324,14 @@ class CommandCenter:
                 raise ValueError(f"approval is {record['state']}, not APPROVED")
             if self.approval_expired(record):
                 record["state"] = "EXPIRED"
+                self._journal_flush()
                 raise ValueError(
                     "approval expired: decided more than "
                     f"{APPROVAL_TTL_SECONDS // 60} minutes ago"
                 )
             record["state"] = "CONSUMED"
             record["consumed_at"] = time.time()
+            self._journal_flush()
             return dict(record)
 
     def approval_expired(self, record: dict[str, Any]) -> bool:
@@ -319,6 +386,7 @@ class CommandCenter:
             record["decided_at"] = time.time()
             record["decided_by"] = (actor or "").strip() or None
             record["note"] = (note or "").strip()
+            self._journal_flush()
             return dict(record)
 
     # -- pause -------------------------------------------------------------- #
@@ -361,7 +429,11 @@ class CommandCenter:
             "departments": DEPARTMENTS,
             "lanes": LANES,
             "approvals_pending": len(pending),
-            "state_persistence": "in-memory: this state does not survive a restart",
+            "state_persistence": (
+                "journal at " + APPROVAL_JOURNAL_PATH
+                if APPROVAL_JOURNAL_PATH else
+                "in-memory: this state does not survive a restart"
+            ),
             "note": "Statuses are claims with evidence, not live probes. LIVE is not VERIFIED. "
                     "The claims are hand-maintained, so read registry_as_of before trusting "
                     "them — two of them were already stale when this date was added.",

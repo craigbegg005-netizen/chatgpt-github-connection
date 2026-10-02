@@ -402,3 +402,64 @@ class ApprovalExpiryAndNormalizationTests(unittest.TestCase):
             )
         center.decide(rec["id"], "approve")
         self.assertFalse(center.approval_expired(center.get_approval(rec["id"])))
+
+
+class ApprovalPersistenceTests(unittest.TestCase):
+    """§29's last open item: approvals must survive a restart.
+
+    The journal is opt-in via ODDFELLOW_APPROVAL_JOURNAL. These tests set it,
+    mutate approvals, then build a *second* CommandCenter from the same file —
+    the restart simulation — and assert the state carried over.
+    """
+
+    def test_approvals_survive_a_restart(self):
+        import tempfile, os as _os
+        with tempfile.TemporaryDirectory() as td:
+            journal = _os.path.join(td, "approvals.jsonl")
+            cc1 = command_center.CommandCenter()
+            cc1._journal_path = journal
+            rec = cc1.add_approval("Deploy", "d", "critical", binding_text="delete the branch")
+            cc1.decide(rec["id"], "approve", actor="owner")
+            # Simulated restart: a fresh instance reads the same journal
+            cc2 = command_center.CommandCenter()
+            cc2._journal_path = journal
+            cc2._journal_load()
+            loaded = cc2.get_approval(rec["id"])
+            self.assertIsNotNone(loaded, "approval lost across restart")
+            self.assertEqual(loaded["state"], "APPROVED")
+            self.assertEqual(loaded["decided_by"], "owner")
+            # And it is still consumable exactly once
+            retired = cc2.consume_approval(rec["id"])
+            self.assertEqual(retired["state"], "CONSUMED")
+            with self.assertRaises(ValueError):
+                cc2.consume_approval(rec["id"])
+
+    def test_consumed_state_survives_restart(self):
+        import tempfile, os as _os
+        with tempfile.TemporaryDirectory() as td:
+            journal = _os.path.join(td, "approvals.jsonl")
+            cc1 = command_center.CommandCenter()
+            cc1._journal_path = journal
+            rec = cc1.add_approval("Deploy", "d", "high", binding_text="wipe the logs")
+            cc1.decide(rec["id"], "approve", actor="owner")
+            cc1.consume_approval(rec["id"])
+            # Restart: the CONSUMED state must not resurrect as usable
+            cc2 = command_center.CommandCenter()
+            cc2._journal_path = journal
+            cc2._journal_load()
+            loaded = cc2.get_approval(rec["id"])
+            self.assertEqual(loaded["state"], "CONSUMED")
+            with self.assertRaises(ValueError):
+                cc2.consume_approval(rec["id"])
+
+    def test_corrupt_journal_does_not_break_the_gate(self):
+        import tempfile, os as _os
+        with tempfile.TemporaryDirectory() as td:
+            journal = _os.path.join(td, "approvals.jsonl")
+            with open(journal, "w") as fh:
+                fh.write("not json at all\n")
+                fh.write('{"id": "apr-good", "state": "WAITING_AUTHORIZATION"}\n')
+            cc = command_center.CommandCenter()
+            cc._journal_path = journal
+            cc._journal_load()  # must not raise
+            self.assertIsNotNone(cc.get_approval("apr-good"))
