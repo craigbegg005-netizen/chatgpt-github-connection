@@ -168,80 +168,74 @@ def test_the_question_exemption_is_not_a_bypass_for_structural_danger():
 # The drift check
 # --------------------------------------------------------------------------- #
 
-def _js_regex_literals(line: str) -> list[str]:
-    """Pull `/.../` literals out of one line of JavaScript."""
-    return re.findall(r"/((?:[^/\\]|\\.)+)/", line)
+def _shipped_plan_source() -> str:
+    """The page's own `plan()` function, extracted by brace balancing.
+
+    Extracting the *function* and calling it is not the same as extracting its
+    regex literals and re-applying them here. The first runs the shipped code;
+    the second runs a copy of the logic written in this file. This file did the
+    second for two days, and could not see a real defect in the shipped line --
+    `const destructive=/(?:...)/;` with no `.test()`, a regex object that is
+    always truthy, so the page flagged every non-question as elevated.
+    """
+    html = open(FRONTEND, encoding="utf-8").read()
+    start = html.index("function plan(")
+    open_brace = html.index("{", start)
+    depth, i = 0, open_brace
+    while i < len(html):
+        if html[i] == "{":
+            depth += 1
+        elif html[i] == "}":
+            depth -= 1
+            if depth == 0:
+                return html[start : i + 1]
+        i += 1
+    raise AssertionError("unbalanced braces in the page's plan()")
+
+
+def _run_shipped_plan(texts: list[str]) -> dict[str, str]:
+    """Call the page's `plan()` in node and return ``{text: risk}``."""
+    import json
+    import shutil
+    import subprocess
+
+    node = shutil.which("node")
+    if not node:
+        pytest.skip("node is not available to run the page's plan()")
+
+    script = (
+        "const src = " + json.dumps(_shipped_plan_source()) + ";\n"
+        "const plan = new Function(src + '\\nreturn plan;')();\n"
+        "const cases = JSON.parse(process.argv[1]);\n"
+        "console.log(JSON.stringify(cases.map(t => plan(t).risk)));\n"
+    )
+    proc = subprocess.run(
+        [node, "-e", script, json.dumps(texts)],
+        capture_output=True, text=True, timeout=60,
+    )
+    assert proc.returncode == 0, f"node failed running the page's plan():\n{proc.stderr}"
+    risks = json.loads(proc.stdout.strip().splitlines()[-1])
+    assert len(risks) == len(texts), "node returned the wrong number of results"
+    return dict(zip(texts, risks))
+
+
+_CLIENT_RISKS: dict[str, str] | None = None
 
 
 def _client_classifier():
-    """Rebuild the front end's classifier from the HTML, as Python.
+    """A callable that asks the page's own `plan()` -- not a copy of it.
 
-    This is deliberately a re-implementation from the *source text* rather than
-    a shared import: the point is to test what is actually shipped to the
-    browser, not what a refactor would prefer it to be.
+    The whole corpus is run in one node invocation and cached, so this costs one
+    process for the suite rather than one per case.
     """
-    html = open(FRONTEND, encoding="utf-8").read()
-    lead_line = re.search(r"^\s*const askingLead=.*$", html, re.M)
-    asking_line = re.search(r"^\s*const asking=.*$", html, re.M)
-    risky_line = re.search(r"^\s*const risky=.*$", html, re.M)
-    destructive_line = re.search(r"^\s*const destructive=.*$", html, re.M)
-    scrub_line = re.search(r"^\s*const scrubbed=.*$", html, re.M)
-    assert lead_line, "could not find the client's `askingLead` rule in index.html"
-    assert asking_line, "could not find the client's `asking` rule in index.html"
-    assert risky_line, "could not find the client's `risky` rule in index.html"
-    assert destructive_line, "could not find the client's `destructive` rule in index.html"
-    assert scrub_line, "could not find the client's `scrubbed` step in index.html"
-
-    lead = [re.compile(p) for p in _js_regex_literals(lead_line.group(0))]
-    # The page composes `asking` as `askingLead || /\?\s*$/`, so the extraction
-    # has to compose it the same way rather than reading the line in isolation.
-    asking = lead + [re.compile(p) for p in _js_regex_literals(asking_line.group(0))]
-    risky = [re.compile(p) for p in _js_regex_literals(risky_line.group(0))]
-    destructive = [re.compile(p) for p in _js_regex_literals(destructive_line.group(0))]
-    # The page strips the doctrine term and policy references before the verb
-    # layer, so the extraction has to strip them too -- otherwise this test would
-    # keep passing while the shipped page behaved differently, which is the exact
-    # failure it exists to catch.
-    scrub = [re.compile(p) for p in _js_regex_literals(scrub_line.group(0))]
-    assert lead, "no regex literals found in the client's `askingLead` rule"
-    assert risky, "no regex literals found in the client's `risky` rule"
-    assert destructive, "no regex literals found in the client's `destructive` rule"
-    assert len(scrub) >= 2, "expected two scrub patterns in the client"
-
-    # The page must actually TEST each regex. This test used to extract the
-    # literals and apply `.search()` itself, which meant it verified its own
-    # re-implementation rather than the shipped code -- and it passed for a long
-    # time while the page assigned `destructive` as a REGEX OBJECT with no
-    # `.test()`. A regex object is always truthy, so `destructive && !askingLead`
-    # was true for every non-question and the browser flagged everything as
-    # elevated. The server was correct, so nothing server-side failed; only the
-    # page was wrong, and the test that existed to compare them could not see it.
-    #
-    # Asserting the call is present is what makes this test about the shipped code.
-    for label, line in (
-        ("askingLead", lead_line.group(0)),
-        ("asking", asking_line.group(0)),
-        ("risky", risky_line.group(0)),
-        ("destructive", destructive_line.group(0)),
-    ):
-        assert ".test(" in line, (
-            f"the client's `{label}` rule extracts a regex but never calls .test() "
-            f"on it -- the regex object itself is truthy, so the rule would always "
-            f"fire. Line: {line.strip()[:120]}"
-        )
 
     def client_is_elevated(text: str) -> bool:
-        lowered = text.lower()
-        scrubbed = lowered
-        for r in scrub:
-            scrubbed = r.sub(" ", scrubbed)
-        # Mirrors index.html exactly: the structural layer consults only the
-        # leading interrogative, the verb layer consults both.
-        if any(r.search(lowered) for r in destructive):
-            return not any(r.search(lowered) for r in lead)
-        if any(r.search(lowered) for r in asking):
-            return False
-        return any(r.search(scrubbed) for r in risky)
+        global _CLIENT_RISKS
+        if _CLIENT_RISKS is None:
+            _CLIENT_RISKS = _run_shipped_plan(ELEVATED_CASES + NORMAL_CASES)
+        if text not in _CLIENT_RISKS:
+            _CLIENT_RISKS.update(_run_shipped_plan([text]))
+        return _CLIENT_RISKS[text] == "elevated"
 
     return client_is_elevated
 
