@@ -1,2 +1,6 @@
 -r requirements.txt
 pytest>=8.0
+# Imported by frontend/icons/make_icons.py, the one-off PWA icon generator.
+# Not needed at runtime or by the test suite (the generated PNGs are committed),
+# so it belongs here rather than in requirements.txt. Legal/IP audit 2026-10-02.
+Pillow>=10
