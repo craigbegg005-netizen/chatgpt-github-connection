@@ -9,6 +9,14 @@ Status labels: ✅ VERIFIED · 🟢 LIVE · 🚀 DEPLOYED · 🔗 CONNECTED · �
 Maintained by Oddfellow (Letta agent). Last verification sweep: **2026-10-01 04:05 UTC**.
 Every "verified" line below was checked by an actual request from this agent at that time.
 
+**Partial re-verification 2026-10-02 02:5x UTC (Operations department), by actual request:**
+`oddfellow-letta-backend-v0206` `/livez` → **200** (`ready:false`, v0.20.6), `/healthz` → **503**;
+`oddfellow-letta-backend` (dead) `/livez` → **000**; `oddfellow-letta-poc` `/livez` → **404**;
+`oddfellow-personal-staging-v017b` `/` → **303**; `oddfellow-personal-secure` `/` → **303**;
+`begg-ai-industries-v013` `/` → **200**; `begg-ai-core-v010` `/` → **200**;
+`begg-ai-command-center` `/` → **401**. All match the rows below. Rows not re-probed this cycle
+keep their 2026-10-01 stamp.
+
 **Sweep 2026-10-01 04:05 UTC — re-probe of all 10 services.** **33 of 35 surfaces** returned a
 result; the other 2 are named below and are the reason for the count. Everything below still
 holds. Three notes from that sweep:
@@ -44,7 +52,8 @@ holds. Three notes from that sweep:
 | `letta/independent-verification-2026-09-30` | `46d731b` | ✅ VERIFIED — independent reproduction of the deploy branch's claims |
 
 **Connector status, stated at the level it has actually reached:** the core is
-**TESTED** (113 offline tests), **COMMITTED**, and now **MERGED INTO CANONICAL** and
+**TESTED** (**123** offline tests — corrected 2026-10-02 from 113; `connector/tests/test_worker.py`
+accounts for the 10 later additions), **COMMITTED**, and now **MERGED INTO CANONICAL** and
 **USED** — the Command Center exposes its queue at `GET /api/command/jobs`. Its credential model is now
 **real** — scoped, revocable, per-provider tokens with constant-time verification,
 and the owner master token refused *by value*. It is **not CONNECTED** to any
@@ -244,7 +253,10 @@ one confusingly similar name.
 
 ```bash
 # branch heads and repo access
-cd /root/workspace/oddfellow-repo
+# NOTE (corrected 2026-10-02): the checkout path depends on the worktree in use. The path
+# previously written here, /root/workspace/oddfellow-repo, does not exist in the current
+# sandbox; worktrees live under /root/workspace/<dept>. Use the checkout you are actually in.
+cd /root/workspace/dept-ops   # or your own worktree
 git fetch origin '+refs/heads/*:refs/remotes/origin/*'
 git rev-parse --short origin/letta/combined-single-service-v0.20.4
 GH_REPO=craigbegg005-netizen/chatgpt-github-connection gh api installation/repositories --jq .total_count

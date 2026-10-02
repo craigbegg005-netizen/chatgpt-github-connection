@@ -16,6 +16,20 @@
 # i.e. RUNNING but NOT READY -- fail-closed on two missing environment variables.
 # The app builds and starts. The fix is the two secrets, not the build.
 #
+# RE-VERIFIED 2026-10-02 02:5x UTC by the Operations department, by actual request:
+#   GET https://oddfellow-letta-backend-v0206.onrender.com/livez  -> 200 (ready:false, v0.20.6)
+#   GET https://oddfellow-letta-backend-v0206.onrender.com/healthz -> 503 (same two names)
+#   GET https://oddfellow-letta-backend.onrender.com/livez         -> 000 (no response, 45s)
+# The mismatch is real and current: the name below is DEAD, the live service is -v0206.
+#
+# IS IT SAFE TO CHANGE `name:` HERE? NO -- it needs owner authorization, not a
+# unilateral edit. Changing `name` in a Render Blueprint makes Render treat it as a
+# different service; re-applying the Blueprint could then create a NEW service, or
+# (if the name were changed to the live one) act on the live service. Either is a
+# Render control-plane action. The standing rule is no Render churn before the owner
+# secrets are in place, and this agent has no Render access. So the discrepancy is
+# recorded here and left for the owner to decide; it is NOT fixed by editing this file.
+#
 # Do NOT "fix" this by renaming the service here: a Blueprint sync could then act
 # on the live service. Record the discrepancy and let the owner decide.
 #

@@ -8,12 +8,47 @@ Prepared by Oddfellow (Letta agent), 2026-09-30. Times in CT.
 
 ---
 
-## ⚠️ CURRENT AS OF 2026-09-30 07:00 UTC — read this before the tables below
+## ✅ RE-VERIFIED 2026-10-02 02:5x UTC — the live service is `oddfellow-letta-backend-v0206`
 
-The tables further down were written against builds that are no longer the candidate.
-**Nothing is deployed.** The current state:
+**This block supersedes the `2026-09-30 07:00 UTC` block immediately below it, which is kept
+as a historical record of the dead-service confusion, not as current guidance.** Probed by
+actual request this cycle:
 
 | Thing | Now |
+|---|---|
+| **Deploy target — THE LIVE ONE** | **`oddfellow-letta-backend-v0206`** — `https://oddfellow-letta-backend-v0206.onrender.com` |
+| `/livez` (live service) | **200** — `{"live":true,"ready":false,"checks_failed":["LETTA_API_KEY","ODDFELLOW_OWNER_TOKEN"],"version":"0.20.6"}` |
+| `/healthz` (live service) | **503** — fail-closed on the same two names. ⚠️ **`WAITING_CREDENTIAL`** |
+| Backend version it serves | **`0.20.6`** — ⚠️ the branch is *named* v0.20.4; report both, do not assume equivalence |
+| Tests | **109 backend + 123 connector = 232 pass** · fault injection **39/39** |
+| Health check the platform uses | **`/livez`** (always 200). `/healthz` still fails closed with 503. |
+| Second deploy target | `oddfellow/cloudflare/` — the same API as a Cloudflare Worker, **v0.20.6**, verified locally, not deployed |
+| ⚠️ `oddfellow-letta-backend` (no `-v0206`) | 🔴 **DEAD — do not act on it.** `/livez` → **000**, no HTTP response at a 45s timeout (re-probed 2026-10-02). It is what `render.yaml` defines and it is **not** the live service. |
+| Live backend (older) | `oddfellow-letta-poc` — 🟢 LIVE, v0.20.2 (`/livez` → 404, route absent), ⚠️ **unconfigured** |
+| Live front end **with** PWA icons and backend wiring | `oddfellow-letta-ui-v020-pwa` — 🟢 LIVE (reported; not re-probed this cycle) |
+
+**The single owner action, corrected:** Render → **`oddfellow-letta-backend-v0206`** →
+Environment → set `LETTA_API_KEY` and `ODDFELLOW_OWNER_TOKEN` → Save. Do **not** enter them on
+`oddfellow-letta-backend`; that service is dead and is not the deploy target.
+
+**Run the harness rather than reading tables:** `python oddfellow/acceptance_check.py
+<url> --owner-token "$ODDFELLOW_OWNER_TOKEN"`. It automates GATE 2, and it **backs off and
+retries on HTTP 429** — Render's free tier rate-limits at 20 requests/minute and a platform
+limit is not a property of the build under test.
+
+---
+
+## ⚠️ HISTORICAL — 2026-09-30 07:00 UTC block, superseded
+
+> **Read this as history, not as instructions.** Everything below was written before the
+> `oddfellow-letta-backend` vs `oddfellow-letta-backend-v0206` confusion was found. It says
+> "Nothing is deployed", names the **dead** service as the deploy target, and tells the reader
+> to deploy it. That advice is void: the live service is `oddfellow-letta-backend-v0206`.
+> The 2026-09-30 narrative is preserved because it documents how the blind spot formed.
+
+The tables further down were written against builds that are no longer the candidate.
+
+| Thing | Then (2026-09-30) |
 |---|---|
 | Deploy candidate | `letta/combined-single-service-v0.20.4` @ **`62fecf5`** |
 | Backend version it serves | **`0.20.6`** — ⚠️ the branch is *named* v0.20.4; report both, do not assume equivalence |
@@ -23,11 +58,6 @@ The tables further down were written against builds that are no longer the candi
 | `oddfellow-letta-backend` | 🔴 **not serving** — DNS resolves, TCP connects in 19ms, **no HTTP response** at 20/45/60/90/120s. ⚠️ **`WAITING_CREDENTIAL`** |
 | Live backend | `oddfellow-letta-poc` — 🟢 LIVE, v0.20.2, ⚠️ **unconfigured** |
 | Live front end **with** PWA icons and backend wiring | `oddfellow-letta-ui-v020-pwa` — 🟢 LIVE, 20897 B = commit `91b411c` |
-
-**Run the harness rather than reading tables:** `python oddfellow/acceptance_check.py
-<url> --owner-token "$ODDFELLOW_OWNER_TOKEN"`. It automates GATE 2, and it **backs off and
-retries on HTTP 429** — Render's free tier rate-limits at 20 requests/minute and a platform
-limit is not a property of the build under test.
 
 ### Two candidate causes for `oddfellow-letta-backend` never coming up
 
@@ -40,8 +70,9 @@ Neither is visible from outside the Render platform. Both are in `render.yaml`.
 2. **`autoDeploy: false` means a push never deploys, and saving env vars is not a deploy.**
    Bringing the service up requires an explicit deploy in the Render dashboard.
 
-**The one action that resolves both:** confirm the service's branch, then trigger a manual
-deploy and read Events/Logs.
+**The one action that resolved both (2026-09-30):** confirm the service's branch, then trigger
+a manual deploy and read Events/Logs. This was done on the *correct* service,
+`oddfellow-letta-backend-v0206`, on 2026-10-01; the dead name was never the deploy target.
 
 ### The live rehearsal — how to run the gates before the deploy exists
 
