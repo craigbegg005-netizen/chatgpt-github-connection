@@ -43,6 +43,19 @@ from typing import Any, Callable, Optional
 from fastapi import APIRouter, Body, HTTPException, Request
 
 
+def _actor_of(request: Optional[Request]) -> str:
+    """Who is acting. The owner, by construction: every route is owner-gated.
+
+    Recorded explicitly rather than assumed, because the moment a second
+    credential type exists (a scoped connector token, a delegate) an assumed
+    actor becomes a wrong one.
+    """
+    if request is None:
+        return "owner"
+    header = request.headers.get("X-Owner-Token")
+    return "owner" if header else "unknown"
+
+
 def binding_hash(text: str) -> str:
     """Hash the exact command an approval authorises.
 
@@ -213,6 +226,7 @@ class CommandCenter:
             "state": "WAITING_AUTHORIZATION",
             "created_at": time.time(),
             "decided_at": None,
+            "decided_by": None,
             "decision": None,
             "note": "",
             "binding": binding_hash(normalized_binding_text(binding_text))
@@ -276,7 +290,22 @@ class CommandCenter:
             rows = [r for r in rows if r["state"] == state]
         return sorted(rows, key=lambda r: r["created_at"])
 
-    def decide(self, approval_id: str, decision: str, note: str = "") -> dict[str, Any]:
+    def decide(
+        self,
+        approval_id: str,
+        decision: str,
+        note: str = "",
+        actor: str = "",
+    ) -> dict[str, Any]:
+        """Grant or refuse a pending approval. Once decided, it is decided.
+
+        ``actor`` is recorded on the record itself, not only in the audit trail.
+        The §29 checklist names "actor" as a field of the approval, and until
+        2026-10-02 the record had no such field: the audit line knew who decided
+        and the record did not, so anything reading the record alone could not
+        answer the question. The connector's approval record always carried it;
+        this one now does too.
+        """
         if decision not in ("approve", "reject"):
             raise ValueError("decision must be approve or reject")
         with self._lock:
@@ -288,6 +317,7 @@ class CommandCenter:
             record["decision"] = decision
             record["state"] = "APPROVED" if decision == "approve" else "REJECTED"
             record["decided_at"] = time.time()
+            record["decided_by"] = (actor or "").strip() or None
             record["note"] = (note or "").strip()
             return dict(record)
 
@@ -419,7 +449,10 @@ def build_router(
         guard(request, request.headers.get("X-Owner-Token"))
         try:
             record = center.decide(
-                approval_id, payload.get("decision", ""), payload.get("note", "")
+                approval_id,
+                payload.get("decision", ""),
+                payload.get("note", ""),
+                actor=_actor_of(request),
             )
         except KeyError as exc:
             raise HTTPException(status_code=404, detail="unknown approval") from exc
