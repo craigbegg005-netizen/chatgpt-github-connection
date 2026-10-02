@@ -749,3 +749,32 @@ def test_one_approval_does_not_cover_a_whole_handoff_batch(store):
     assert a.job_id in accepted, report
     assert b.job_id in refused, "the approval leaked to a second job"
     assert store.get_job(b.job_id).status is Status.READY
+
+
+def test_create_job_canonicalises_a_pre_claimed_provider(store):
+    """Found by QA 2026-10-02: the one write path that skipped canonicalisation.
+
+    `create_job` stores `job.provider` verbatim. No shipped caller sets it, so it
+    was not reachable from the CLI -- but it was the gap in "canonicalised at
+    every write", and a job created under 'Anthropic' was invisible to
+    `disconnect_provider("anthropic")`, which then reported a clean disconnect
+    while the claim stayed stranded.
+    """
+    j = job(title="pre-claimed work")
+    j.provider = "Anthropic"
+    j.status = Status.RUNNING
+    store.create_job(j, actor="x")
+    assert store.get_job(j.job_id).provider == "anthropic"
+
+    tokens = TokenStore(store._conn, owner_token=MASTER)
+    report = disconnect_provider(store, tokens, "anthropic", actor="owner")
+    assert j.job_id in report.claims_released
+    assert report.clean, report.failures
+
+
+def test_create_job_refuses_an_invalid_pre_claimed_provider(store):
+    j = job(title="hostile provider")
+    j.provider = "../../etc/passwd"
+    j.status = Status.RUNNING
+    with pytest.raises(ValueError):
+        store.create_job(j, actor="x")

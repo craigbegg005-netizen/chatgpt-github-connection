@@ -597,24 +597,40 @@ class LettaError(RuntimeError):
         super().__init__(f"Letta API error {status}: {detail}")
 
 
+#: An error *kind* is an identifier. No spaces, no prose, no message body.
+_ERROR_KIND = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.\-]{0,63}$")
+
+
 def _error_kind(detail: Any) -> str:
-    """Reduce a Letta error payload to a short, non-content label.
+    """Reduce a Letta error payload to a short identifier, or refuse to guess.
 
     A Letta error can echo the request body, so the payload must never be logged
     verbatim. Only the error *name* is kept -- ``{"error": "not_found"}`` becomes
-    ``"not_found"`` -- and it is truncated and stripped of anything that is not a
-    plain identifier, so a payload that puts prose (or a message) in the ``error``
-    field cannot smuggle it into the log either.
+    ``"not_found"``.
+
+    **Corrected 2026-10-02.** The first version of this function allowed spaces
+    in the pattern (``[A-Za-z0-9_.\\- ]``) and its docstring claimed that meant "a
+    payload that puts prose (or a message) in the ``error`` field cannot smuggle
+    it into the log either". That was false: spaces are exactly what prose needs,
+    so a Letta 4xx echoing the message into ``error`` reached the durable audit
+    line, truncated to 64 characters. A QA pass found it. The docstring was
+    asserting a property the pattern did not have -- the fifth control of the day
+    to be described rather than implemented, and the first one written *by this
+    agent, during the fix pass that was fixing the other four*.
+
+    The pattern now admits identifiers only. Anything else returns
+    ``"unrecognised"``: losing a diagnostic detail is a cost, and it is the
+    correct one to pay, because the alternative is writing the owner's private
+    message to the only durable log this service has.
     """
-    kind = ""
     if isinstance(detail, dict):
-        kind = str(detail.get("error") or detail.get("kind") or "")
+        candidate = detail.get("error") or detail.get("kind") or ""
     elif isinstance(detail, str):
-        kind = detail
-    kind = kind.strip()[:64]
-    if not re.fullmatch(r"[A-Za-z0-9_.\- ]*", kind):
-        return "unrecognised"
-    return kind or "unspecified"
+        candidate = detail
+    else:
+        return "unspecified"
+    candidate = str(candidate).strip()
+    return candidate if _ERROR_KIND.match(candidate) else "unrecognised"
 
 
 @app.exception_handler(LettaError)

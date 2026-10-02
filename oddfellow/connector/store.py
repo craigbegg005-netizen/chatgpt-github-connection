@@ -308,12 +308,23 @@ class Store:
         which is the intended behaviour when two AIs independently derive the same
         job from the same instruction -- the second one is told so, and no
         duplicate work is queued.
+
+        A job may be created already claimed (``provider`` set). That is the one
+        write path that stored the provider verbatim, which made it the one place
+        a provider id could escape canonicalisation -- a job created under
+        ``Anthropic`` was invisible to ``disconnect_provider("anthropic")``, so
+        the disconnect reported itself clean while the claim stayed stranded. No
+        shipped caller sets ``provider`` here, so it was not reachable from the
+        CLI; it was still the gap in "canonicalised at every write", and QA found
+        it by reading rather than by exploiting.
         """
         existing = self.get_job(job.job_id)
         if existing:
             self.audit(actor, "job.duplicate", job_id=job.job_id)
             return existing, False
 
+        if job.provider is not None:
+            job.provider = canonical_provider(job.provider)
         job.created_at = job.created_at or _now()
         job.updated_at = job.created_at
         row = job.to_row()

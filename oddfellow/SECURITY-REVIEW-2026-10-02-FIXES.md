@@ -160,7 +160,64 @@ docstring was the thing that was wrong, not the code.
 `claim_job(..., approved=True)` claims a CRITICAL job — the finding, written down
 as the expected behaviour.
 
-## The pattern, now four-for-four
+---
+
+## A QA pass broke three of these fixes, including one I wrote that day
+
+The QA lane was asked to falsify the claims above rather than confirm them. It
+found three real defects. All three are fixed; the tests it wrote are now a
+regression suite (`tests/test_qa_adversarial.py`), with the characterization
+tests inverted rather than deleted so the old behaviour stays visible.
+
+### QA-1 — the classifier was a verb allowlist, and missed code-shaped danger
+
+`rm -rf / --no-preserve-root`, `DROP TABLE jobs;`, `truncate table users`,
+`git push --force origin main`, `git reset --hard`, `shutdown -h now`,
+`chmod 777 /etc/shadow`, `curl … | bash` — **every one classified `normal`** and
+forwarded to Letta with no approval at all. The allowlist caught intent written
+in English and could not see danger expressed as a flag, a pipe or a keyword.
+
+Fixed with a second, structural layer. It is still a heuristic and still
+incomplete, and it is **not** a sandbox — the honest limit is that this cannot be
+made complete by adding patterns. The real fix is to gate the *actions* rather
+than classify free text, which is option (b) in the original review and remains
+open.
+
+The structural layer is checked **before** the question exemption, so a stray
+`?` cannot excuse `rm -rf / ?`. A *leading* interrogative still does: "what does
+rm -rf do?" is a question.
+
+### QA-2 — I wrote a docstring that claimed a property the code did not have
+
+`_error_kind` allowed spaces in its pattern (`[A-Za-z0-9_.\- ]`) while its
+docstring said that meant "a payload that puts prose (or a message) in the
+`error` field cannot smuggle it into the log either". **Spaces are exactly what
+prose needs.** A Letta 4xx echoing the message into `error` reached the durable
+audit line, truncated to 64 characters.
+
+This is the fifth control of the day to be described rather than implemented —
+and the first one written **by me, during the fix pass that was fixing the other
+four**. The pattern is now identifiers-only; anything else returns
+`"unrecognised"`.
+
+### QA-3 — `create_job` was the one write path that skipped canonicalisation
+
+`Store.create_job` stored `job.provider` verbatim, so a job created under
+`Anthropic` was invisible to `disconnect_provider("anthropic")`, which then
+reported a clean disconnect while the claim stayed stranded. No shipped caller
+sets `provider` there, so it was not reachable from the CLI — QA found it by
+reading, which is the point.
+
+### And a fourth, found by running the extracted regex in a real JS engine
+
+`"rm -rf / ?"` was **elevated in Python and normal in the browser**: the front
+end excused it with the trailing `?`. The three-way drift check did not catch
+this, because its corpus did not contain the case. A drift check is only as good
+as its corpus, so the corpus now carries the adversarial cases rather than only
+the tidy ones — and the extraction was verified in a real JS engine, not only by
+re-implementing the pattern in Python.
+
+## The pattern, now five-for-five
 
 | Claim | Where | Reality |
 |---|---|---|
@@ -168,16 +225,17 @@ as the expected behaviour.
 | "these are claims with dates, and the date is part of the claim" | `command_center.py` docstring | no entry carried a date |
 | "the real approval gate, not a browser confirm" | voice commit message | still a browser confirm |
 | "the store never holds a second copy of the owner's message" | `binding_hash` docstring, written today | `detail` holds it |
+| "prose in the `error` field cannot smuggle it into the log" | `_error_kind` docstring, written today | the pattern allowed spaces |
 
-All four were written by agents. All four asserted a discipline the code did not
+All five were written by agents. All five asserted a discipline the code did not
 enforce. **A comment, a docstring, and a commit message are the same kind of
-evidence: a claim about the code, not the code.** The fourth one is the useful
-one — it was written *during this fix*, by me, and caught by a runtime check
-rather than by review.
+evidence: a claim about the code, not the code.** The last two are the useful
+ones — both were written *during this fix pass*, by me, and both were caught by
+checks rather than by review. Writing a fix is not a protected activity.
 
 ## Evidence
 
-- **354 tests pass** (was 232 at the branch base; +122).
+- **462 tests pass** (was 232 at the branch base; +230).
 - **39/39 fault injection.**
 - Runtime verification of the gate over HTTP (table above).
 - Runtime verification of the audit-log redaction.
@@ -185,6 +243,9 @@ rather than by review.
   regexes out of `index.html` and the Worker's out of `worker.js`, runs one
   corpus through all three, and asserts they agree — with a companion test that
   proves the extraction is reading real patterns rather than an empty function.
+- The extracted browser regex was additionally run in a **real JS engine**
+  (node), which is how the `"rm -rf / ?"` divergence was found. Re-implementing
+  a pattern in Python tests the re-implementation.
 
 ## Still open
 

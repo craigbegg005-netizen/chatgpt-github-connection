@@ -326,9 +326,21 @@ function plan(text){
   // while the flag only coloured a chip; it became a real problem the moment the
   // flag started gating sends. Two fixes: questions are excluded, and the terms
   // are actionable ones rather than topic words.
-  const asking=/^\s*(what|how|why|when|where|who|which|is|are|does|do|can|could|should|explain|tell me|describe|show me)\b/.test(t)||/\?\s*$/.test(t);
-  const risky=/\b(delete|remove|erase|publish|post to|send (an? )?(email|message|money|payment)|spend|buy|purchase|pay|transfer|deploy to production|production deploy|password|credential|api key|payment)\b/.test(t);
-  const risk=(risky&&!asking)?'elevated':'normal';
+  // A *leading* interrogative makes it a question. A trailing "?" alone does not:
+  // "rm -rf / ?" is a command, and letting a stray question mark excuse a
+  // destructive pattern would make the exemption a bypass. The structural layer
+  // uses askingLead only; the verb layer uses both.
+  const askingLead=/^\s*(what|how|why|when|where|who|which|is|are|does|do|can|could|should|explain|tell me|describe|show me)\b/.test(t);
+  const asking=askingLead||/\?\s*$/.test(t);
+  const risky=/\b(delete|remove|erase|publish|post to|send (an? )?(email|message|money|payment)|spend|buy|purchase|pay|transfer|deploy to production|production deploy|password|credential|api key|payment|wipe|exfiltrate|destroy|drain|revoke|terminate|overwrite|uninstall|wire (the )?(money|funds)|empty (the )?(account|table))\b/.test(t);
+  // Structural layer: input that is *code*, not prose. A verb allowlist cannot
+  // see these, because the destructive part is a flag, a pipe or a keyword
+  // rather than an English verb. QA found `rm -rf / --no-preserve-root` being
+  // classified normal and forwarded with no approval at all.
+  // Checked BEFORE the question exemption, so a command containing a "?" cannot
+  // use the exemption as a bypass.
+  const destructive=/(?:\brm\s+-[a-z]*[rf]|\brm\s+.*\s-[a-z]*[rf]|\bdrop\s+(?:table|database|schema|index)\b|\btruncate\s+table\b|\bdelete\s+from\b|\bupdate\s+\w+\s+set\b|\bgit\s+push\b[^\n]*--force\b|\bgit\s+reset\s+--hard\b|\bgit\s+clean\s+-[a-z]*[fd]|\bgit\s+branch\s+-d\b|\bmkfs(?:\.\w+)?\b|\bdd\b[^\n]*\bof=\/dev\/|\bchmod\s+(?:-r\s+)?777\b|\bchown\s+(?:-r\s+)?root\b|\b(?:shutdown|reboot|halt|poweroff)\b|\b(?:curl|wget)\b[^\n|]*\|\s*(?:ba|z|k|da)?sh\b|:\(\)\s*\{.*\}\s*;\s*:|\btruncate\s+-s\s*0\b|>\s*\/dev\/sd[a-z]|\bkill\s+-9\s+-1\b|\bsudo\s+rm\b)/;
+  const risk=(destructive&&!askingLead)||(risky&&!asking)?'elevated':'normal';
   return {task,risk};
 }
 function pick(task,excludeProviders=[]){

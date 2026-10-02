@@ -589,13 +589,18 @@ async function handleAgent(env, request, token) {
  * because it contains "spend". Questions are excluded, and the terms are
  * actionable verbs rather than topic words.
  */
+const RISK_ASKING_LEAD = /^\s*(what|how|why|when|where|who|which|is|are|does|do|can|could|should|explain|tell me|describe|show me)\b/;
 const RISK_ASKING = /^\s*(what|how|why|when|where|who|which|is|are|does|do|can|could|should|explain|tell me|describe|show me)\b/;
 const RISK_QUESTION_TAIL = /\?\s*$/;
-const RISK_RISKY = /\b(delete|remove|erase|publish|post to|send (an? )?(email|message|money|payment)|spend|buy|purchase|pay|transfer|deploy to production|production deploy|password|credential|api key|payment)\b/;
+const RISK_RISKY = /\b(delete|remove|erase|publish|post to|send (an? )?(email|message|money|payment)|spend|buy|purchase|pay|transfer|deploy to production|production deploy|password|credential|api key|payment|wipe|exfiltrate|destroy|drain|revoke|terminate|overwrite|uninstall|wire (the )?(money|funds)|empty (the )?(account|table))\b/;
+// Structural layer: input that is *code*, not prose. Checked BEFORE the question
+// exemption, so a command containing a "?" cannot use it as a bypass.
+const RISK_DESTRUCTIVE = /(?:\brm\s+-[a-z]*[rf]|\brm\s+.*\s-[a-z]*[rf]|\bdrop\s+(?:table|database|schema|index)\b|\btruncate\s+table\b|\bdelete\s+from\b|\bupdate\s+\w+\s+set\b|\bgit\s+push\b[^\n]*--force\b|\bgit\s+reset\s+--hard\b|\bgit\s+clean\s+-[a-z]*[fd]|\bgit\s+branch\s+-d\b|\bmkfs(?:\.\w+)?\b|\bdd\b[^\n]*\bof=\/dev\/|\bchmod\s+(?:-r\s+)?777\b|\bchown\s+(?:-r\s+)?root\b|\b(?:shutdown|reboot|halt|poweroff)\b|\b(?:curl|wget)\b[^\n|]*\|\s*(?:ba|z|k|da)?sh\b|:\(\)\s*\{.*\}\s*;\s*:|\btruncate\s+-s\s*0\b|>\s*\/dev\/sd[a-z]|\bkill\s+-9\s+-1\b|\bsudo\s+rm\b)/;
 
 function isElevatedRisk(text) {
   if (typeof text !== "string") return false;
   const lowered = text.toLowerCase();
+  if (RISK_DESTRUCTIVE.test(lowered)) return !RISK_ASKING_LEAD.test(lowered);
   if (RISK_ASKING.test(lowered) || RISK_QUESTION_TAIL.test(lowered)) return false;
   return RISK_RISKY.test(lowered);
 }

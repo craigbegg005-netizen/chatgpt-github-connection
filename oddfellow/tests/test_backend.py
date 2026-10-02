@@ -1395,3 +1395,106 @@ def test_the_pause_switch_still_wins_over_a_valid_approval(fake):
     )
     assert r.status_code == 503
     assert r.json()["detail"]["error"] == "paused_by_owner"
+
+
+# --------------------------------------------------------------------------- #
+# _error_kind must not be able to carry prose into the durable log
+# --------------------------------------------------------------------------- #
+#
+# Found by a QA pass on 2026-10-02, against the fix that introduced it. The
+# first version allowed spaces in its pattern and its docstring claimed that
+# meant prose could not get through. Spaces are exactly what prose needs, so a
+# Letta 4xx echoing the message into `error` reached the audit line. The
+# docstring asserted a property the pattern did not have.
+
+def test_error_kind_keeps_a_real_identifier(fake):
+    m, f, client = fake
+    assert m._error_kind({"error": "not_found"}) == "not_found"
+    assert m._error_kind({"kind": "ConnectError"}) == "ConnectError"
+    assert m._error_kind({"error": "letta_transport_error"}) == "letta_transport_error"
+    assert m._error_kind({"error": "invalid_request_error"}) == "invalid_request_error"
+
+
+def test_error_kind_refuses_prose_in_the_error_field(fake):
+    """The exact case QA demonstrated."""
+    m, f, client = fake
+    payload = "delete the production database and transfer the balance"
+    kind = m._error_kind({"error": payload})
+    assert payload not in kind
+    assert kind == "unrecognised"
+
+
+@pytest.mark.parametrize(
+    "detail",
+    [
+        "All connection attempts failed",
+        "connection refused to https://example.invalid",
+        "the owner's message body",
+        "delete everything",
+        "line one\nline two",
+        "a" * 200,
+    ],
+)
+def test_error_kind_refuses_a_prose_string_detail(fake, detail):
+    m, f, client = fake
+    kind = m._error_kind(detail)
+    assert kind == "unrecognised", f"prose survived: {kind!r}"
+
+
+def test_error_kind_handles_a_non_string_non_dict(fake):
+    m, f, client = fake
+    assert m._error_kind(None) == "unspecified"
+    assert m._error_kind(42) == "unspecified"
+    assert m._error_kind(["x"]) == "unspecified"
+
+
+def test_error_kind_never_returns_a_long_value(fake):
+    m, f, client = fake
+    assert len(m._error_kind({"error": "x" * 500})) <= 64
+
+
+def test_the_letta_error_audit_line_carries_no_message_body(fake, capsys):
+    """The audit line, composed exactly as the handler composes it.
+
+    This is written against `audit` + `_error_kind` rather than by driving a
+    request, because `/api/letta/message` catches `LettaError` itself and
+    re-raises it as an `HTTPException` -- so the exception handler that emits
+    this line is never reached on that route. An earlier version of this test
+    drove the request and asserted a 400, which the route never produces. The
+    property under test is the composition, so the test composes it.
+
+    On Render's free plan the disk is ephemeral, so stdout is the only durable
+    record this service has. That is what makes this a real leak rather than a
+    cosmetic one.
+    """
+    m, f, client = fake
+    secret = "QASECRETMESSAGE delete the production database"
+    m.audit("letta_error", None, status=400, kind=m._error_kind({"error": secret}))
+    out = capsys.readouterr().out
+    assert "QASECRETMESSAGE" not in out, "the message body reached the durable log"
+    assert "letta_error" in out, "the audit line should still exist"
+    assert "unrecognised" in out, "the kind should say it refused to guess"
+
+
+def test_the_route_that_catches_letta_error_does_not_audit_the_payload(fake, capsys):
+    """`/api/letta/message` re-raises as HTTPException; check that path too.
+
+    The route embeds the Letta `detail` in the *response body*, which goes to the
+    authenticated owner who sent the message -- that is not a leak. What matters
+    is that it does not also reach stdout.
+    """
+    m, f, client = fake
+    secret = "QASECRETMESSAGE delete the production database"
+
+    async def boom(*a, **k):
+        raise m.LettaError(400, {"error": secret})
+
+    monkeypatch_target = m
+    monkeypatch_target.letta_raw = boom
+    try:
+        r = client.post("/api/letta/message", headers=auth(), json={"input": "hi"})
+        assert r.status_code == 502
+        out = capsys.readouterr().out
+        assert "QASECRETMESSAGE" not in out, "the message body reached stdout"
+    finally:
+        monkeypatch_target.letta_raw = f.letta_raw
