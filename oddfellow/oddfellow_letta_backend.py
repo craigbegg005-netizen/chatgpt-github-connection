@@ -566,6 +566,16 @@ def require_approval_if_elevated(
             "one exact action.",
         )
 
+    # Consume the approval atomically: one owner decision buys exactly one
+    # execution. Until 2026-10-02 this line audited "approval_consumed"
+    # without consuming anything -- an APPROVED approval could authorise the
+    # same command repeatedly. The fourth false control in as many days.
+    try:
+        COMMAND.consume_approval(approval_id)
+    except (KeyError, ValueError) as exc:
+        # Refused between the read above and the consume here -- e.g. the
+        # approval was consumed by a concurrent request. Fail closed.
+        refuse("approval_unavailable", f"The approval can no longer be used: {exc}")
     audit("approval_consumed", request, approval_id=approval_id)
 
 
@@ -1198,4 +1208,3 @@ if FRONTEND_DIR and os.path.isdir(FRONTEND_DIR):
     from fastapi.staticfiles import StaticFiles
 
     app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
-

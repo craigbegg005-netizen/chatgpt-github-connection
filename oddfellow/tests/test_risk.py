@@ -16,11 +16,13 @@ import re
 import sys
 
 import pytest
+import unittest
 
 APP_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, APP_DIR)
 
 from risk import classify, is_elevated  # noqa: E402
+from command_center import CommandCenter  # noqa: E402
 
 FRONTEND = os.path.join(APP_DIR, "frontend", "index.html")
 
@@ -235,3 +237,40 @@ def test_the_worker_classifier_extraction_is_live():
     assert any(results), "the Worker's classifier returned False for everything"
     assert not all(results), "the Worker's classifier returned True for everything"
     assert len(results) == len(cases)
+
+
+class ApprovalSingleUseTests(unittest.TestCase):
+    """An APPROVED, bound approval must authorise exactly one execution.
+
+    Found 2026-10-02 as the fourth false control: the audit line said
+    "approval_consumed" but nothing was consumed, so one owner decision
+    could authorise the same command any number of times.
+    """
+
+    def test_approved_approval_is_consumed_on_use(self):
+        center = CommandCenter()
+        rec = center.add_approval("Deploy", "d", "high", binding_text="deploy now")
+        center.decide(rec["id"], "approve")
+        retired = center.consume_approval(rec["id"])
+        self.assertEqual(retired["state"], "CONSUMED")
+        self.assertIn("consumed_at", retired)
+
+    def test_consumed_approval_cannot_be_reused(self):
+        center = CommandCenter()
+        rec = center.add_approval("Deploy", "d", "high", binding_text="deploy now")
+        center.decide(rec["id"], "approve")
+        center.consume_approval(rec["id"])
+        after = center.get_approval(rec["id"])
+        self.assertEqual(after["state"], "CONSUMED")
+        # The enforcement path refuses anything not APPROVED, so a second
+        # use of the same approval must fail closed.
+        with self.assertRaises(ValueError):
+            center.consume_approval(rec["id"])
+
+    def test_unapproved_or_unknown_cannot_be_consumed(self):
+        center = CommandCenter()
+        waiting = center.add_approval("Deploy", "d", "high", binding_text="deploy now")
+        with self.assertRaises(ValueError):
+            center.consume_approval(waiting["id"])  # still WAITING_AUTHORIZATION
+        with self.assertRaises(KeyError):
+            center.consume_approval("apr-doesnotexist")

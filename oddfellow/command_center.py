@@ -207,6 +207,25 @@ class CommandCenter:
             record = self._approvals.get(approval_id)
             return dict(record) if record is not None else None
 
+    def consume_approval(self, approval_id: str) -> dict[str, Any]:
+        """Atomically retire an APPROVED approval so it can authorise once only.
+
+        Until 2026-10-02 the enforcement path audited ``approval_consumed``
+        without consuming anything: an APPROVED, bound approval could
+        authorise the same command any number of times. One owner decision
+        must buy exactly one execution. Returns the retired record; raises
+        ``KeyError`` if unknown and ``ValueError`` if not APPROVED.
+        """
+        with self._lock:
+            record = self._approvals.get(approval_id)
+            if record is None:
+                raise KeyError(approval_id)
+            if record["state"] != "APPROVED":
+                raise ValueError(f"approval is {record['state']}, not APPROVED")
+            record["state"] = "CONSUMED"
+            record["consumed_at"] = time.time()
+            return dict(record)
+
     def list_approvals(self, state: Optional[str] = None) -> list[dict[str, Any]]:
         with self._lock:
             rows = list(self._approvals.values())
