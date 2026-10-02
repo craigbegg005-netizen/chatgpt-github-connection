@@ -34,6 +34,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from .handoff import render_handoff
+from .schema import canonical_provider
 from .store import Store
 
 #: Where the last rendered handoff's fingerprint is remembered.
@@ -44,6 +45,24 @@ def _fingerprint(jobs) -> str:
     """A stable digest of the ready set, so an unchanged queue is detectable."""
     material = "|".join(sorted(j.job_id for j in jobs))
     return hashlib.sha256(material.encode("utf-8")).hexdigest()[:16]
+
+
+def _handoff_path(out: Path, provider: str) -> Path:
+    """Resolve the handoff filename, refusing anything that escapes ``out``.
+
+    The provider id is interpolated into a filename, so it is an arbitrary-write
+    primitive if it is not validated. The ``handoff-`` prefix blocks a leading
+    ``..`` but not a later segment: ``provider="../../../tmp/pwn"`` resolved
+    outside the output directory. ``canonical_provider`` rejects it outright, and
+    the containment check below is the belt to that braces -- it catches a future
+    caller that builds the path some other way.
+    """
+    provider = canonical_provider(provider)
+    path = out / f"handoff-{provider}.md"
+    resolved = path.resolve()
+    if resolved.parent != out.resolve():
+        raise ValueError(f"handoff path {resolved} escapes the output directory")
+    return path
 
 
 def tick(
@@ -89,7 +108,7 @@ def tick(
 
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
-    path = out / f"handoff-{provider}.md"
+    path = _handoff_path(out, provider)
     path.write_text(render_handoff(store, provider, limit=limit), encoding="utf-8")
 
     store.flag_set(FINGERPRINT_KEY, digest)

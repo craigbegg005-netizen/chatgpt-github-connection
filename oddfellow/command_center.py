@@ -33,6 +33,7 @@ dates, and the date is part of the claim.
 
 from __future__ import annotations
 
+import hashlib
 import threading
 import time
 import uuid
@@ -40,6 +41,27 @@ import os
 from typing import Any, Callable, Optional
 
 from fastapi import APIRouter, Body, HTTPException, Request
+
+
+def binding_hash(text: str) -> str:
+    """Hash the exact command an approval authorises.
+
+    The hash is what makes the binding an exact match rather than a prefix or
+    substring comparison: a truncated binding would let a longer command ride in
+    on a shorter approval, and a substring binding would let an approval for
+    "delete the branch" authorise "delete the branch and transfer the balance".
+
+    **What this does not do, stated plainly:** the approval record still carries
+    the command in its ``detail`` field, because the owner has to be able to see
+    what they are approving -- a gate that authorises an action it will not name
+    is theatre. ``detail`` is truncated for display and is never used for
+    enforcement. An earlier version of this docstring claimed the store "never
+    holds a second copy of the owner's message"; that was false when written, and
+    a runtime check caught it. The property that actually holds is narrower: the
+    *binding* is a hash, and the binding is what decides.
+    """
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
 
 # --------------------------------------------------------------------------- #
 # Registry
@@ -143,7 +165,21 @@ class CommandCenter:
 
     # -- approvals ---------------------------------------------------------- #
 
-    def add_approval(self, title: str, detail: str, risk: str) -> dict[str, Any]:
+    def add_approval(
+        self,
+        title: str,
+        detail: str,
+        risk: str,
+        binding_text: Optional[str] = None,
+    ) -> dict[str, Any]:
+        """Create a pending approval.
+
+        ``binding_text`` is the exact command this approval authorises. It is
+        **hashed, never stored**: the approval then authorises one specific
+        action and nothing else, and the store holds no second copy of the
+        owner's message. Without a binding the approval is advisory -- it can be
+        displayed and decided, but it authorises nothing.
+        """
         title = (title or "").strip()
         if not title:
             raise ValueError("title is required")
@@ -159,10 +195,17 @@ class CommandCenter:
             "decided_at": None,
             "decision": None,
             "note": "",
+            "binding": binding_hash(binding_text) if binding_text is not None else None,
         }
         with self._lock:
             self._approvals[record["id"]] = record
         return record
+
+    def get_approval(self, approval_id: str) -> Optional[dict[str, Any]]:
+        """Return a copy of one approval, or ``None``. Never returns the live dict."""
+        with self._lock:
+            record = self._approvals.get(approval_id)
+            return dict(record) if record is not None else None
 
     def list_approvals(self, state: Optional[str] = None) -> list[dict[str, Any]]:
         with self._lock:
@@ -293,11 +336,16 @@ def build_router(
         guard(request, request.headers.get("X-Owner-Token"))
         try:
             record = center.add_approval(
-                payload.get("title", ""), payload.get("detail", ""), payload.get("risk", "high")
+                payload.get("title", ""),
+                payload.get("detail", ""),
+                payload.get("risk", "high"),
+                binding_text=payload.get("binding_text"),
             )
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         note("command_approval_created", request, approval_id=record["id"], risk=record["risk"])
+        # The binding itself is a hash and is safe to return; the text it was
+        # computed from is not returned, and is not stored.
         return record
 
     @router.post("/approvals/{approval_id}/decide")

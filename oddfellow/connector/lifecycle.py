@@ -24,6 +24,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from .schema import canonical_provider
 from .store import Store
 from .tokens import Scope, TokenStore
 
@@ -82,6 +83,12 @@ def disconnect_provider(
     Failures are collected rather than raised, so a partial disconnect is visible
     and specific instead of aborting halfway with no record of how far it got.
     """
+    # Canonicalise before comparing. The comparison below is exact, so
+    # `disconnect --provider anthropic` after `connect --provider Anthropic` used
+    # to revoke nothing, leave the credential live, strand its claims, and report
+    # a clean disconnect. A disconnect that reports success while a credential
+    # stays active is worse than one that fails.
+    provider = canonical_provider(provider)
     report = DisconnectReport(provider=provider)
 
     # 1. Revoke every unrevoked token belonging to this provider.

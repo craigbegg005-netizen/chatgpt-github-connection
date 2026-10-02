@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from dataclasses import dataclass, field, asdict
 from enum import Enum
 from typing import Any
@@ -58,6 +59,36 @@ class Risk(str, Enum):
 
 #: Risk levels that may never execute without an explicit owner approval.
 APPROVAL_REQUIRED = frozenset({Risk.HIGH, Risk.CRITICAL})
+
+
+#: A provider id is an identifier, not a path and not a display name.
+PROVIDER_ID = re.compile(r"^[a-z0-9][a-z0-9_-]{0,63}$")
+
+
+def canonical_provider(provider: str) -> str:
+    """Normalise a provider id, or raise ``ValueError``.
+
+    Provider ids are compared for equality in several places -- token revocation,
+    claim release, routing -- so ``Anthropic`` and ``anthropic`` must not be two
+    different providers. They were: ``connect --provider Anthropic`` followed by
+    ``disconnect --provider anthropic`` revoked nothing, left the token live and
+    its claims stranded, and reported a clean disconnect. That is the "disconnect
+    leaves credentials behind" case, and it is a comparison bug, not a typo.
+
+    The same rule closes a second hole: the id is interpolated into a filename by
+    the handoff writer, so a value like ``../../../tmp/pwn`` has to be rejected
+    rather than sanitised. Rejecting is the safer failure -- a silently rewritten
+    provider id would be a *different* provider, and the caller would never know.
+    """
+    if not isinstance(provider, str):
+        raise ValueError("provider must be a string")
+    canonical = provider.strip().lower()
+    if not PROVIDER_ID.match(canonical):
+        raise ValueError(
+            f"invalid provider id {provider!r}: expected lowercase letters, digits, "
+            "'-' or '_', starting with a letter or digit"
+        )
+    return canonical
 
 
 class TaskKind(str, Enum):

@@ -34,6 +34,8 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from enum import Enum
 
+from .schema import canonical_provider
+
 
 class Scope(str, Enum):
     """What a token is allowed to do. Deliberately coarse but not vague."""
@@ -134,6 +136,11 @@ class TokenStore:
         scopes = frozenset(scopes)
         if not scopes:
             raise ValueError("a token must have at least one scope")
+        # Canonicalise at the one place every token is minted, so no stored
+        # provider id can differ from another only by case or whitespace. A
+        # mismatch here is what let a disconnect revoke nothing and still report
+        # itself clean.
+        provider = canonical_provider(provider)
         token_id = "ctk-" + secrets.token_hex(6)
         plaintext = "odf_" + secrets.token_hex(32)
         self._conn.execute(

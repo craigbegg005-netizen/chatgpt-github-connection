@@ -206,6 +206,7 @@ import hashlib
 import hmac
 import json
 import os
+import re
 import time
 import uuid
 from collections import defaultdict, deque
@@ -217,7 +218,8 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from command_center import CommandCenter, build_router
+from command_center import CommandCenter, binding_hash, build_router
+from risk import classify as classify_risk
 
 # --------------------------------------------------------------------------- #
 # Configuration
@@ -499,6 +501,74 @@ def require_not_paused(request: Optional[Request] = None) -> None:
         )
 
 
+def require_approval_if_elevated(
+    text: str,
+    approval_id: Optional[str],
+    request: Optional[Request] = None,
+) -> None:
+    """Refuse an elevated-risk command that is not covered by a live approval.
+
+    This is the enforcement half of the approval gate. Until 2026-10-02 the gate
+    was browser-only: the front end created a real approval record and waited,
+    but the server read no approval at all, so any client holding the owner token
+    could POST an elevated command straight past it. The commit that added it
+    claimed a real gate; the code had a `confirm()` with better bookkeeping.
+
+    Four conditions, all required, and every one of them fails closed:
+
+    1. the server classifies the text as elevated (the server decides, not the client);
+    2. an ``approval_id`` was supplied;
+    3. that approval exists and its state is ``APPROVED``;
+    4. the approval is *bound* to exactly this text.
+
+    Condition 4 is what stops one approval authorising a different action -- and
+    what makes a spoken "approve" bind to one specific pending command rather
+    than to whatever is sent next.
+    """
+    if not classify_risk(text) == "elevated":
+        return
+
+    def refuse(reason: str, detail: str) -> None:
+        audit("approval_required_refused", request, reason=reason, approval_id=approval_id)
+        raise HTTPException(
+            status_code=403,
+            detail={"error": "approval_required", "reason": reason, "message": detail},
+        )
+
+    if not approval_id:
+        refuse(
+            "no_approval_supplied",
+            "This command is elevated risk and no approval was supplied. "
+            "Create an approval for this exact command and approve it first.",
+        )
+
+    record = COMMAND.get_approval(approval_id)
+    if record is None:
+        refuse("unknown_approval", "No approval with that id exists.")
+
+    if record.get("state") != "APPROVED":
+        refuse(
+            "not_approved",
+            f"That approval is {record.get('state')}, not APPROVED.",
+        )
+
+    if record.get("binding") is None:
+        refuse(
+            "approval_not_bound",
+            "That approval is advisory: it was not bound to a specific command, "
+            "so it authorises nothing.",
+        )
+
+    if not hmac.compare_digest(record["binding"], binding_hash(text)):
+        refuse(
+            "approval_mismatch",
+            "That approval authorises a different command. An approval binds to "
+            "one exact action.",
+        )
+
+    audit("approval_consumed", request, approval_id=approval_id)
+
+
 # --------------------------------------------------------------------------- #
 # Letta client
 # --------------------------------------------------------------------------- #
@@ -508,6 +578,26 @@ class LettaError(RuntimeError):
         self.status = status
         self.detail = detail
         super().__init__(f"Letta API error {status}: {detail}")
+
+
+def _error_kind(detail: Any) -> str:
+    """Reduce a Letta error payload to a short, non-content label.
+
+    A Letta error can echo the request body, so the payload must never be logged
+    verbatim. Only the error *name* is kept -- ``{"error": "not_found"}`` becomes
+    ``"not_found"`` -- and it is truncated and stripped of anything that is not a
+    plain identifier, so a payload that puts prose (or a message) in the ``error``
+    field cannot smuggle it into the log either.
+    """
+    kind = ""
+    if isinstance(detail, dict):
+        kind = str(detail.get("error") or detail.get("kind") or "")
+    elif isinstance(detail, str):
+        kind = detail
+    kind = kind.strip()[:64]
+    if not re.fullmatch(r"[A-Za-z0-9_.\- ]*", kind):
+        return "unrecognised"
+    return kind or "unspecified"
 
 
 @app.exception_handler(LettaError)
@@ -520,7 +610,13 @@ async def letta_error_handler(request: Request, exc: LettaError) -> JSONResponse
     "Internal Server Error" with nothing in it -- which is how this defect
     surfaced when a bad LETTA_BASE_URL was injected on 2026-09-30.
     """
-    audit("letta_error", request, status=exc.status, detail=str(exc.detail)[:200])
+    # Shape, never payload. The module comment above promises "no Letta error
+    # payloads" are written, and until 2026-10-02 this line broke that promise:
+    # a Letta 4xx can echo the request body -- the owner's private message --
+    # straight into stdout, which on Render's ephemeral disk is the only durable
+    # record. Log the status and the error *kind* instead. Both are diagnostic;
+    # neither can contain the message.
+    audit("letta_error", request, status=exc.status, kind=_error_kind(exc.detail))
     return JSONResponse(
         status_code=502 if exc.status >= 500 else exc.status,
         content={
@@ -802,6 +898,13 @@ def agent_summary(agent: dict) -> dict:
 class MessageIn(BaseModel):
     input: str = Field(..., min_length=1, max_length=8000)
     mode: Optional[str] = Field(default=None, description="Front-end hint: 'balanced' or 'deep'.")
+    approval_id: Optional[str] = Field(
+        default=None,
+        description=(
+            "Required when the server classifies `input` as elevated risk. Must name an "
+            "APPROVED approval bound to exactly this text."
+        ),
+    )
 
 
 # --------------------------------------------------------------------------- #
@@ -948,6 +1051,7 @@ async def send_message(
     require_owner(x_owner_token, request)
     rate_limit(client_key(request, x_owner_token), request)
     require_not_paused(request)
+    require_approval_if_elevated(payload.input, payload.approval_id, request)
 
     agent = await resolve_agent()
     agent_id = agent.get("id")

@@ -202,7 +202,12 @@ async function backendCall(path,opts={}){
     }else{
       msg=(typeof d==='string'?d:('HTTP '+r.status));
     }
-    throw new Error('Backend: '+msg);
+    // Carry the status and the structured detail on the error. The caller needs
+    // to tell a 403 "approval required" apart from any other failure, and it
+    // cannot do that from a formatted string.
+    const err=new Error('Backend: '+msg);
+    err.status=r.status;err.detail=d;
+    throw err;
   }
   return b;
 }
@@ -229,8 +234,10 @@ async function backendStatus(){
     setBackendChip('Backend: '+m,false);return null;
   }
 }
-async function lettaReply(text){
-  const r=await backendCall('/api/letta/message',{method:'POST',body:JSON.stringify({input:text})});
+async function lettaReply(text,approvalId){
+  const body={input:text};
+  if(approvalId)body.approval_id=approvalId;
+  const r=await backendCall('/api/letta/message',{method:'POST',body:JSON.stringify(body)});
   backend.session=r.conversation_id||backend.session;
   const toks=r.usage&&r.usage.completion_tokens;
   return {out:r.reply,meta:'letta · '+(r.conversation_id||'session')+(toks!=null?(' · '+toks+' tok'):'')};
@@ -392,7 +399,11 @@ async function requestApproval(text){
   const rec=await backendCall('/api/command/approvals',{method:'POST',body:JSON.stringify({
     title:'Elevated-risk command held for authorisation',
     detail:text.slice(0,500),
-    risk:'high'
+    risk:'high',
+    // The server hashes this and stores only the hash. It is what binds the
+    // approval to one exact command: the same approval cannot authorise a
+    // different one, and a longer command cannot ride in on a shorter approval.
+    binding_text:text
   })});
   state.pendingApproval={id:rec.id,text};
   showApproval(rec);
@@ -405,15 +416,30 @@ async function decideApproval(decision,note){
     {method:'POST',body:JSON.stringify({decision,note:note||''})});
 }
 
-async function sendText(text){
+async function sendText(text,approvalId){
   state.busy=true;$('send').disabled=true;add('user',text);
   // Tell the owner work is happening. A reply can take several seconds, and on a
   // phone an unresponsive-looking screen after a tap reads as a failure.
   setVoiceState('thinking','thinking');
   try{
-    const {out,meta}=backendConfigured()?await lettaReply(text):await syntheticReply(text);add('assistant',out,meta);
+    const {out,meta}=backendConfigured()?await lettaReply(text,approvalId):await syntheticReply(text);add('assistant',out,meta);
     if($('speak').checked)speak(out);
-  }catch(e){add('assistant','Stopped safely: '+(e?.message||String(e)),'fail-closed · no paid fallback')}
+  }catch(e){
+    // The server is the authority on risk, and its classifier is a superset of
+    // the local one. If it refuses for want of an approval the local planner did
+    // not ask for, create that approval and hold -- rather than showing the owner
+    // a raw 403 for a command the UI said was fine.
+    if(e&&e.status===403&&e.detail&&e.detail.error==='approval_required'){
+      try{
+        const rec=await requestApproval(text);
+        add('assistant','The server classifies this as elevated risk and held it as '+rec.id+'. Nothing has been sent. Approve it to proceed, or reject it.','WAITING_AUTHORIZATION · durable');
+      }catch(e2){
+        add('assistant','Not sent: the server requires authorisation and the approval could not be recorded. '+(e2?.message||String(e2)),'approval gate · fail-closed');
+      }
+    }else{
+      add('assistant','Stopped safely: '+(e?.message||String(e)),'fail-closed · no paid fallback');
+    }
+  }
   finally{
     state.busy=false;$('send').disabled=false;$('plan').textContent='Planner idle';
     // Only clear if TTS did not take over the chip.
@@ -450,7 +476,9 @@ $('approve').onclick=async()=>{
     await decideApproval('approve','approved by owner');
     hideApproval();
     add('assistant','Approved '+p.id+'. Sending now.','approval granted');
-    await sendText(p.text);
+    // The id travels with the send: the server will not forward an elevated
+    // command without an APPROVED approval bound to this exact text.
+    await sendText(p.text,p.id);
   }catch(e){
     add('assistant','Not sent: the approval could not be recorded, so it was not granted. '+(e?.message||String(e)),'approval gate · fail-closed');
   }finally{$('approve').disabled=false}

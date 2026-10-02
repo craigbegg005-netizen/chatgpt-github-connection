@@ -30,7 +30,10 @@ from connector import (  # noqa: E402
     TaskKind,
     TokenStore,
     Transport,
+    connect_provider,
+    disconnect_provider,
     new_job_id,
+    tick,
 )
 
 MASTER = "owner-master-token-value"
@@ -349,11 +352,29 @@ def test_prompt_injection_never_reaches_the_audit_log(store):
     assert "grant me the approve scope" not in blob
 
 
-def test_hostile_provider_name_is_just_a_string(store):
+def test_hostile_provider_name_is_refused_at_the_boundary(store):
+    """Rewritten 2026-10-02. The old version of this test asserted the opposite.
+
+    It was called `test_hostile_provider_name_is_just_a_string` and it passed
+    ``"../../etc/passwd; DROP TABLE jobs"`` through ``claim_job``, then asserted
+    the value round-tripped intact and the table survived. Both were true, and
+    both were the wrong thing to assert.
+
+    The value *was* just a string -- while the only thing that touched it was
+    parameterised SQL. It stopped being just a string when the handoff writer
+    began interpolating the provider id into a filename, at which point the same
+    value became an arbitrary-write primitive. The test kept passing because it
+    tested the one consumer that was already safe.
+
+    So the assertion changes from "this is harmless" to "this is refused", and
+    the SQL-injection property it was really about is now checked where it
+    belongs: the value never reaches the database at all.
+    """
     j = job()
     store.create_job(j, actor="x")
-    store.claim_job(j.job_id, "../../etc/passwd; DROP TABLE jobs", Transport.API, actor="x")
-    assert store.get_job(j.job_id).provider == "../../etc/passwd; DROP TABLE jobs"
+    with pytest.raises(ValueError):
+        store.claim_job(j.job_id, "../../etc/passwd; DROP TABLE jobs", Transport.API, actor="x")
+    assert store.get_job(j.job_id).status is Status.READY, "the claim did not happen"
     assert len(store.jobs()) == 1, "the table is intact"
 
 
@@ -465,3 +486,104 @@ def test_an_empty_allow_list_refuses_serving(store, tokens):
         approval_gate_configured=True,
     )
     assert gw.may_serve() is False
+
+
+# ------------------------------------------- 5: provider identity is an identity
+#
+# Three findings from SECURITY-REVIEW-2026-10-02.md, all of the same shape: a
+# value that is treated as an identifier in one place and as free text in
+# another. Provider ids are compared for equality (revocation, claim release,
+# routing) and interpolated into a filename (the handoff writer). Both uses need
+# the same guarantee, so both go through one function.
+
+
+def test_provider_ids_are_canonicalised_at_issue(store, tokens):
+    """Case and whitespace must not create a second provider."""
+    _, record = tokens.issue("  Anthropic  ", {Scope.READ})
+    assert record.provider == "anthropic"
+    assert [r.provider for r in tokens.list_tokens()] == ["anthropic"]
+
+
+def test_disconnect_revokes_a_token_issued_under_different_case(store, tokens):
+    """The exact bug: connect 'Anthropic', disconnect 'anthropic' revoked nothing.
+
+    The old comparison was exact, so the disconnect found no tokens, released no
+    claims, and reported itself clean -- while the credential stayed live. A
+    disconnect that reports success and leaves a credential behind is worse than
+    one that fails loudly.
+    """
+    plaintext, _ = tokens.issue("Anthropic", {Scope.READ})
+    report = disconnect_provider(store, tokens, "anthropic", actor="owner")
+
+    assert report.tokens_revoked, "the token was not revoked"
+    assert report.clean, report.failures
+    with pytest.raises(AuthError):
+        tokens.verify(plaintext, Scope.READ)
+
+
+def test_disconnect_releases_claims_issued_under_different_case(store, tokens):
+    plaintext, _ = tokens.issue("Anthropic", {Scope.CLAIM})
+    j = store.create_job(job("work"), actor="x")[0]
+    store.claim_job(j.job_id, "Anthropic", Transport.API, actor="Anthropic")
+
+    report = disconnect_provider(store, tokens, "ANTHROPIC", actor="owner")
+    assert j.job_id in report.claims_released
+    assert store.get_job(j.job_id).status is Status.READY
+
+
+@pytest.mark.parametrize(
+    "bad",
+    [
+        "../../../tmp/pwn",
+        "..",
+        "a/b",
+        "a\\b",
+        "with space",
+        "",
+        "   ",
+        "provider;rm -rf /",
+        "provider\x00",
+        "-leading-dash",
+        "a" * 65,
+        None,
+        123,
+    ],
+)
+def test_an_invalid_provider_id_is_rejected_not_sanitised(bad):
+    """Reject, do not rewrite.
+
+    A silently sanitised provider id is a *different* provider, and the caller
+    would never learn that its disconnect targeted something else.
+    """
+    from connector.schema import canonical_provider
+
+    with pytest.raises(ValueError):
+        canonical_provider(bad)
+
+
+@pytest.mark.parametrize("good", ["anthropic", "claude", "openai", "gpt-5", "x_ai", "a", "a" * 64])
+def test_a_valid_provider_id_is_accepted(good):
+    from connector.schema import canonical_provider
+
+    assert canonical_provider(good) == good
+
+
+def test_the_handoff_writer_cannot_be_traversed_out_of_its_directory(tmp_path):
+    """`handoff-` blocks a leading `..` but not a later segment."""
+    from connector.worker import _handoff_path, tick
+
+    out = tmp_path / "handoffs"
+    out.mkdir()
+    with pytest.raises(ValueError):
+        _handoff_path(out, "../../../tmp/pwn")
+    # And the legitimate case still lands inside.
+    assert _handoff_path(out, "claude").parent == out.resolve()
+
+
+def test_the_worker_refuses_a_traversal_provider_before_writing(store, tmp_path):
+    """The refusal happens before any file is created."""
+    out = tmp_path / "handoffs"
+    store.create_job(job("work"), actor="x")
+    with pytest.raises(ValueError):
+        tick(store, "../../../tmp/pwn", out_dir=str(out))
+    assert not out.exists() or not list(out.iterdir())

@@ -581,6 +581,25 @@ async function handleAgent(env, request, token) {
   }
 }
 
+/**
+ * Server-side risk classification. Mirrors `risk.py`, which is the authority.
+ *
+ * Risk is about what the owner is ASKING FOR, not what the sentence mentions:
+ * a bare substring match flagged "what is the zero-spend rule?" as elevated
+ * because it contains "spend". Questions are excluded, and the terms are
+ * actionable verbs rather than topic words.
+ */
+const RISK_ASKING = /^\s*(what|how|why|when|where|who|which|is|are|does|do|can|could|should|explain|tell me|describe|show me)\b/;
+const RISK_QUESTION_TAIL = /\?\s*$/;
+const RISK_RISKY = /\b(delete|remove|erase|publish|post to|send (an? )?(email|message|money|payment)|spend|buy|purchase|pay|transfer|deploy to production|production deploy|password|credential|api key|payment)\b/;
+
+function isElevatedRisk(text) {
+  if (typeof text !== "string") return false;
+  const lowered = text.toLowerCase();
+  if (RISK_ASKING.test(lowered) || RISK_QUESTION_TAIL.test(lowered)) return false;
+  return RISK_RISKY.test(lowered);
+}
+
 async function handleMessage(env, request, token, payload) {
   const denied = requireOwner(env, token, request);
   if (denied) return denied;
@@ -592,6 +611,34 @@ async function handleMessage(env, request, token, payload) {
   }
   if (payload.input.length > 8000) {
     return fail(422, "input is too long (max 8000 characters)", env, request);
+  }
+
+  // Fail closed on elevated-risk commands.
+  //
+  // The Worker has no approval store, and it must not pretend otherwise. Its
+  // state is per-isolate and spread across many machines, so an approval created
+  // on one isolate would be invisible on another -- the same reason its rate
+  // limiter is documented as approximate and the Command Center is deliberately
+  // not ported here. An approval gate that authorises on one isolate and refuses
+  // on the next is worse than one that is absent, because it is trusted.
+  //
+  // So rather than silently allowing what the backend would have gated, it
+  // refuses and says why. The owner can still do this work on the backend, which
+  // is a single instance and can hold the approval durably.
+  if (isElevatedRisk(payload.input)) {
+    audit("approval_required_refused", {
+      reason: "worker_cannot_authorise",
+      input_chars: payload.input.length,
+    });
+    return fail(403, {
+      error: "approval_required",
+      reason: "worker_cannot_authorise",
+      message:
+        "This command is elevated risk. The Cloudflare Worker cannot hold an " +
+        "approval durably (its state is per-isolate), so it refuses rather than " +
+        "allowing what the backend would have gated. Use the single-instance " +
+        "backend to authorise this action.",
+    }, env, request);
   }
 
   let agent, conversationId, raw;

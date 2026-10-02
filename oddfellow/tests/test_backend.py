@@ -1133,3 +1133,265 @@ def test_the_worker_serves_the_same_routes_as_the_backend(monkeypatch):
     known_gap = {p for p in missing if p.startswith("/api/command")}
     unexpected = sorted(set(missing) - known_gap)
     assert not unexpected, f"worker.js never mentions these backend routes: {unexpected}"
+
+
+# --------------------------------------------------------------------------- #
+# The approval gate is enforced by the server, not by the browser
+# --------------------------------------------------------------------------- #
+#
+# Until 2026-10-02 the gate was browser-only: the front end created a real
+# approval and waited, but `/api/letta/message` read no approval at all, so a
+# client holding the owner token could POST an elevated command straight past
+# it. The commit that added it claimed "the real approval gate, not a browser
+# confirm". These tests exist so that claim is checkable.
+
+def _approve(m, client, text, risk="high"):
+    """Create an approval bound to `text` and approve it. Returns its id."""
+    r = client.post(
+        "/api/command/approvals",
+        headers=auth(),
+        json={"title": "t", "detail": text[:200], "risk": risk, "binding_text": text},
+    )
+    assert r.status_code == 200, r.text
+    approval_id = r.json()["id"]
+    d = client.post(
+        f"/api/command/approvals/{approval_id}/decide",
+        headers=auth(),
+        json={"decision": "approve", "note": "test"},
+    )
+    assert d.status_code == 200, d.text
+    return approval_id
+
+
+def test_normal_message_needs_no_approval(fake):
+    m, f, client = fake
+    r = client.post("/api/letta/message", headers=auth(), json={"input": "who are you"})
+    assert r.status_code == 200
+
+
+def test_elevated_message_without_an_approval_is_refused(fake):
+    """The whole point: the server refuses, not just the browser."""
+    m, f, client = fake
+    r = client.post(
+        "/api/letta/message", headers=auth(), json={"input": "delete the old branch"}
+    )
+    assert r.status_code == 403
+    assert r.json()["detail"]["error"] == "approval_required"
+    assert r.json()["detail"]["reason"] == "no_approval_supplied"
+    # Nothing reached Letta. A refusal that still sends is not a refusal.
+    assert not [c for c in f.calls if c["path"].endswith("/messages")]
+
+
+def test_elevated_message_with_an_unknown_approval_is_refused(fake):
+    m, f, client = fake
+    r = client.post(
+        "/api/letta/message",
+        headers=auth(),
+        json={"input": "delete the old branch", "approval_id": "apr-doesnotexist"},
+    )
+    assert r.status_code == 403
+    assert r.json()["detail"]["reason"] == "unknown_approval"
+
+
+def test_elevated_message_with_an_unapproved_approval_is_refused(fake):
+    """A pending approval is not an approval."""
+    m, f, client = fake
+    text = "delete the old branch"
+    rec = client.post(
+        "/api/command/approvals",
+        headers=auth(),
+        json={"title": "t", "detail": text, "risk": "high", "binding_text": text},
+    ).json()
+    r = client.post(
+        "/api/letta/message",
+        headers=auth(),
+        json={"input": text, "approval_id": rec["id"]},
+    )
+    assert r.status_code == 403
+    assert r.json()["detail"]["reason"] == "not_approved"
+
+
+def test_elevated_message_with_a_rejected_approval_is_refused(fake):
+    m, f, client = fake
+    text = "delete the old branch"
+    rec = client.post(
+        "/api/command/approvals",
+        headers=auth(),
+        json={"title": "t", "detail": text, "risk": "high", "binding_text": text},
+    ).json()
+    client.post(
+        f"/api/command/approvals/{rec['id']}/decide",
+        headers=auth(),
+        json={"decision": "reject"},
+    )
+    r = client.post(
+        "/api/letta/message",
+        headers=auth(),
+        json={"input": text, "approval_id": rec["id"]},
+    )
+    assert r.status_code == 403
+    assert r.json()["detail"]["reason"] == "not_approved"
+
+
+def test_an_approved_but_unbound_approval_authorises_nothing(fake):
+    """An advisory approval is displayable and decidable, but authorises nothing."""
+    m, f, client = fake
+    text = "delete the old branch"
+    rec = client.post(
+        "/api/command/approvals",
+        headers=auth(),
+        json={"title": "t", "detail": text, "risk": "high"},  # no binding_text
+    ).json()
+    client.post(
+        f"/api/command/approvals/{rec['id']}/decide",
+        headers=auth(),
+        json={"decision": "approve"},
+    )
+    r = client.post(
+        "/api/letta/message",
+        headers=auth(),
+        json={"input": text, "approval_id": rec["id"]},
+    )
+    assert r.status_code == 403
+    assert r.json()["detail"]["reason"] == "approval_not_bound"
+
+
+def test_an_approval_for_one_command_does_not_authorise_another(fake):
+    """Binding is exact. This is what makes a spoken 'approve' mean one action."""
+    m, f, client = fake
+    approval_id = _approve(m, client, "delete the old branch")
+    r = client.post(
+        "/api/letta/message",
+        headers=auth(),
+        json={"input": "delete the production database", "approval_id": approval_id},
+    )
+    assert r.status_code == 403
+    assert r.json()["detail"]["reason"] == "approval_mismatch"
+
+
+def test_a_longer_command_cannot_ride_in_on_a_shorter_approval(fake):
+    """A prefix or substring binding would let this through. Exact hashing does not."""
+    m, f, client = fake
+    approval_id = _approve(m, client, "delete the branch")
+    r = client.post(
+        "/api/letta/message",
+        headers=auth(),
+        json={
+            "input": "delete the branch and also transfer the balance",
+            "approval_id": approval_id,
+        },
+    )
+    assert r.status_code == 403
+    assert r.json()["detail"]["reason"] == "approval_mismatch"
+
+
+def test_a_bound_and_approved_approval_lets_the_command_through(fake):
+    """The gate must open for the action it authorises, or it is just a wall."""
+    m, f, client = fake
+    text = "delete the old branch"
+    approval_id = _approve(m, client, text)
+    r = client.post(
+        "/api/letta/message", headers=auth(), json={"input": text, "approval_id": approval_id}
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["reply"] == "I am Oddfellow."
+    assert [c for c in f.calls if c["path"].endswith("/messages")]
+
+
+def test_the_binding_is_a_hash_and_not_the_command(fake):
+    """The *binding* is a hash. That is the property enforcement rests on.
+
+    This test used to be called `..._never_holds_the_command_text` and asserted
+    the command appeared nowhere in the record. A runtime check showed that was
+    false: `detail` carries it, because the owner has to be able to see what they
+    are approving. The docstring was the thing that was wrong, not the code -- so
+    the assertion is narrowed to what is actually true and load-bearing.
+    """
+    m, f, client = fake
+    text = "delete the secret-project branch"
+    rec = client.post(
+        "/api/command/approvals",
+        headers=auth(),
+        json={"title": "t", "detail": "", "risk": "high", "binding_text": text},
+    ).json()
+    assert rec["binding"] != text
+    assert len(rec["binding"]) == 64  # sha256 hex
+    # The binding is not derivable from anything else in the record, and the
+    # record's display field is not what enforcement reads.
+    listed = client.get("/api/command/approvals", headers=auth()).json()["approvals"]
+    row = [a for a in listed if a["id"] == rec["id"]][0]
+    assert row["binding"] == rec["binding"]
+    assert row["detail"] != rec["binding"]
+
+
+def test_a_truncated_display_detail_cannot_weaken_the_binding(fake):
+    """`detail` is truncated for display; the binding must not be.
+
+    If enforcement ever read `detail` instead of `binding`, a 500-character
+    truncation would turn an exact match into a prefix match and a longer command
+    could ride in on a shorter approval.
+    """
+    m, f, client = fake
+    long_command = "delete the branch " + ("x" * 600)
+    rec = client.post(
+        "/api/command/approvals",
+        headers=auth(),
+        json={
+            "title": "t",
+            "detail": long_command[:500],  # what the front end actually sends
+            "risk": "high",
+            "binding_text": long_command,  # the full text, hashed
+        },
+    ).json()
+    client.post(
+        f"/api/command/approvals/{rec['id']}/decide",
+        headers=auth(),
+        json={"decision": "approve"},
+    )
+    # The truncated prefix must NOT authorise the full command.
+    r = client.post(
+        "/api/letta/message",
+        headers=auth(),
+        json={"input": long_command[:500], "approval_id": rec["id"]},
+    )
+    assert r.status_code == 403
+    assert r.json()["detail"]["reason"] == "approval_mismatch"
+    # The full command does.
+    r2 = client.post(
+        "/api/letta/message",
+        headers=auth(),
+        json={"input": long_command, "approval_id": rec["id"]},
+    )
+    assert r2.status_code == 200, r2.text
+
+
+def test_the_gate_is_case_insensitive_like_the_classifier(fake):
+    m, f, client = fake
+    r = client.post(
+        "/api/letta/message", headers=auth(), json={"input": "DELETE THE OLD BRANCH"}
+    )
+    assert r.status_code == 403
+
+
+def test_a_question_about_a_dangerous_action_is_not_gated(fake):
+    """The bug this rule was written for: 'what is the zero-spend rule?' is not a command."""
+    m, f, client = fake
+    r = client.post(
+        "/api/letta/message",
+        headers=auth(),
+        json={"input": "what is the zero-spend rule?"},
+    )
+    assert r.status_code == 200
+
+
+def test_the_pause_switch_still_wins_over_a_valid_approval(fake):
+    """Order matters: a paused service refuses even a properly approved command."""
+    m, f, client = fake
+    text = "delete the old branch"
+    approval_id = _approve(m, client, text)
+    client.post("/api/command/pause", headers=auth(), json={"paused": True, "reason": "test"})
+    r = client.post(
+        "/api/letta/message", headers=auth(), json={"input": text, "approval_id": approval_id}
+    )
+    assert r.status_code == 503
+    assert r.json()["detail"]["error"] == "paused_by_owner"

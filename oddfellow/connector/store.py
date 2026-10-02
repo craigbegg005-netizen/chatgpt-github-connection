@@ -31,7 +31,15 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterator
 
-from .schema import APPROVAL_REQUIRED, Job, Risk, Status, canonical_json, result_hash
+from .schema import (
+    APPROVAL_REQUIRED,
+    Job,
+    Risk,
+    Status,
+    canonical_json,
+    canonical_provider,
+    result_hash,
+)
 
 
 class ClaimRefused(Exception):
@@ -366,7 +374,16 @@ class Store:
 
         The state change is a *conditional* UPDATE, so two providers racing produce
         one winner and one refusal rather than two RUNNING rows.
+
+        The provider id is canonicalised here as well as at token issue. Storing
+        it verbatim was the second half of the disconnect bug: a job claimed by
+        ``Anthropic`` was invisible to ``disconnect_provider("anthropic")``, so
+        the disconnect revoked the token, released no claims, and reported itself
+        clean -- leaving the work stranded in RUNNING under a provider that no
+        longer exists. Canonicalising at the *write* is what makes every later
+        comparison correct, rather than patching each comparison in turn.
         """
+        provider = canonical_provider(provider)
         job = self._require(job_id)
         if paused:
             self.audit(actor, "job.claim.refused", job_id=job_id, reason="paused")
@@ -425,6 +442,12 @@ class Store:
         completion. This is what makes failover across providers safe: two
         providers producing the same answer is one answer.
         """
+        # Canonicalise the caller's id before comparing it to the stored one, so
+        # a case difference refuses nothing it should allow. This is a false
+        # *refusal* rather than a hole, but a provider that cannot submit under
+        # its own name is a provider that silently loses work.
+        if provider is not None:
+            provider = canonical_provider(provider)
         job = self._require(job_id)
         if job.status is not Status.RUNNING:
             self.audit(actor, "job.result.refused", job_id=job_id, reason=job.status.value)
@@ -456,6 +479,7 @@ class Store:
         evidence** -- a bare "looks fine" is refused, because an unevidenced
         verification is indistinguishable from no verification at all.
         """
+        verified_by = canonical_provider(verified_by)
         job = self._require(job_id)
         if job.status is not Status.COMPLETE:
             raise ValueError(f"cannot verify a job that is {job.status.value}")
