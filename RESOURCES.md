@@ -185,6 +185,36 @@ its real workflow by this agent.
 | Instagram | `embrooks.home` | ⚠️ reported |
 | TikTok | `emmabrooks400` | ⚠️ reported |
 
+## Hosting — zero-cost paths
+
+**✅ A zero-cost public hosting path already exists and is verified: the Oddfellow
+backend itself.** The service serves static files from `oddfellow/frontend/`, and it
+already serves subdirectories — verified 2026-10-02 00:03 UTC on **both** the
+rehearsal and the live Render service:
+
+```
+/icons/icon-192.png   -> 200   (a static subdirectory, on both services)
+/command.html         -> 200   (a second HTML page, on both services)
+/planner/             -> 404   (nothing is there yet — not a routing limitation)
+```
+
+So a second static app placed at `oddfellow/frontend/planner/` would be served at
+`/planner/` on the existing service: **same origin, no new account, no new service,
+no cost, and no CORS**. The 404 above is the absence of content, not the absence of a
+route.
+
+⚠️ **This does not deploy anything.** It identifies the path. The Planner PWA
+prototype is not in this repository, so nothing has been hosted, and hosting it would
+be a publication decision for the owner.
+
+**Checked and NOT available:**
+
+| Path | Status |
+|---|---|
+| GitHub Pages | ❌ **Unavailable.** The repo is public (so Pages would be free) but `has_pages: false`, the Pages API returns 404, and this agent has **no admin** on the repository. Verified 2026-10-02 00:03 UTC. |
+| Floot | ⚠️ Free capacity full (5/5 projects). Do not delete or overwrite an existing project to make room. |
+| Cloudflare Pages / Netlify / Vercel | ⚠️ Require an account this agent does not have. |
+
 ## Integrations
 
 | Service | Status |
