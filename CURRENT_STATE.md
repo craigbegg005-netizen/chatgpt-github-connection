@@ -33,14 +33,33 @@ not a defect in the document, it is a defect in treating a snapshot as current. 
 | Branch | Head at 23:10 UTC | Role |
 |---|---|---|
 | `letta/combined-single-service-v0.20.4` | `bf62e44d` | **Canonical.** Deploy branch. Single origin: page + API + PWA. |
-| `letta/universal-connector-v0.21` | `8f9c139e` | **Universal Connector.** Dev branch, based on canonical. Not merged, not deployed. |
-| `letta/voice-v1` | `e83a61b7` | **Voice V1 approval gate.** Dev branch. Not merged, not deployed. |
+| `letta/universal-connector-v0.21` | `8f9c139e` | **Universal Connector.** Dev branch. **✅ MERGED into canonical** — verified 2026-10-02: `git merge-base --is-ancestor` → true, 0 commits ahead. |
+| `letta/voice-v1` | `9becaa8a` | **Voice V1 approval gate.** Dev branch. **✅ MERGED into canonical** — verified 2026-10-02: ancestor, 0 commits ahead. |
 | `main` | `8ddfe325` | Default branch. **Index only** — no `oddfellow/` directory, so a service pointed here cannot satisfy `rootDir: oddfellow` and its build fails with no obvious cause. |
 | `letta/continuity-2026-09-30` | `a01e96e` | Where this file used to live. 72 commits behind canonical. |
 
-**What does NOT go stale, and is the part worth reading:** the *roles* column, the
-`main` warning, and the deploy-target warning below. Those are structural facts about
-the repository, not observations about its current state.
+**🔴 CORRECTED 2026-10-02 — the roles column was wrong, and the claim that it "does not go stale" was the error.**
+
+An earlier revision of this table said both dev branches were **"Not merged, not deployed"**, and
+the paragraph below asserted that the *roles* column was the part that does **not** go stale. Both
+are false, and the second is why the first survived: a column labelled "structural fact" is not
+re-checked, so a merge that happened after it was written goes unnoticed.
+
+Verified by measurement, not by reading the log:
+
+```
+git merge-base --is-ancestor origin/letta/universal-connector-v0.21 origin/letta/combined-...  -> true
+git merge-base --is-ancestor origin/letta/voice-v1                 origin/letta/combined-...  -> true
+git rev-list --count origin/letta/combined-...  ..origin/<branch>                            -> 0
+```
+
+**No work is stranded on either side branch.** The combined branch holds strictly *more*: 1,925
+more lines than the connector branch and 5,784 more than the voice branch. The merge commits
+`155dd3f` and `d00ad7a` are real.
+
+**The lesson is narrower than "update the table":** a column is not exempt from going stale
+because it is *described* as structural. If a claim can change when someone merges a branch, it
+is an observation, and it needs a date and a re-check like any other.
 
 ⚠️ The canonical branch is **named** `v0.20.4` but the code reports **`0.20.6`**. Report both; never assume equivalence.
 
@@ -82,7 +101,9 @@ are wrapped so it cannot leave production paused.
 
 ### Connector security, at the level it has actually reached
 
-🧪 **TESTED — 113 connector tests** (offline, deterministic) · 🛠 **IMPLEMENTED** ·
+🧪 **TESTED — 123 connector tests** (offline, deterministic; corrected from 113 on 2026-10-02 —
+the branch gained 10 tests after that figure was written, and `connector/tests/test_worker.py`
+is the file that accounts for them) · 🛠 **IMPLEMENTED** ·
 ⏳ **NOT CONNECTED** to any provider · ⏳ **NOT DEPLOYED** · the MCP gateway
 **serves nothing**.
 
