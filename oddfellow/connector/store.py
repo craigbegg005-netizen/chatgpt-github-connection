@@ -145,7 +145,7 @@ def _now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def _evidence_is_checkable(evidence: str) -> bool:
+def evidence_is_checkable(evidence: str) -> bool:
     """A heuristic floor on evidence: does the string *look like* a reference?
 
     **This is a heuristic, not a property, and the distinction is the point.**
@@ -189,8 +189,14 @@ def _evidence_is_checkable(evidence: str) -> bool:
     # and `"done/"` have nothing after it, so they no longer pass.
     if _re.search(r"(?:^|[\s(])\.{0,2}/?\w[\w.\-]*/\w", evidence):
         return True
-    if lowered.startswith(("commit ", "apr-", "job-")):
+    if lowered.startswith(("apr-", "job-")):
         return True  # an identifier reference
+    # "commit <hash>" counts anywhere in the sentence, not only at the start --
+    # "re-ran the suite at commit abc123" names a commit and is checkable. The
+    # hash floor is 4 here rather than 7 because the word "commit" is doing the
+    # work of saying what the token is; a bare hex run still needs 7.
+    if _re.search(r"\bcommit\s+[0-9a-f]{4,40}\b", lowered):
+        return True
     if _re.search(r"\b[0-9a-f]{7,40}\b", lowered):
         return True  # a commit-like hash named in prose
     return False
@@ -719,7 +725,7 @@ class Store:
         # of trusting the docstring. Evidence must now name something
         # checkable: a URL, a path, or a reference. A phrase is not
         # evidence; it is a restatement of the claim.
-        if not _evidence_is_checkable(evidence):
+        if not evidence_is_checkable(evidence):
             raise ValueError(
                 "verification evidence must be checkable (a URL, path, or "
                 "identifier), not a bare assertion"

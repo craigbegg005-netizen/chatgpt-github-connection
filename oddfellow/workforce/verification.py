@@ -23,6 +23,7 @@ from enum import Enum
 from typing import Iterable
 
 from connector.schema import Risk
+from connector.store import evidence_is_checkable
 from .permissions import Decision, check_authority
 from .registry import WorkforceRegistry
 from .schema import Authority, Worker
@@ -121,6 +122,22 @@ def verify(
         return VerificationOutcome(
             False,
             "no evidence supplied; an unevidenced verification is not a verification",
+            verifier_id,
+        )
+
+    # The *kind* of evidence was checked; the detail was not. `add()` accepted any
+    # string, including "", so `add(REPRODUCED, "")` satisfied the HIGH-risk
+    # minimum and produced a VERIFIED verdict from evidence that names nothing.
+    # This module's docstring already said the two paths "must not be able to
+    # disagree" -- and they did: the connector refused "looks fine" while this
+    # path accepted it, and accepted empty evidence outright. They now share one
+    # rule rather than two that can drift.
+    unchecked = [d for _, d in request.evidence if not evidence_is_checkable(d or "")]
+    if unchecked:
+        return VerificationOutcome(
+            False,
+            "evidence must be checkable (a URL, path, or identifier), not a bare "
+            f"assertion; refused {len(unchecked)} of {len(request.evidence)}",
             verifier_id,
         )
 

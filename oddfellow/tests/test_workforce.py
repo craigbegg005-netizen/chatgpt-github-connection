@@ -257,8 +257,16 @@ def test_verification_without_evidence_is_refused(reg):
 
 
 def test_weak_evidence_is_refused_for_high_risk_work(reg):
+    """Isolates the *kind* rule, so the detail must be checkable.
+
+    This used `"another agent said it was fine"` -- a filler string -- which
+    meant the refusal could come from either the kind rule or the checkability
+    rule. Now that both exist, a filler string is refused for the wrong reason
+    and the kind rule goes untested. A checkable reference of a weak kind is the
+    only input that isolates what this test is about.
+    """
     req = VerificationRequest(job_id="job-1", producer_id="eng_backend", risk=Risk.HIGH)
-    req.add(EvidenceKind.AI_REPORT, "another agent said it was fine")
+    req.add(EvidenceKind.AI_REPORT, "see the review note at docs/ai-review.md")
     outcome = verify(reg, req, "qa_claim_verifier")
     assert not outcome.verified
     assert "weaker than" in outcome.reason
@@ -382,3 +390,38 @@ def test_a_serialised_roster_cannot_smuggle_an_inflated_authority():
         WorkforceRegistry.from_dict(payload)
     with pytest.raises(ValueError, match="holds A4 but its head"):
         WorkforceRegistry.from_json(json.dumps(payload))
+
+
+# --------------------------------------------------------------------------- #
+# The evidence detail must be checkable on THIS path too, not only in the
+# connector. The two paths must not be able to disagree.
+# --------------------------------------------------------------------------- #
+
+@pytest.mark.parametrize("detail", ["", "   ", "looks fine", "ok", "n/a", "looks fine/"])
+def test_uncheckable_evidence_detail_is_refused(reg, detail):
+    """`add()` accepted any string, so `add(REPRODUCED, "")` satisfied the
+    HIGH-risk minimum and produced a VERIFIED verdict from evidence that names
+    nothing. The kind was checked; the detail was not.
+
+    This module's docstring already said the connector and this path "must not
+    be able to disagree" -- and they did: the connector refused "looks fine"
+    while this path accepted it, and accepted empty evidence outright.
+    """
+    req = VerificationRequest(job_id="job-1", producer_id="eng_backend", risk=Risk.HIGH)
+    req.add(EvidenceKind.REPRODUCED, detail)
+    outcome = verify(reg, req, "qa_claim_verifier")
+    assert not outcome.verified
+    assert "checkable" in outcome.reason
+
+
+@pytest.mark.parametrize("detail", [
+    "reproduced at src/x.py:12",
+    "re-ran the suite at commit abc123; 509 passed",
+    "see https://example.com/run/7",
+])
+def test_checkable_evidence_detail_still_verifies(reg, detail):
+    """Tightening the detail must not start refusing real evidence."""
+    req = VerificationRequest(job_id="job-1", producer_id="eng_backend", risk=Risk.HIGH)
+    req.add(EvidenceKind.REPRODUCED, detail)
+    outcome = verify(reg, req, "qa_claim_verifier")
+    assert outcome.verified, outcome.reason
