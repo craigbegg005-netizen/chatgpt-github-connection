@@ -803,3 +803,39 @@ def test_evidence_naming_a_commit_in_prose_is_accepted(store):
     store.submit_result(j.job_id, {"r": 1}, actor="letta", provider="letta")
     v = store.verify_result(j.job_id, "chatgpt", "reproduced against repo at f55951a7")
     assert v.verified is True
+
+
+@pytest.mark.parametrize("filler", [
+    "looks fine/", "done/", "trust me/", "ok/", "n/a", "n/a/", "N/A/", "none", "tbd",
+])
+def test_filler_with_a_reference_shaped_token_is_still_refused(store, filler):
+    """The rule is a heuristic, but it must not be one character deep.
+
+    The first version tested `"/" in evidence`, so the exact string the
+    docstring names -- "looks fine" plus a single trailing slash -- was
+    accepted. The regression test shipped alongside it checked only the four
+    strings the author had in mind, which is a proxy for the property rather
+    than the property. These are the shapes that slipped through.
+    """
+    j = job()
+    store.create_job(j, actor="x")
+    store.claim_job(j.job_id, "letta", Transport.API, actor="letta")
+    store.submit_result(j.job_id, {"r": 1}, actor="letta", provider="letta")
+    with pytest.raises(ValueError, match="checkable"):
+        store.verify_result(j.job_id, "chatgpt", filler)
+
+
+@pytest.mark.parametrize("real", [
+    "see src/foo.py",
+    "./oddfellow/tests/test_risk.py",
+    "checked connector/store.py:693",
+    "see https://example.com/a/b",
+    "reproduced against repo at f55951a7",
+])
+def test_real_references_are_still_accepted(store, real):
+    """Tightening the floor must not start refusing real evidence."""
+    j = job()
+    store.create_job(j, actor="x")
+    store.claim_job(j.job_id, "letta", Transport.API, actor="letta")
+    store.submit_result(j.job_id, {"r": 1}, actor="letta", provider="letta")
+    assert store.verify_result(j.job_id, "chatgpt", real).verified is True

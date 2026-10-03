@@ -146,22 +146,51 @@ def _now() -> str:
 
 
 def _evidence_is_checkable(evidence: str) -> bool:
-    """Whether an evidence string names something another party could check.
+    """A heuristic floor on evidence: does the string *look like* a reference?
 
-    Not a judgment of whether the evidence is *true* -- that is the verifier's
-    job. This is the floor: the string must point at something (a URL, a
-    filesystem path, a commit/identifier reference), because a bare phrase
-    like "looks fine" restates the claim rather than supporting it.
+    **This is a heuristic, not a property, and the distinction is the point.**
+    Whether a string "names something another party could check" is not
+    decidable by inspecting the string -- `"see src/foo.py"` and
+    `"looks fine/ok"` are the same shape, and only one of them points anywhere.
+    No rule here can tell them apart, so this function does not claim to. It
+    raises the floor from "non-empty" to "shaped like a reference" and leaves
+    the real judgment to the verifier, which is where it belongs.
+
+    **What it does catch:** a bare assertion with no reference-shaped token --
+    "looks fine", "ok", "verified it myself", "trust me", "done", "n/a".
+
+    **What it does not catch, stated plainly because the previous version of
+    this function claimed otherwise:** a filler phrase with a reference-shaped
+    token bolted on. `"looks fine/ok"` passes. So does `"done#1"` and
+    `"deadbeef"`. An earlier revision tested only `"/" in evidence`, so the
+    exact string this docstring names -- `"looks fine"` plus a single trailing
+    slash -- was accepted, and the regression test shipped alongside it checked
+    only the four strings the author had in mind. That is a proxy recorded as a
+    property, the same mistake this project has now made eight times.
+
+    If the floor needs to be a real property rather than a heuristic, the fix is
+    not a better regex -- it is structured evidence (a typed kind plus a value,
+    as `workforce.EvidenceKind` already models) so the *shape* is enforced
+    instead of guessed from prose.
     """
-    lowered = evidence.lower()
-    if lowered.startswith(("http://", "https://")):
-        return True
-    if "/" in evidence and len(evidence) > 3:
-        return True  # a path or a URL fragment
-    if "#" in evidence or lowered.startswith(("commit ", "apr-", "job-")):
-        return True  # an identifier reference
     import re as _re
 
+    lowered = evidence.lower().strip()
+    # A handful of pure-filler tokens that are reference-shaped by accident --
+    # `n/a` matches a path pattern because it has a slash and word characters on
+    # both sides. This list is illustrative, not exhaustive, and is not a claim
+    # that everything outside it is real evidence.
+    if lowered.rstrip("./! ") in {"n/a", "na", "none", "nil", "tbd", "n.a"}:
+        return False
+    # A URL may be embedded in a sentence ("see https://..."), not only leading.
+    if _re.search(r"https?://\S", evidence):
+        return True
+    # A path needs a word character on both sides of the slash. `"looks fine/"`
+    # and `"done/"` have nothing after it, so they no longer pass.
+    if _re.search(r"(?:^|[\s(])\.{0,2}/?\w[\w.\-]*/\w", evidence):
+        return True
+    if lowered.startswith(("commit ", "apr-", "job-")):
+        return True  # an identifier reference
     if _re.search(r"\b[0-9a-f]{7,40}\b", lowered):
         return True  # a commit-like hash named in prose
     return False
