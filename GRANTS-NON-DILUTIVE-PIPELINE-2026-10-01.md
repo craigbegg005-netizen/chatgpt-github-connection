@@ -226,12 +226,33 @@ Teams: one point of contact completes it; other names and emails go at the end o
 
 ---
 
-## 4. Discovery channels — ⏳ LEAD, not checked
+## 4. Discovery channels
 
-- **Verizon Small Business Digital Ready** — free educational platform and grant-discovery channel.
-- **Hello Alice** — free grant-matching/discovery platform.
+### 4a. Verizon Small Business Digital Ready — ✅ VERIFIED OPEN (2026-10-03, primary source)
 
-Both are free to use. Neither is a funding commitment. **Verify each individual opportunity before applying** — a listing on a discovery platform is not an open program.
+**Verified against Verizon's own domain** (`digitalready.verizonwireless.com`), not a search hit. The earlier note called this "a free educational platform and grant-discovery channel" — that undersold it. It runs its **own** national grant, and it is open.
+
+| Question | Answer |
+|---|---|
+| Is it open? | **Yes** — 2026 applications are open |
+| Award | **$10,000**, non-repayable (an FAQ entry asks "Does anything need to be repaid?") |
+| How many | **10 per month, June–December 2026** — ~70 grants this year |
+| Cost to apply | **$0.** Register free, complete **any two free courses or events** to unlock the application |
+| Eligibility | Owners of **for-profit** small businesses in the US, Puerto Rico or the USVI, 18+ |
+| Apply once? | Yes — one application keeps you eligible for the rest of 2026 |
+| Decisions | Monthly review; final decision for everyone by **12 January 2027** |
+| Partner | LISC (manages selection) |
+| Track record | $15M awarded since 2021; 1,500+ businesses |
+
+**Selection is a three-stage funnel, and it matters for odds:** an anonymous drawing narrows the pool, an algorithm balances industry and geography, then a subset gets in-depth review. **Priority goes to businesses in under-resourced, low-to-moderate-income communities.** That priority is a real factor and Begg AI is not obviously in that category — worth knowing before treating this as likely.
+
+**⚠️ The honest caveat, and the one thing that connects to the entity gate.** The page says selected businesses "complete a verification process to confirm good financial and legal standing before funds are awarded." So the bar to **apply** is low (no entity named in the eligibility rule), but the bar to **receive** involves financial and legal standing. **Whether a sole proprietorship satisfies that is not stated on the page**, and the FAQ answers sit behind a JavaScript accordion that does not render for a text fetch. **Do not assume either way.** This is answerable by the same ASBTDC call already queued at item 1 of Next actions — add it to that question list rather than making a separate trip.
+
+**Why this lane is worth more than its "discovery channel" label suggested:** like Emergent Ventures it needs no LLC, no SAM.gov registration, no institutional affiliation, and costs nothing — so it is unblocked by both the entity gate and Gate A. It is also **explicitly for-profit**, which is what Begg AI Industries is, and it is a **volume** programme (70 grants/year against a documented selection process) rather than a single subjective award.
+
+### 4b. Hello Alice — ⏳ LEAD, not checked
+
+Free grant-matching/discovery platform. **Nothing has been verified.** A listing on a discovery platform is not an open program.
 
 ---
 
@@ -260,13 +281,16 @@ to be the gating step, not the accelerator, and two accelerators are closed.
    and ASBTDC's NSF Proposal Lab.
 4. ⏳ Read the full **NSF 26-510** solicitation and decide whether the verification architecture is
    a defensible R&D pitch. (Can run alongside 3.)
-5. ✅ **Emergent Ventures — VERIFIED OPEN 2026-10-02** (section 3). It moved *out* of the
-   unverified list. **It is the only lane here that is unblocked by both the entity gate and
-   Gate A**: it takes individuals from age 13, needs no LLC, no SAM.gov registration, no
-   institutional affiliation, and costs nothing to apply. Everything else in this file is
-   waiting on the entity decision, on a credential, or on a closed window.
-   ⏳ Still to verify: **Verizon Small Business Digital Ready** and **Hello Alice** (leads,
-   nothing checked), and **The Pollination Project** (Peace lane, separate).
+5. ✅ **Two lanes are now VERIFIED OPEN and both are unblocked by the entity gate and Gate A:**
+   **Emergent Ventures** (§3, verified 2026-10-02) and **Verizon Small Business Digital Ready**
+   (§4a, verified 2026-10-03, $10,000 × 10/month through December). Neither needs an LLC, a
+   SAM.gov registration, an institutional affiliation, or any spend. **Verizon is the higher-
+   volume shot** — ~70 grants a year against a documented three-stage process — and it is
+   explicitly for-profit. **Emergent Ventures is the more distinctive pitch.** They are not
+   mutually exclusive; the Verizon unlock (two free courses) is a few hours of work.
+   ⏳ Still to verify: **Hello Alice** (§4b, nothing checked) and **The Pollination Project**
+   (Peace lane, separate). **Add to the ASBTDC call at item 1:** does a sole proprietorship
+   satisfy Verizon's "good financial and legal standing" verification?
 6. ⏳ **AEDC SBIR Matching Grant is post-award only** — revisit only once a Phase I award exists.
    It is a follow-on, not an entry point.
 
