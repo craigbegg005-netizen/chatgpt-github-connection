@@ -319,3 +319,66 @@ def test_decision_is_falsy_when_refused():
     d = check_authority(load().worker("research_general"), Authority.A2_INTERNAL)
     assert not d
     assert d.reason
+
+
+# --------------------------------------------------------------------------- #
+# The authority ceiling must hold on every path into the registry, not just the
+# one that ships.
+# --------------------------------------------------------------------------- #
+
+def _head(authority):
+    from workforce.schema import DepartmentHead
+    return DepartmentHead(
+        department_id="d1", name="Test", title="T", mission="m",
+        authority=authority, risk_ceiling=Risk.LOW, spend_ceiling_usd=0.0,
+        capabilities=frozenset(), permitted_tools=(), permitted_providers=(),
+        escalation_rules=(),
+    )
+
+
+def _worker(authority):
+    from workforce.schema import Worker
+    return Worker(
+        worker_id="w1", name="W", department_id="d1", role=Role.WORKER, mission="m",
+        capabilities=frozenset(), authority=authority, risk_ceiling=Risk.LOW,
+        spend_ceiling_usd=0.0, permitted_tools=(), permitted_providers=(),
+        manager_id="h1", memory_scope="d1", status="active",
+    )
+
+
+def test_the_registry_refuses_a_worker_that_outranks_its_head():
+    """The rule held only for the built-in roster.
+
+    `workers.default_workers()` checked it, so the roster that ships was safe
+    and every other roster was not -- including one that arrived through
+    `from_dict`, which this module's docstring claimed was validated. A worker
+    at A4 under an A1 head loaded without complaint.
+    """
+    with pytest.raises(ValueError, match="holds A4 but its head"):
+        WorkforceRegistry(departments=[_head(Authority.A1_DRAFT)],
+                          workers=[_worker(Authority.A4_CONSEQUENTIAL)])
+
+
+def test_the_registry_still_accepts_a_worker_at_its_heads_level():
+    """The guard above must not be vacuous -- equality is allowed."""
+    reg = WorkforceRegistry(departments=[_head(Authority.A1_DRAFT)],
+                            workers=[_worker(Authority.A1_DRAFT)])
+    assert reg.worker("w1") is not None
+
+
+def test_a_serialised_roster_cannot_smuggle_an_inflated_authority():
+    """`from_dict`/`from_json` are the paths that actually carry stored state.
+
+    This is the case the module docstring promised was covered and was not: a
+    round-tripped roster with one worker raised to A4.
+    """
+    payload = WorkforceRegistry().to_dict()
+    heads = {d["department_id"]: d["authority"] for d in payload["departments"]}
+    target = next(w for w in payload["workers"]
+                  if w["authority"] != heads[w["department_id"]])
+    target["authority"] = "A4"
+
+    with pytest.raises(ValueError, match="holds A4 but its head"):
+        WorkforceRegistry.from_dict(payload)
+    with pytest.raises(ValueError, match="holds A4 but its head"):
+        WorkforceRegistry.from_json(json.dumps(payload))

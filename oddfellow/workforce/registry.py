@@ -19,7 +19,7 @@ from typing import Any, Iterable
 
 from connector.schema import Risk
 from .departments import DEPARTMENTS
-from .schema import Authority, Role, Worker
+from .schema import Authority, Role, Worker, authority_rank
 from .workers import default_workers
 
 
@@ -48,6 +48,23 @@ class WorkforceRegistry:
             if w.department_id not in self._departments:
                 raise ValueError(
                     f"{w.worker_id} belongs to unknown department {w.department_id!r}"
+                )
+
+        # A worker may never hold more authority than its head. This was checked
+        # only in `workers.default_workers()`, which validates the *built-in*
+        # roster -- so the rule held for the roster that ships and was silently
+        # skipped for every roster that arrives any other way, including through
+        # `from_dict`/`from_json`. This module's own docstring claimed the
+        # opposite ("a workforce record that loads with an inflated authority
+        # ceiling is worse than one that refuses to load"), and it was not true:
+        # a serialised roster with one worker raised to A4 loaded without
+        # complaint. The check belongs here, where every path passes through.
+        for w in self._workers.values():
+            head = self._departments[w.department_id]
+            if authority_rank(w.authority) > authority_rank(head.authority):
+                raise ValueError(
+                    f"{w.worker_id} holds {w.authority.value} but its head "
+                    f"{head.department_id} holds only {head.authority.value}"
                 )
 
     # ------------------------------------------------------------ departments
