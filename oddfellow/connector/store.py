@@ -145,6 +145,28 @@ def _now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def _evidence_is_checkable(evidence: str) -> bool:
+    """Whether an evidence string names something another party could check.
+
+    Not a judgment of whether the evidence is *true* -- that is the verifier's
+    job. This is the floor: the string must point at something (a URL, a
+    filesystem path, a commit/identifier reference), because a bare phrase
+    like "looks fine" restates the claim rather than supporting it.
+    """
+    lowered = evidence.lower()
+    if lowered.startswith(("http://", "https://")):
+        return True
+    if "/" in evidence and len(evidence) > 3:
+        return True  # a path or a URL fragment
+    if "#" in evidence or lowered.startswith(("commit ", "apr-", "job-")):
+        return True  # an identifier reference
+    import re as _re
+
+    if _re.search(r"\b[0-9a-f]{7,40}\b", lowered):
+        return True  # a commit-like hash named in prose
+    return False
+
+
 def _summarise(key: str, value: Any) -> Any:
     """Decide what an audit entry may keep for one detail value.
 
@@ -658,8 +680,21 @@ class Store:
         job = self._require(job_id)
         if job.status is not Status.COMPLETE:
             raise ValueError(f"cannot verify a job that is {job.status.value}")
-        if not (evidence or "").strip():
+        evidence = (evidence or "").strip()
+        if not evidence:
             raise ValueError("verification requires evidence")
+        # The docstring promises a bare "looks fine" is refused. Until
+        # 2026-10-03 the code only refused *empty* evidence, so any
+        # filler string passed -- the seventh false control in this
+        # project's ledger, caught by live-checking the claim instead
+        # of trusting the docstring. Evidence must now name something
+        # checkable: a URL, a path, or a reference. A phrase is not
+        # evidence; it is a restatement of the claim.
+        if not _evidence_is_checkable(evidence):
+            raise ValueError(
+                "verification evidence must be checkable (a URL, path, or "
+                "identifier), not a bare assertion"
+            )
         if verified_by == job.provider:
             raise ValueError("a result cannot be verified by the provider that submitted it")
         job.verified = True

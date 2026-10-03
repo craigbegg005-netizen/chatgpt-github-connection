@@ -778,3 +778,28 @@ def test_create_job_refuses_an_invalid_pre_claimed_provider(store):
     j.status = Status.RUNNING
     with pytest.raises(ValueError):
         store.create_job(j, actor="x")
+
+
+# --------------------------------------- 19: evidence must be checkable
+
+def test_bare_phrase_evidence_is_refused(store):
+    """The docstring promises a bare 'looks fine' is refused; until 2026-10-03
+    the code only refused *empty* evidence (the seventh false control). A
+    phrase that restates the claim is not evidence."""
+    j = job()
+    store.create_job(j, actor="x")
+    store.claim_job(j.job_id, "letta", Transport.API, actor="letta")
+    store.submit_result(j.job_id, {"r": 1}, actor="letta", provider="letta")
+    for bare in ("looks fine", "ok", "verified it myself", "trust me"):
+        with pytest.raises(ValueError, match="checkable"):
+            store.verify_result(j.job_id, "chatgpt", bare)
+
+
+def test_evidence_naming_a_commit_in_prose_is_accepted(store):
+    """A descriptive sentence that names a commit is checkable evidence."""
+    j = job()
+    store.create_job(j, actor="x")
+    store.claim_job(j.job_id, "letta", Transport.API, actor="letta")
+    store.submit_result(j.job_id, {"r": 1}, actor="letta", provider="letta")
+    v = store.verify_result(j.job_id, "chatgpt", "reproduced against repo at f55951a7")
+    assert v.verified is True
