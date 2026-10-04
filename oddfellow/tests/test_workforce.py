@@ -425,3 +425,42 @@ def test_checkable_evidence_detail_still_verifies(reg, detail):
     req.add(EvidenceKind.REPRODUCED, detail)
     outcome = verify(reg, req, "qa_claim_verifier")
     assert outcome.verified, outcome.reason
+
+
+# --------------------------------------------------------------------------- #
+# The central rule of this module is identity, so the identity comparison has to
+# be sound. It was a raw `==` on two strings.
+# --------------------------------------------------------------------------- #
+
+@pytest.mark.parametrize("near_miss", [
+    "QA_CLAIM_VERIFIER",     # case
+    "qa_claim_verifier ",    # trailing space
+    " qa_claim_verifier",    # leading space
+    "qa-claim-verifier",     # hyphen for underscore
+])
+def test_a_near_miss_identity_cannot_verify_its_own_work(reg, near_miss):
+    """`can_verify` compared the two ids with `==` before normalising.
+
+    So the module's central rule -- "the identity that produced a result may not
+    be the identity that verifies it" -- was bypassable by a case change. The
+    connector already canonicalises provider ids for exactly this reason and
+    says so in its docstring; that reasoning was never carried here.
+    """
+    d = can_verify(reg, near_miss, "qa_claim_verifier")
+    assert not d.allowed
+
+
+def test_an_unknown_producer_cannot_be_verified(reg):
+    """Independence cannot be established for a producer that does not exist.
+
+    Refusing is the safe failure: otherwise anyone can name a producer that is
+    not a worker and have the work verified by whoever they like.
+    """
+    d = can_verify(reg, "nonexistent_worker", "qa_claim_verifier")
+    assert not d.allowed
+    assert "unknown producer" in d.reason
+
+
+def test_independent_verification_still_works(reg):
+    """The guards above must not be vacuous -- a real verifier still verifies."""
+    assert can_verify(reg, "eng_backend", "qa_claim_verifier").allowed

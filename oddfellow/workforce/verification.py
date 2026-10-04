@@ -26,7 +26,7 @@ from connector.schema import Risk
 from connector.store import evidence_is_checkable
 from .permissions import Decision, check_authority
 from .registry import WorkforceRegistry
-from .schema import Authority, Worker
+from .schema import Authority, Worker, valid_id
 
 
 class EvidenceKind(str, Enum):
@@ -89,11 +89,43 @@ class VerificationOutcome:
 def can_verify(
     registry: WorkforceRegistry, producer_id: str, verifier_id: str
 ) -> Decision:
-    """Whether `verifier_id` is permitted to verify `producer_id`'s work."""
+    """Whether `verifier_id` is permitted to verify `producer_id`'s work.
+
+    Identity is compared **after** normalising, not before. A raw `==` on the
+    two strings made the central rule of this module bypassable by a case
+    change: `can_verify(reg, "QA_CLAIM_VERIFIER", "qa_claim_verifier")` returned
+    allowed, so the same identity could verify its own work by shouting its name.
+    A trailing space worked too, as did a hyphen for an underscore.
+
+    `connector.schema.canonical_provider` exists for exactly this reason and says
+    so in its own docstring -- "`Anthropic` and `anthropic` must not be two
+    different providers ... it is a comparison bug, not a typo." That reasoning
+    was never carried here, which is the tenth time in this project that a rule
+    held in one path and not in the path beside it.
+    """
+    # Both ids must be well-formed before they can be compared. An id that fails
+    # `valid_id` cannot be a worker id at all (`Worker.__post_init__` enforces the
+    # same pattern), so it cannot be a legitimate producer either.
+    for label, value in (("producer", producer_id), ("verifier", verifier_id)):
+        if not valid_id(value):
+            return Decision.no(
+                f"{label} id {value!r} is not a valid worker id; ids are lowercase "
+                "and stable, so a near-miss is a different identity"
+            )
+
     if producer_id == verifier_id:
         return Decision.no(
             "a producer may not verify its own work; verification must be independent"
         )
+
+    # An unknown producer means independence cannot be established. Refusing is
+    # the safe failure: the alternative is that anyone can name a producer that
+    # does not exist and have the work verified.
+    if registry.worker(producer_id) is None:
+        return Decision.no(
+            f"unknown producer {producer_id!r}; independence cannot be established"
+        )
+
     verifier = registry.worker(verifier_id)
     if verifier is None:
         return Decision.no(f"unknown verifier {verifier_id!r}")
