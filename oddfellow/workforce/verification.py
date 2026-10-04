@@ -209,7 +209,13 @@ def assign_verifier(
     """
     blocked = set(exclude)
     for w in registry.verifiers():
-        if w.worker_id == producer_id or w.worker_id in blocked:
+        # `w.worker_id == producer_id` used to be checked here as well. It was a
+        # second copy of the rule `can_verify` owns, and a weaker one -- a raw
+        # comparison, which is the bug that made the tenth false control possible
+        # one function above. It was harmless only because `can_verify` gates the
+        # next line, and a second source of truth that happens to agree today is
+        # how the ninth and tenth both drifted. `can_verify` is the authority.
+        if w.worker_id in blocked:
             continue
         if not can_verify(registry, producer_id, w.worker_id).allowed:
             continue
