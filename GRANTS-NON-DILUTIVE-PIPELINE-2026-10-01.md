@@ -250,9 +250,27 @@ Teams: one point of contact completes it; other names and emails go at the end o
 
 **Why this lane is worth more than its "discovery channel" label suggested:** like Emergent Ventures it needs no LLC, no SAM.gov registration, no institutional affiliation, and costs nothing — so it is unblocked by both the entity gate and Gate A. It is also **explicitly for-profit**, which is what Begg AI Industries is, and it is a **volume** programme (70 grants/year against a documented selection process) rather than a single subjective award.
 
-### 4b. Hello Alice — ⏳ LEAD, not checked
+### 4b. Hello Alice — ✅ VERIFIED (2026-10-04, primary source): a marketplace, and nothing on it fits right now
 
-Free grant-matching/discovery platform. **Nothing has been verified.** A listing on a discovery platform is not an open program.
+**Verified against `helloalice.com`.** The earlier note said "free grant-matching/discovery platform — nothing has been verified". That is now checked, and the answer is: **it is a marketplace, not a program, and none of its currently-listed programs fits Begg AI.**
+
+| | |
+|---|---|
+| What it is | A platform (Circular Board Inc.) hosting **sponsor-funded** grants — the sponsor sets the rules, the money and the calendar. There is no single "Hello Alice grant" |
+| Active programs | **8** at time of check, per their own page |
+| Cost to apply | **$0**, and grants are non-repayable (their FAQ: "not loans and do not have to be repaid") |
+| Track record | $57M+ distributed, 1.6M+ owners on the platform |
+| Also offers | Loans, lines of credit, CDFI/nonprofit microlenders — **not grants**, and not zero-spend |
+
+**The three programs listed on the page at time of check, and why none is a fit:**
+
+1. **Main Street Rising Tour — Pitch (New York)** — geography-restricted to New York.
+2. **DoorDash Local Business Disaster Relief — Spokane Fires** — $5,000, restricted to Spokane businesses affected by those fires.
+3. **2026 Fund Her Future (H&R Block)** — $50,000, **women-owned businesses only**, up to four recipients.
+
+**Two structural gates worth knowing before treating this as a lane.** General eligibility across funds requires a **for-profit entity registered in the US/DC/PR** — that is the entity gate again, in a third place. And **revenue thresholds are the most common disqualifier**, varying per fund; Begg AI has no revenue, so a fund with a floor excludes it outright.
+
+**Verdict: correctly a discovery channel, not an open lane.** It is free and worth a periodic look, because programs rotate and a future one may fit. It is **not** something to plan around, and it should not be counted alongside Emergent Ventures and Verizon, which are open and unblocked. **The distinction the earlier note was reaching for is the right one — a listing is not an open program — and it now has evidence behind it rather than being an assumption.**
 
 ---
 
@@ -288,9 +306,11 @@ to be the gating step, not the accelerator, and two accelerators are closed.
    volume shot** — ~70 grants a year against a documented three-stage process — and it is
    explicitly for-profit. **Emergent Ventures is the more distinctive pitch.** They are not
    mutually exclusive; the Verizon unlock (two free courses) is a few hours of work.
-   ⏳ Still to verify: **Hello Alice** (§4b, nothing checked) and **The Pollination Project**
-   (Peace lane, separate). **Add to the ASBTDC call at item 1:** does a sole proprietorship
-   satisfy Verizon's "good financial and legal standing" verification?
+   ✅ **Hello Alice checked 2026-10-04** (§4b) — a marketplace, and none of its currently-listed
+   programs fits (geography, gender, or disaster restrictions). Correctly a discovery channel,
+   not a lane. ⏳ Still to verify: **The Pollination Project** (Peace lane, separate).
+   **Add to the ASBTDC call at item 1:** does a sole proprietorship satisfy Verizon's "good
+   financial and legal standing" verification?
 6. ⏳ **AEDC SBIR Matching Grant is post-award only** — revisit only once a Phase I award exists.
    It is a follow-on, not an entry point.
 
