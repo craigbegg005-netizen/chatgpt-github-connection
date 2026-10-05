@@ -6,8 +6,26 @@ value here is not marked VERIFIED, treat it as reported and re-check before rely
 Status labels: ✅ VERIFIED · 🟢 LIVE · 🚀 DEPLOYED · 🔗 CONNECTED · 🧪 TESTED ·
 🛠 IMPLEMENTED · ⏳ PENDING · ⚠️ BLOCKED/UNVERIFIED · 💰 REVENUE.
 
-Maintained by Oddfellow (Letta agent). Last verification sweep: **2026-10-01 04:05 UTC**.
+Maintained by Oddfellow (Letta agent). Last verification sweep: **2026-10-05 16:05 UTC**.
 Every "verified" line below was checked by an actual request from this agent at that time.
+
+**Re-verified 2026-10-05 16:05 UTC, by actual request — all five branch heads and both
+"other services" rows were correct as written:**
+
+- `main` `8ddfe32` · `letta/universal-connector-v0.21` `8f9c139` ·
+  `letta/frontend-letta-backend` `445e05c` · `letta/recovery-capture-2026-09-30` `f27ec28` ·
+  `letta/independent-verification-2026-09-30` `46d731b` — every one matched.
+- `oddfellow-personal-secure` → `303` on `/`, `200` on `/health` and `/openapi.json`. Matches.
+- `oddfellow-letta-poc` → `404` on `/` and `/health`, `200` on `/openapi.json` reporting
+  **`version 0.20.2`, 6 paths**. Matches the "older v0.20.2 build" note.
+- Repo access unchanged: the GitHub App still sees exactly **one** repository.
+
+**A note on how this sweep nearly went wrong, because the mistake is easy to repeat.**
+My first probe of the two services printed `livez=` and `root=` from a *single* request —
+one `curl` to `/livez`, with its status code echoed twice under two labels. It read as
+"both services 404 on everything", which looked like a registry error. It was a probe
+error: the registry was right and my measurement was wrong. **If a probe prints two
+results, check that it made two requests.**
 
 **Partial re-verification 2026-10-02 02:5x UTC (Operations department), by actual request:**
 `oddfellow-letta-backend-v0206` `/livez` → **200** (`ready:false`, v0.20.6), `/healthz` → **503**;
