@@ -377,3 +377,9 @@ The running commit is `11b3901`, verified to be a real ancestor of the canonical
 - `IP-CLEARANCE-SEARCH-2026-09-30.md`, `IP-INVENTORY.md` — name is crowded; register clear in Classes 9/42
 - `oddfellow/CORRELATION-2026-09-30.md` — what each AI did, chronologically
 - `GRANTS-NON-DILUTIVE-PIPELINE-2026-10-01.md` — grants / non-dilutive lane (leads, not findings)
+- `oddfellow/memory_check.py` — **check memory file sizes before appending to one.**
+  `MEMORY_DIR=$MEMORY_DIR python3 oddfellow/memory_check.py`. Two files were sitting at
+  55 and 90 characters of headroom on 2026-10-05 and nothing would have said so until a
+  write failed. The limit is 20000 **characters**, not bytes — `wc -c` overstates these
+  files by ~1.6% because they carry emoji and em dashes. (15 tests; proven to fail if the
+  implementation counts bytes.)
