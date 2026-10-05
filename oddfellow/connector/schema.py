@@ -168,6 +168,23 @@ class Job:
     verified: bool = False
     verified_by: str | None = None
     verification_evidence: str | None = None
+    # --- Phase 2: workforce linkage. -------------------------------------
+    # All optional and all defaulting to None, because every job that already
+    # exists predates them and must keep working unchanged. A job created by
+    # hand has no department; a job created by a synthetic department head
+    # does, and `workforce.jobs` enforces that (see the origin rule there).
+    assigned_department: str | None = None
+    assigned_worker: str | None = None
+    requested_by: str | None = None
+    #: What caused this job to exist. For anything a synthetic head generates,
+    #: at least one of these is required -- otherwise a head can produce work
+    #: that produces work, with nothing tying the tree back to an owner intent.
+    origin_objective: str | None = None
+    origin_job_id: str | None = None
+    #: The identity that verified it. Distinct from `verified_by` only in
+    #: intent: `verified_by` is who signed, this is who was *assigned* to check,
+    #: which is what lets an unverified job show that a check is outstanding.
+    verification_worker: str | None = None
     created_at: str | None = None
     updated_at: str | None = None
 
@@ -206,6 +223,12 @@ class Job:
             verified=bool(row.get("verified", 0)),
             verified_by=row.get("verified_by"),
             verification_evidence=row.get("verification_evidence"),
+            assigned_department=row.get("assigned_department"),
+            assigned_worker=row.get("assigned_worker"),
+            requested_by=row.get("requested_by"),
+            origin_objective=row.get("origin_objective"),
+            origin_job_id=row.get("origin_job_id"),
+            verification_worker=row.get("verification_worker"),
             created_at=row["created_at"],
             updated_at=row["updated_at"],
         )

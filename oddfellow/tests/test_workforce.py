@@ -312,13 +312,19 @@ def test_state_survives_a_serialise_reload_round_trip(reg):
 
 
 def test_existing_jobs_without_workforce_fields_still_work(reg):
-    """Phase 1 is additive: it must not require changes to existing job records."""
+    """Phase 1 is additive: it must not require changes to existing job records.
+
+    Phase 2 then *added* those fields, so this no longer asserts their absence --
+    that would be asserting that a later phase had not happened. The property
+    worth keeping is that a job created without them still works, which is true
+    whether the field is missing or present-and-None.
+    """
     payload = {"spec": "existing job"}
     j = Job(
         job_id=new_job_id(TaskKind.CODE, "existing", payload),
         kind=TaskKind.CODE, title="existing", payload=payload, risk=Risk.LOW,
     )
-    assert not hasattr(j, "assigned_worker")
+    assert getattr(j, "assigned_worker", None) is None
     assert can_delegate(reg, "eng_backend", job_risk=j.risk, job_status=j.status).allowed
 
 

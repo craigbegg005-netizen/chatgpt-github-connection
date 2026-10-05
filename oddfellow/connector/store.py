@@ -124,6 +124,15 @@ _ADDED_COLUMNS = (
     ("jobs", "verified", "INTEGER NOT NULL DEFAULT 0"),
     ("jobs", "verified_by", "TEXT"),
     ("jobs", "verification_evidence", "TEXT"),
+    # Phase 2: workforce linkage. Nullable with no default because "no
+    # department" is a real and common state -- every job that existed before
+    # this feature, and every job a human files by hand.
+    ("jobs", "assigned_department", "TEXT"),
+    ("jobs", "assigned_worker", "TEXT"),
+    ("jobs", "requested_by", "TEXT"),
+    ("jobs", "origin_objective", "TEXT"),
+    ("jobs", "origin_job_id", "TEXT"),
+    ("jobs", "verification_worker", "TEXT"),
 )
 
 #: Detail keys the audit log refuses to store verbatim. A payload that reaches the
@@ -386,11 +395,24 @@ class Store:
         job.updated_at = job.created_at
         row = job.to_row()
         self._conn.execute(
+            # The column list is explicit, so a field the Job dataclass has but
+            # this statement omits is written as its SQL default and silently
+            # lost. That is how the Phase 2 workforce fields vanished on write
+            # while still reading back correctly off the in-memory object -- the
+            # object looked right and the database never heard about it. When a
+            # field is added to Job, it has to be added *here* too, and the
+            # round-trip test is what catches it when it is not.
             "INSERT INTO jobs (job_id, kind, title, payload, risk, status, provider, "
             "transport, depends_on, attempts, max_attempts, result, result_hash, error, "
+            "verified, verified_by, verification_evidence, "
+            "assigned_department, assigned_worker, requested_by, "
+            "origin_objective, origin_job_id, verification_worker, "
             "created_at, updated_at) VALUES (:job_id,:kind,:title,:payload,:risk,:status,"
             ":provider,:transport,:depends_on,:attempts,:max_attempts,:result,:result_hash,"
-            ":error,:created_at,:updated_at)",
+            ":error,:verified,:verified_by,:verification_evidence,"
+            ":assigned_department,:assigned_worker,:requested_by,"
+            ":origin_objective,:origin_job_id,:verification_worker,"
+            ":created_at,:updated_at)",
             row,
         )
         self._conn.commit()
@@ -423,6 +445,10 @@ class Store:
             "result=:result, result_hash=:result_hash, error=:error, "
             "verified=:verified, verified_by=:verified_by, "
             "verification_evidence=:verification_evidence, "
+            "assigned_department=:assigned_department, "
+            "assigned_worker=:assigned_worker, requested_by=:requested_by, "
+            "origin_objective=:origin_objective, origin_job_id=:origin_job_id, "
+            "verification_worker=:verification_worker, "
             "updated_at=:updated_at WHERE job_id=:job_id",
             row,
         )

@@ -35,6 +35,14 @@ from .permissions import (
     check_tool,
 )
 from .registry import WorkforceRegistry, load
+from .jobs import (
+    OriginRequired,
+    assign_job,
+    create_generated_job,
+    record_verification_worker,
+    traceability,
+    untraced_jobs,
+)
 from .schema import (
     Authority,
     Capability,
@@ -74,6 +82,12 @@ __all__ = [
     "VerificationRequest",
     "Worker",
     "WorkforceRegistry",
+    "OriginRequired",
+    "assign_job",
+    "create_generated_job",
+    "record_verification_worker",
+    "traceability",
+    "untraced_jobs",
     "allows",
     "assign_verifier",
     "authority_rank",

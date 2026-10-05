@@ -355,7 +355,13 @@ The running commit is `11b3901`, verified to be a real ancestor of the canonical
 
 ## Read these for detail
 
-- `oddfellow/HANDOFF-UNIVERSAL-2026-10-05-1955Z.md` — **newest handoff** (2026-10-05 19:55 UTC).
+- `oddfellow/HANDOFF-UNIVERSAL-2026-10-05-2107Z.md` — **newest handoff** (2026-10-05 21:07 UTC).
+  ⚠️ Superseding the 21:07 entry: **workforce Phase 2 is now committed** — synthetic heads
+  cannot create a job without naming its origin, and the origin rule is enforced at
+  construction rather than documented. Fixed a real persistence bug in the same pass: the
+  `INSERT INTO jobs` column list was explicit, so the new workforce fields were written as
+  SQL defaults and **silently dropped** while the in-memory object read back correctly.
+- `oddfellow/HANDOFF-UNIVERSAL-2026-10-05-1955Z.md` — the 19:55 UTC handoff
   **This line has now been wrong twice**: it named a 2026-10-01 file for two days, and
   then a 2026-10-03 file for the hours after a newer one landed. A test now guards it
   (`oddfellow/tests/test_handoff_pointer.py`) and caught the second drift within hours —
