@@ -12,6 +12,7 @@ OpenAPI document rather than listing them by hand.
 
 import importlib
 import os
+import re
 import sys
 
 import pytest
@@ -248,3 +249,60 @@ def test_an_approval_decision_is_audited(client):
     events = [r["event"] for r in client.get("/api/command/audit", headers=AUTH).json()["records"]]
     assert "command_approval_created" in events
     assert "command_approval_decided" in events
+
+
+# --------------------------------------------------------------------------- #
+# The status notes must not carry facts that nothing maintains.
+# --------------------------------------------------------------------------- #
+
+def _all_notes() -> list[tuple[str, str]]:
+    """Every (label, note) pair the Command Center publishes."""
+    import command_center as cc
+
+    out = []
+    for d in cc.DEPARTMENTS:
+        out.append((f"department {d['name']}", d.get("note", "")))
+    for lane in cc.LANES:
+        out.append((f"lane {lane['name']}", lane.get("note", "")))
+    return out
+
+
+def test_no_status_note_carries_a_test_count():
+    """A count in hard-coded prose is a claim that is wrong most of the time.
+
+    The Engineering note said "109 tests" while the suite had 575. Nothing
+    maintained it and nothing could catch it: no test referenced these notes at
+    all, so the drift was invisible until someone read the page and counted.
+
+    This guards the *shape* of that bug -- a number in prose -- not the truth of
+    the prose, which no test can check. Correcting the number would only reset
+    the clock; removing it is the fix, and this keeps it removed.
+    """
+    offenders = [
+        (label, note)
+        for label, note in _all_notes()
+        if re.search(r"\b\d+\s+tests?\b", note, re.I)
+    ]
+    assert not offenders, (
+        "a status note states a test count, which nothing maintains and which has "
+        f"drifted before: {offenders}"
+    )
+
+
+def test_the_deploy_note_does_not_claim_the_target_is_unreachable():
+    """The blind-spot claim, guarded where the owner actually reads it.
+
+    The deploy lane note opened with "Target returns no HTTP response" for
+    twenty hours while `/livez` answered 200. The sentence was corrected later in
+    the same note but the false half was left standing, so the owner-facing view
+    still led with it. This is a string guard, not a live probe -- it catches the
+    claim coming back, not the target going down.
+    """
+    deploy = next(
+        (n for label, n in _all_notes() if "Oddfellow deploy" in label), None
+    )
+    assert deploy is not None, "the Oddfellow deploy lane disappeared from the registry"
+    assert "no HTTP response" not in deploy, (
+        "the deploy note again claims the target returns no HTTP response; it "
+        "answers /livez with 200"
+    )

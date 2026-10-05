@@ -127,7 +127,12 @@ DEPARTMENTS: list[dict[str, Any]] = [
     {"name": "Product", "state": "RUNNING",
      "note": "Oddfellow v0.20.6 is the active product; Command Center is its owner layer."},
     {"name": "Engineering", "state": "RUNNING",
-     "note": "109 tests, 39/39 fault injection, acceptance green on the rehearsal."},
+     # The test count used to be written here as a literal ("109 tests") and had
+     # drifted to 575. A count that nothing maintains is a claim that is wrong
+     # most of the time it is read, so the number is gone rather than corrected --
+     # correcting it would only reset the clock. `test_command_center.py` asserts
+     # no note carries a test count, so it cannot come back.
+     "note": "Test suite green; 39/39 fault injection; acceptance green on the rehearsal."},
     {"name": "QA / Verification", "state": "RUNNING",
      "note": "Every claim in this registry is dated; unverified items are marked."},
     {"name": "Security", "state": "RUNNING",
@@ -153,13 +158,19 @@ DEPARTMENTS: list[dict[str, Any]] = [
 LANES: list[dict[str, Any]] = [
     {"name": "Oddfellow deploy", "state": "BLOCKED",
      "blocker": "WAITING_CREDENTIAL", "owner": "Claude (Render access)",
-     "note": "Target returns no HTTP response. The cause IS the missing secrets: Render's "
-             "own dashboard reading is build completed, app started, config check reported "
-             "both secrets missing, /healthz 503, deploy update_failed — the fail-closed "
-             "health check meeting Render's non-200 healthCheckPath contract. An earlier "
-             "note here said the opposite; it was wrong and is corrected. Fix: enter "
-             "LETTA_API_KEY and ODDFELLOW_OWNER_TOKEN, then trigger a deploy "
-             "(autoDeploy: false means saving them is not a deploy)."},
+     # This note opened with "Target returns no HTTP response", which was the
+     # false belief behind the 20-hour blind spot: the target answers /livez with
+     # 200 and always did. It was corrected below in the same sentence while the
+     # false half was left standing, so the owner-facing view still led with the
+     # wrong claim. Corrected 2026-10-05 against a live probe.
+     "note": "The target is RUNNING, NOT READY: /livez answers 200 with "
+             "ready:false and both secrets named in checks_failed. The cause IS the "
+             "missing secrets — Render's own dashboard reading is build completed, "
+             "app started, config check reported both secrets missing, /healthz 503, "
+             "deploy update_failed, the fail-closed health check meeting Render's "
+             "non-200 healthCheckPath contract. Fix: enter LETTA_API_KEY and "
+             "ODDFELLOW_OWNER_TOKEN, then trigger a deploy (autoDeploy: false means "
+             "saving them is not a deploy)."},
     {"name": "Oddfellow live rehearsal", "state": "LIVE",
      "note": "Self-healing; all acceptance gates green. Dies with the sandbox by design."},
     {"name": "Cloudflare Worker fallback", "state": "IMPLEMENTED",
