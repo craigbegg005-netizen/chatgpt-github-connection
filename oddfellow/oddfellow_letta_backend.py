@@ -248,6 +248,27 @@ ALLOW_PAID_MODEL = os.environ.get("ODDFELLOW_ALLOW_PAID_MODEL", "").lower() == "
 RATE_PER_MIN = int(os.environ.get("ODDFELLOW_RATE_PER_MIN", "20"))
 
 AGENT_NAME = "Oddfellow"
+
+# The version was a literal repeated in five places, so bumping four of them and
+# missing the fifth would have had the service report two different versions of
+# itself depending on which endpoint you asked. One constant, referenced.
+VERSION = "0.20.6"
+
+# Which commit is actually running. This is the field whose absence made
+# "deployed-commit identity" an open question for days: the service reported a
+# hand-maintained semver and nothing tying it to code, so two different commits
+# were both plausible and neither was checkable from outside.
+#
+# Render sets RENDER_GIT_COMMIT itself, so this needs no deploy-side change. It
+# reports None when the variable is absent rather than guessing -- a build
+# identity that is inferred is worse than one that is honestly unknown, which is
+# the same rule the rest of this codebase applies to evidence.
+BUILD_COMMIT = (
+    os.environ.get("RENDER_GIT_COMMIT")
+    or os.environ.get("ODDFELLOW_BUILD_COMMIT")
+    or ""
+).strip() or None
+
 HTTP_TIMEOUT = httpx.Timeout(120.0, connect=15.0)
 
 # Memory blocks seeded only if this backend has to create the agent itself.
@@ -344,7 +365,7 @@ def audit(event: str, request: Optional[Request] = None, **fields: Any) -> None:
         "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "event": event,
         "service": "oddfellow_letta_backend",
-        "version": "0.20.6",
+        "version": VERSION,
     }
     if request is not None:
         record["request_id"] = getattr(request.state, "request_id", None)
@@ -363,7 +384,7 @@ def audit(event: str, request: Optional[Request] = None, **fields: Any) -> None:
         pass
 
 
-app = FastAPI(title="Oddfellow Letta backend", version="0.20.6")
+app = FastAPI(title="Oddfellow Letta backend", version=VERSION)
 
 
 @app.middleware("http")
@@ -961,7 +982,8 @@ async def healthz() -> dict:
         "ok": healthy,
         "checks_failed": CONFIG_FAILED_KEYS,
         "service": "oddfellow_letta_backend",
-        "version": "0.20.6",
+        "version": VERSION,
+        "build": BUILD_COMMIT,
     }
     # Fail closed: a service that cannot answer a single request must not report
     # 200 to a platform health check, or the platform will route traffic to it.
@@ -992,7 +1014,12 @@ async def livez() -> dict:
         "ready": not CONFIG_ERRORS,
         "checks_failed": CONFIG_FAILED_KEYS,
         "service": "oddfellow_letta_backend",
-        "version": "0.20.6",
+        "version": VERSION,
+        # Which commit is running. `None` means the platform did not tell us --
+        # reported honestly rather than inferred from the version, because two
+        # different commits can both say 0.20.6 and that ambiguity is exactly
+        # what this field exists to remove.
+        "build": BUILD_COMMIT,
     }
 
 
@@ -1010,7 +1037,7 @@ async def status(
 
     result: dict = {
         "backend": "oddfellow_letta_backend",
-        "version": "0.20.6",
+        "version": VERSION,
         "letta_base_url": LETTA_BASE_URL,
         "model": LETTA_MODEL,
         "agent_pinned": bool(ODDFELLOW_AGENT_ID),
