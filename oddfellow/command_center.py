@@ -639,4 +639,130 @@ def build_router(
         finally:
             store.close()
 
+    # --------------------------------------------------------------------- #
+    # Workforce (Phase 3): read-only.
+    #
+    # `/api/command/status` returns `DEPARTMENTS`, which is a hand-maintained
+    # list of prose. Its own `note` admits the problem -- "the claims are
+    # hand-maintained, so read registry_as_of before trusting them -- two of
+    # them were already stale when this date was added." These endpoints return
+    # the *registry* instead: departments, heads, authority ceilings and spend
+    # limits as the code defines them, which cannot drift from the code because
+    # it is the code.
+    #
+    # Read-only by construction. Nothing here mutates the roster, assigns work,
+    # or spends anything -- a control surface that can change what it reports is
+    # a different and much larger decision than one that can only show it.
+    # --------------------------------------------------------------------- #
+
+    def _workforce() -> dict[str, Any]:
+        """Load the roster, or explain why it could not be loaded.
+
+        Imported here rather than at module scope so that a problem in the
+        workforce package degrades these three endpoints instead of the whole
+        backend. An owner-facing control surface that goes dark because an
+        unrelated module failed is worse than one missing a panel.
+        """
+        try:
+            from .workforce import load as _load  # type: ignore[import-not-found]
+        except ImportError:
+            try:
+                from workforce import load as _load  # type: ignore[no-redef]
+            except ImportError as exc:  # pragma: no cover - environment specific
+                return {"ok": False, "error": f"workforce unavailable: {exc}"}
+        try:
+            return {"ok": True, "registry": _load()}
+        except Exception as exc:  # noqa: BLE001 - a broken roster must not 500
+            return {"ok": False, "error": f"workforce failed to load: {exc}"}
+
+    @router.get("/departments")
+    async def command_departments(request: Request) -> dict[str, Any]:
+        """The 12 departments as the registry defines them, not as prose does."""
+        guard(request, request.headers.get("X-Owner-Token"))
+        got = _workforce()
+        if not got["ok"]:
+            return {"count": 0, "departments": [], "error": got["error"]}
+        reg = got["registry"]
+        out = []
+        for d in reg.departments():
+            out.append({
+                "department_id": d.department_id,
+                "name": d.name,
+                "title": d.title,
+                "authority": d.authority.value,
+                # Zero-spend is a property of the roster, so it is reported as
+                # data rather than asserted in prose that can drift from it.
+                "spend_ceiling_usd": d.spend_ceiling_usd,
+                "risk_ceiling": d.risk_ceiling.value,
+                # `Capability` is a (name, required_authority, description)
+                # dataclass, not an Enum -- the authority is carried alongside
+                # the name so a reader can see what each one costs.
+                "capabilities": [
+                    {"name": c.name, "required_authority": c.required_authority.value}
+                    for c in sorted(d.capabilities, key=lambda c: c.name)
+                ],
+                "permitted_tools": sorted(d.permitted_tools),
+                "status": d.status,
+            })
+        return {
+            "count": len(out),
+            "departments": out,
+            "max_authority": reg.health().get("max_authority"),
+            "source": "workforce registry (derived from code, not hand-maintained)",
+        }
+
+    @router.get("/workers")
+    async def command_workers(request: Request, department_id: Optional[str] = None) -> dict[str, Any]:
+        guard(request, request.headers.get("X-Owner-Token"))
+        got = _workforce()
+        if not got["ok"]:
+            return {"count": 0, "workers": [], "error": got["error"]}
+        reg = got["registry"]
+        out = []
+        for w in reg.workers():
+            if department_id is not None and w.department_id != department_id:
+                continue
+            out.append({
+                "worker_id": w.worker_id,
+                "name": w.name,
+                "department_id": w.department_id,
+                "role": w.role.value,
+                "authority": w.authority.value,
+                # Worker capabilities are plain strings; department capabilities
+                # are Capability objects. That asymmetry is in the schema, so it
+                # is mirrored here rather than hidden behind a helper -- a reader
+                # comparing the two payloads should see what the schema holds.
+                "capabilities": sorted(w.capabilities),
+                "can_verify": "verify_claims" in set(w.capabilities),
+                "spend_ceiling_usd": w.spend_ceiling_usd,
+            })
+        return {"count": len(out), "workers": out, "department_id": department_id}
+
+    @router.get("/workers/{worker_id}")
+    async def command_worker(request: Request, worker_id: str) -> dict[str, Any]:
+        guard(request, request.headers.get("X-Owner-Token"))
+        got = _workforce()
+        if not got["ok"]:
+            return {"worker_id": worker_id, "found": False, "error": got["error"]}
+        reg = got["registry"]
+        w = reg.worker(worker_id)
+        if w is None:
+            return {"worker_id": worker_id, "found": False,
+                    "error": "no such worker; ids are lowercase and stable"}
+        return {
+            "worker_id": w.worker_id,
+            "found": True,
+            "name": w.name,
+            "department_id": w.department_id,
+            "role": w.role.value,
+            "authority": w.authority.value,
+            "risk_ceiling": w.risk_ceiling.value,
+            "spend_ceiling_usd": w.spend_ceiling_usd,
+            "capabilities": sorted(w.capabilities),
+            "can_verify": "verify_claims" in set(w.capabilities),
+            "permitted_tools": sorted(w.permitted_tools),
+            "permitted_providers": sorted(w.permitted_providers),
+            "manager_id": w.manager_id,
+        }
+
     return router
