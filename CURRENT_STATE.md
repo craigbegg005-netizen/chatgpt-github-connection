@@ -81,7 +81,7 @@ is an observation, and it needs a date and a re-check like any other.
 
 ---
 
-# ✅ LATEST CYCLE — 2026-10-05 12:00 UTC
+# ✅ LATEST CYCLE — 2026-10-05 19:55 UTC
 
 **This supersedes every contradicting line below it.**
 
@@ -106,12 +106,23 @@ of the live one caused a 20-hour blind spot on 2026-10-01.
 
 ## Where the branch actually is
 
-- `letta/combined-single-service-v0.20.4` @ **`5d500e4`** (2026-10-05). **577 tests pass.**
+- `letta/combined-single-service-v0.20.4` @ **`4df96d4`** (2026-10-05). **579 tests pass** at `b635f3d` (the code head before the BSI doc commit, which changed documentation only).
 - The branch is *named* v0.20.4 but the code reports **0.20.6**. Report both.
 - **Repo access is unchanged and still limited to one repository** — re-checked via the
   API 2026-10-05: `craigbegg005-netizen/chatgpt-github-connection` only. The Oddfellow /
   Begg AI source is still not reachable, so the claimed v0.17.0 baseline remains
   *documented but repository-unverified*. This is the project's highest structural risk.
+
+## Corporate identity change — 2026-10-05
+
+**The canonical corporate name is now Begg Synthetic Industries (BSI).** Legacy alias:
+Begg AI Industries. Never "Bay Synthetic Industries" (a mistaken intermediate; never used).
+Migration is documented in `oddfellow/BSI-MIGRATION-2026-10-05.md` — phase 1 (this
+documentation) committed at `4df96d4`; technical identifiers explicitly preserved
+(`begg_ai_command_center`, `mcp__BeggAi__*`, the two live `begg-ai-*` Render services,
+which hold the only surviving record of unrecovered source). Phase 2 (system-prompt
+prose in `oddfellow_letta_backend.py:281,296`) waits for owner review of the wording.
+No blind string replacement performed or endorsed.
 
 ## The false-control ledger — read before trusting any comment in this repo
 
