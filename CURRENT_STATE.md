@@ -355,9 +355,13 @@ The running commit is `11b3901`, verified to be a real ancestor of the canonical
 
 ## Read these for detail
 
-- `oddfellow/HANDOFF-UNIVERSAL-2026-10-03-1530Z.md` — **newest handoff** (2026-10-03 15:30 UTC).
-  **This line said "newest handoff" against a 2026-10-01 file for two days.** Before
-  trusting it, list the directory: `ls -1t oddfellow/HANDOFF-*.md | head -3`.
+- `oddfellow/HANDOFF-UNIVERSAL-2026-10-05-1955Z.md` — **newest handoff** (2026-10-05 19:55 UTC).
+  **This line has now been wrong twice**: it named a 2026-10-01 file for two days, and
+  then a 2026-10-03 file for the hours after a newer one landed. A test now guards it
+  (`oddfellow/tests/test_handoff_pointer.py`) and caught the second drift within hours —
+  but the guard only runs when the suite runs. **Before trusting this line, list the
+  directory: `ls -1t oddfellow/HANDOFF-*.md | head -3`.**
+- `oddfellow/HANDOFF-UNIVERSAL-2026-10-03-1530Z.md` — the 2026-10-03 handoff
 - `oddfellow/HANDOFF-SYNTHETIC-WORKFORCE-PHASE1-2026-10-03.md` — the workforce layer
 - `oddfellow/HANDOFF-TO-CHATGPT-2026-10-01-1950Z.md` — the 19:50 UTC handoff
 - `oddfellow/HANDOFF-2026-10-01-1916Z.md` — the 19:16 UTC handoff
