@@ -1,8 +1,17 @@
 # CURRENT_STATE
 
-**Date:** 2026-10-01 23:40 UTC
+**Date:** 2026-10-05 12:00 UTC
 **Author:** Oddfellow (Letta agent, `agent-a9a8eb2c-2fed-4554-9998-aa4783c7efc4`)
 **Rule:** every line below is either evidenced in this repository or marked unverified. Nothing here is carried over from a handoff on trust.
+
+> **⚠️ This file was four days stale and is the first thing a fresh AI reads.** Until
+> 2026-10-05 12:00 UTC its newest section was dated 2026-10-01 22:40 and it pointed at
+> handoffs from 2026-10-01 — while the newest handoff on the branch was
+> `oddfellow/HANDOFF-UNIVERSAL-2026-10-03-1530Z.md`, which it did not mention at all.
+> A note in agent memory asserted this file "points to the newest dated handoff". It
+> did not. **If you are reading this and the newest handoff is newer than the date
+> above, this file has drifted again** — read the handoff directory directly rather
+> than trusting the pointer here.
 
 ## Status vocabulary
 
@@ -72,9 +81,89 @@ is an observation, and it needs a date and a re-check like any other.
 
 ---
 
-# ✅ LATEST CYCLE — 2026-10-01 22:40 UTC
+# ✅ LATEST CYCLE — 2026-10-05 12:00 UTC
 
 **This supersedes every contradicting line below it.**
+
+## Read this first: the one thing that has not moved
+
+**Gate A is unchanged and is still the sole blocker.** Probed 2026-10-05 12:00 UTC:
+
+```
+GET https://oddfellow-letta-backend-v0206.onrender.com/livez
+→ 200 {"live":true,"ready":false,
+       "checks_failed":["LETTA_API_KEY","ODDFELLOW_OWNER_TOKEN"],
+       "service":"oddfellow_letta_backend","version":"0.20.6"}
+```
+
+**The service is RUNNING, NOT READY.** It answers; it is fail-closed on two missing
+env vars. **Owner action: Render → `oddfellow-letta-backend-v0206` → Environment →
+set both → Save, then trigger a deploy** (`autoDeploy: false` means saving them is
+not a deploy). Everything downstream of v0.20 phone acceptance waits on this.
+
+**Do not probe `oddfellow-letta-backend`.** That service is dead. Probing it instead
+of the live one caused a 20-hour blind spot on 2026-10-01.
+
+## Where the branch actually is
+
+- `letta/combined-single-service-v0.20.4` @ **`5d500e4`** (2026-10-05). **577 tests pass.**
+- The branch is *named* v0.20.4 but the code reports **0.20.6**. Report both.
+- **Repo access is unchanged and still limited to one repository** — re-checked via the
+  API 2026-10-05: `craigbegg005-netizen/chatgpt-github-connection` only. The Oddfellow /
+  Begg AI source is still not reachable, so the claimed v0.17.0 baseline remains
+  *documented but repository-unverified*. This is the project's highest structural risk.
+
+## The false-control ledger — read before trusting any comment in this repo
+
+**Ten times in a week, a file asserted a property the code did not enforce.** The shape
+is consistent: the file is correct as written, the property is not enforced on every
+path, and in most cases *the docstring describing the control was more confident than
+the code*. The last four were all one shape — **a rule that holds on one path and not
+the one beside it** — which makes it searchable rather than luck: for each rule, ask
+where else the same question is asked, and whether it gets the same answer.
+
+The most recent three, all fixed:
+
+| # | claim | reality |
+|---|---|---|
+| 8 | evidence must be checkable | a filler phrase plus one slash passed |
+| 9 | the two evidence paths "must not disagree" | they did; one accepted empty evidence |
+| 10 | "the identity that produced a result may not verify it" | bypassable by a case change |
+
+**And the owner-facing page was carrying two falsehoods** until 2026-10-05: it said
+"109 tests" against 575, and "Target returns no HTTP response" against a 200. The
+second was the blind-spot claim, corrected later in the same sentence while the false
+half was left standing. **A correction appended to a false claim does not remove it.**
+
+## Grants lane — two lanes are open and unblocked by Gate A
+
+Verified against primary sources, not handoffs:
+
+- **Emergent Ventures** — ✅ OPEN (2026-10-02). $0 to apply, no entity needed.
+- **Verizon Small Business Digital Ready** — ✅ OPEN (2026-10-03). $10,000, 10/month
+  through December, $0 to apply, explicitly for-profit.
+- **Hello Alice** — checked (2026-10-04): a marketplace, and none of its listed
+  programs fits. Not a lane.
+- **NSF SBIR/STTR** — pitch now, aim at **March 4 2027**; Nov 4 is not realistic from a
+  standing start. **AEDC** is post-award only.
+
+**No application has been filed. No funding requested or received. Revenue $0.**
+
+## Also true right now
+
+- **Voice deferred by owner** — text/chat core first.
+- **The 7-Day Reset Planner's Gumroad listing is live** (verified 2026-10-05, $4.99, a
+  PDF attached) — but it advertises **12 pages** while the corrected file is recorded
+  as **11**. Reconcile before promoting. Seller access and delivery remain unverified.
+- **Synthetic workforce Phase 1** exists: 12 departments, 28 workers, authority ceilings
+  and evidence rules enforced in code.
+- **Nothing is deployed beyond the fail-closed backend.** No revenue. No customers.
+
+---
+
+# ✅ PREVIOUS CYCLE — 2026-10-01 22:40 UTC
+
+**Superseded by the section above; kept for the detail it carries.**
 
 ## The connector is no longer only safety scaffolding
 
@@ -255,7 +344,11 @@ The running commit is `11b3901`, verified to be a real ancestor of the canonical
 
 ## Read these for detail
 
-- `oddfellow/HANDOFF-TO-CHATGPT-2026-10-01-1950Z.md` — **newest handoff** (`[TO-CHATGPT]` convention)
+- `oddfellow/HANDOFF-UNIVERSAL-2026-10-03-1530Z.md` — **newest handoff** (2026-10-03 15:30 UTC).
+  **This line said "newest handoff" against a 2026-10-01 file for two days.** Before
+  trusting it, list the directory: `ls -1t oddfellow/HANDOFF-*.md | head -3`.
+- `oddfellow/HANDOFF-SYNTHETIC-WORKFORCE-PHASE1-2026-10-03.md` — the workforce layer
+- `oddfellow/HANDOFF-TO-CHATGPT-2026-10-01-1950Z.md` — the 19:50 UTC handoff
 - `oddfellow/HANDOFF-2026-10-01-1916Z.md` — the 19:16 UTC handoff
 - `RESOURCES.md` — resource registry, re-verified 2026-10-01 04:05 UTC
 - `oddfellow/CORRECTION-502-CAUSE-2026-09-30.md` — the 502 cause
