@@ -81,7 +81,7 @@ is an observation, and it needs a date and a re-check like any other.
 
 ---
 
-# ✅ LATEST CYCLE — 2026-10-05 19:55 UTC
+# ✅ LATEST CYCLE — 2026-10-06 00:03 UTC
 
 **This supersedes every contradicting line below it.**
 
@@ -106,7 +106,7 @@ of the live one caused a 20-hour blind spot on 2026-10-01.
 
 ## Where the branch actually is
 
-- `letta/combined-single-service-v0.20.4` @ **`4df96d4`** (2026-10-05). **579 tests pass** at `b635f3d` (the code head before the BSI doc commit, which changed documentation only).
+- `letta/combined-single-service-v0.20.4` @ **`d2b2ebb`** (2026-10-05 20:31 UTC). **636 tests pass** (up from 579; parallel session added Workforce Phase 3: Command Center roster endpoints).
 - The branch is *named* v0.20.4 but the code reports **0.20.6**. Report both.
 - **Repo access is unchanged and still limited to one repository** — re-checked via the
   API 2026-10-05: `craigbegg005-netizen/chatgpt-github-connection` only. The Oddfellow /
@@ -356,6 +356,7 @@ The running commit is `11b3901`, verified to be a real ancestor of the canonical
 ## Read these for detail
 
 - `oddfellow/HANDOFF-UNIVERSAL-2026-10-05-2107Z.md` — **newest handoff** (2026-10-05 21:07 UTC).
+- `oddfellow/HANDOFF-UNIVERSAL-2026-10-05-2107Z.md` — **newest handoff** (2026-10-05 21:07 UTC). Note: Workforce Phase 3 commits (`d2b2ebb`, `d24d3db`, `af86de9`) came after that handoff; no newer handoff exists yet.
   ⚠️ Superseding the 21:07 entry: **workforce Phase 2 is now committed** — synthetic heads
   cannot create a job without naming its origin, and the origin rule is enforced at
   construction rather than documented. Fixed a real persistence bug in the same pass: the
