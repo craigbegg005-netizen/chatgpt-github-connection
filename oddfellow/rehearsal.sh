@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Bring up the Oddfellow live rehearsal: the v0.20.5 backend, served from this
+# Bring up the Oddfellow live rehearsal: the v0.20.6 backend, served from this
 # sandbox and published through a Cloudflare quick tunnel so it can be reached
 # from a phone.
 #
@@ -8,7 +8,13 @@
 #   ./rehearsal.sh status    is it up, and what does the harness say
 #   ./rehearsal.sh keepalive start a detached watchdog that restarts either
 #                            process if it dies and keeps the live URL in
-#                            /tmp/oddfellow-rehearsal-url.txt
+#                            /root/.oddfellow/url.txt
+#
+# The URL file is written by the WATCHDOG, not by `up` -- a bare `up` prints the
+# URL to stdout and leaves no url.txt. `status` does not read it either; it
+# re-derives the URL from the tunnel log. (This comment said
+# /tmp/oddfellow-rehearsal-url.txt until 2026-10-06, left over from before the
+# state dir moved to /root; that path never existed.)
 #   ./rehearsal.sh down      stop everything, including the watchdog
 #
 # THIS IS A REHEARSAL, NOT A DEPLOYMENT. It dies with the sandbox, it uses the
