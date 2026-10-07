@@ -67,11 +67,38 @@ reason to preserve it, not to skip it.
 2. **No code in this repository connects to Postgres.** No `psycopg`, `asyncpg`, or
    `sqlalchemy` anywhere. Whatever uses the database is not in the canonical repo.
 
-These two together suggest the database **may be provisioned but unused**. I want to be
-explicit that this is **an inference from absence, not a verified finding** — and the
-lesson from the 20-hour blind spot applies directly here: *"I tested A and B and neither
-had it" rules out A and B, not "it went somewhere else."* The only way to settle it is
-to look at the database.
+**3. The repo's own Command Center already claims it is unused.** `command_center.py`
+carries `{"name": "Database", "state": "PENDING", "blocker": "not connected to any app"}`.
+
+**4. And the most important finding of this investigation — the likely consumer's source
+is LOST.** The same file carries:
+
+```
+{"name": "Begg AI Core v0.15.0", "state": "BLOCKED",
+ "blocker": "SOURCE NOT PRESERVED", "owner": "Claude (Render access)",
+ "note": "No trace of it or its SHA in any branch or history. Only the live
+          services' API surfaces survive."}
+```
+
+The two live services (`begg-ai-industries-v013` v0.13.0, `begg-ai-core-v010` v0.12.1)
+serve a page titled **"Begg AI Industries Command Center"** at 17,260 bytes. This repo's
+own `command.html` is titled **"Begg AI Command Center"** at 9,610 bytes. **Different
+title, different size — so the live Core is not this repository's code.** It is a
+separate codebase, and per the line above, its source exists nowhere.
+
+**Why that matters for this task, in both directions:**
+
+- It makes "not connected to any app" **weaker than it looks.** The app that would most
+  plausibly have used the database is the one whose source is missing. "Not connected to
+  any app" may only mean *not connected to any app we can still read.*
+- It makes preservation **more valuable, not less.** If a lost codebase wrote to this
+  database, the database may be the *only surviving artifact of it* — and it is scheduled
+  for deletion in three weeks.
+
+Four signals now suggest the database is unused, and one of them undercuts the other
+three. That is exactly the situation where I should not conclude. The 20-hour blind spot
+lesson applies directly: *"I tested A and B and neither had it" rules out A and B, not
+"it went somewhere else."*
 
 **Practical consequence:** if it turns out empty, this costs one `psql` command to
 confirm and the urgency disappears. If it turns out to hold real task history, the
