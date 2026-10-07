@@ -1164,12 +1164,29 @@ def _falsifier_probes(ctx: Context, measurements: Sequence[Measurement]) -> set[
         moved("memory_continuity", memory_continuity(ctx),
               memory_continuity(Context(repo_root=bare_repo, memory_dir=None)))
 
-        # 2. memory_accuracy -- a recorded claim that is false.
-        wrong = dict(ctx.recorded_claims)
-        wrong["canonical_head"] = "0" * 40
-        moved("memory_accuracy", memory_accuracy(ctx),
-              memory_accuracy(Context(repo_root=ctx.repo_root, memory_dir=ctx.memory_dir,
-                                      recorded_claims=wrong)))
+        # 2. memory_accuracy -- a recorded claim that is false, and one that is true.
+        #
+        #    Both directions, and in a fixture rather than in the real repo. The
+        #    first version of this probe only pushed down, against the real repo,
+        #    and it silently stopped demonstrating anything the moment the real
+        #    value was already depressed -- which is exactly when you most want to
+        #    know the measurement is still live. That is not hypothetical: on
+        #    2026-10-07 the real value was 0.333 (two stale claims), the probe
+        #    produced 0.333 as well, and memory_accuracy reported a number it could
+        #    not show could move. A fixture with a known HEAD makes both directions
+        #    available regardless of what the real repo happens to say.
+        claim_repo = tmp / "claim_repo"
+        claim_repo.mkdir()
+        (claim_repo / "marker.txt").write_text("x\n", encoding="utf-8")
+        _probe_repo(claim_repo, "marker.txt")
+        true_head = _git(claim_repo, "rev-parse", "HEAD")
+        moved(
+            "memory_accuracy", memory_accuracy(ctx),
+            memory_accuracy(Context(repo_root=claim_repo, memory_dir=None,
+                                    recorded_claims={"canonical_head": true_head})),
+            memory_accuracy(Context(repo_root=claim_repo, memory_dir=None,
+                                    recorded_claims={"canonical_head": "0" * 40})),
+        )
 
         # 3. self_model_accuracy -- a declaration of something absent.
         fake_repo = tmp / "fake_repo"

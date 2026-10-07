@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import json
 import os
-import subprocess
 import sys
 
 import pytest
@@ -109,18 +108,21 @@ def test_memory_continuity_is_unmeasurable_with_no_entry_point(tmp_path):
 # --------------------------------------------------------------------------
 
 
-def _git_repo(path):
-    """A real, empty git repo -- so the head check has something to disagree with.
+def _git_repo(path, *extra_paths):
+    """A real git repo with one commit -- so the head check has something to disagree with.
 
     Without this the check correctly reports 'git unavailable' rather than
     'failed', which is a different observation and not what this test is about.
+
+    `extra_paths` are committed alongside the seed, for dimensions that measure
+    what a *committed* artifact contains rather than what the working tree does.
     """
     import subprocess
     subprocess.run(["git", "init", "-q"], cwd=path, check=True)
     subprocess.run(["git", "config", "user.email", "t@example.com"], cwd=path, check=True)
     subprocess.run(["git", "config", "user.name", "t"], cwd=path, check=True)
     (path / "seed.txt").write_text("seed\n", encoding="utf-8")
-    subprocess.run(["git", "add", "seed.txt"], cwd=path, check=True)
+    subprocess.run(["git", "add", "seed.txt", *extra_paths], cwd=path, check=True)
     subprocess.run(["git", "commit", "-qm", "seed"], cwd=path, check=True)
     return path
 
@@ -147,6 +149,34 @@ def test_memory_accuracy_is_unmeasurable_rather_than_zero_when_nothing_ran():
     m = memory_accuracy(Context(repo_root=None, memory_dir=None, recorded_claims={}))
     assert m.value is None
     assert "could run" in m.reason
+
+
+def test_a_depressed_dimension_can_still_prove_it_moves(tmp_path):
+    """The probe must offer both directions, not only downward.
+
+    The first version of the memory_accuracy probe pushed down against the real
+    repo. On 2026-10-07 the real value was already 0.333 -- two stale claims --
+    so the probe produced 0.333 as well and the dimension reported a number it
+    could not show could move. That is the false-control shape this instrument
+    exists to catch, and it appeared in the instrument's own probe.
+
+    The fix runs the probe in a fixture with a known HEAD, which makes both
+    directions available no matter what the real repo happens to say.
+    """
+    (tmp_path / "CURRENT_STATE.md").write_text(
+        "# What\n# Why\n# Evidence\n# Open\n# Next\n", encoding="utf-8")
+    # The fixture must be a real repo, or the head check reports "git unavailable"
+    # and the dimension comes back unmeasurable -- which would let this test pass
+    # for the wrong reason. That is the same trap the first version fell into.
+    _git_repo(tmp_path)
+    ctx = Context(repo_root=tmp_path, memory_dir=None,
+                  recorded_claims={"canonical_head": "0" * 40, "test_count": 1})
+    m = [x for x in build_profile(ctx) if x.dimension == "memory_accuracy"][0]
+    assert m.measurable
+    assert m.value < 1.0, "every claim in this fixture is wrong, so the value must be low"
+    assert m.falsifier_demonstrated, (
+        "a dimension sitting at a floor must still be able to prove it can move"
+    )
 
 
 # --------------------------------------------------------------------------
@@ -355,17 +385,6 @@ def _goal(gid, status="open", next_action="do it"):
             "status": status, "next_action": next_action}
 
 
-def _commit_repo(repo, *paths):
-    """A throwaway repo with one commit, so survival can actually be tested."""
-    def run(*args):
-        subprocess.run(["git", *args], cwd=repo, capture_output=True,
-                       text=True, timeout=30)
-    run("init", "-q")
-    run("add", *paths)
-    run("-c", "user.email=t@localhost", "-c", "user.name=t",
-        "commit", "-q", "-m", "t")
-
-
 def test_goal_continuity_falls_when_a_goal_is_never_committed(tmp_path):
     """The failure the dimension was built for: real work that dies with the sandbox.
 
@@ -373,7 +392,7 @@ def test_goal_continuity_falls_when_a_goal_is_never_committed(tmp_path):
     keeps the first and loses the second, so the number must show it.
     """
     _write_register(tmp_path, [_goal("shipped")])
-    _commit_repo(tmp_path, "oddfellow/cognition/GOALS.json")
+    _git_repo(tmp_path, "oddfellow/cognition/GOALS.json")
     _write_register(tmp_path, [_goal("shipped"), _goal("unshipped")])
 
     m = goal_continuity(Context(repo_root=tmp_path, memory_dir=None))
@@ -383,7 +402,7 @@ def test_goal_continuity_falls_when_a_goal_is_never_committed(tmp_path):
 
 def test_goal_continuity_is_one_when_every_open_goal_is_committed(tmp_path):
     _write_register(tmp_path, [_goal("a"), _goal("b")])
-    _commit_repo(tmp_path, "oddfellow/cognition/GOALS.json")
+    _git_repo(tmp_path, "oddfellow/cognition/GOALS.json")
 
     m = goal_continuity(Context(repo_root=tmp_path, memory_dir=None))
     assert m.value == 1.0
@@ -392,7 +411,7 @@ def test_goal_continuity_is_one_when_every_open_goal_is_committed(tmp_path):
 def test_goal_continuity_falls_when_a_committed_goal_has_no_next_action(tmp_path):
     """A goal with a statement but no next action is a wish, not a resumable goal."""
     _write_register(tmp_path, [_goal("a", next_action="")])
-    _commit_repo(tmp_path, "oddfellow/cognition/GOALS.json")
+    _git_repo(tmp_path, "oddfellow/cognition/GOALS.json")
 
     m = goal_continuity(Context(repo_root=tmp_path, memory_dir=None))
     assert m.value == 0.0
@@ -402,7 +421,7 @@ def test_goal_continuity_falls_when_a_committed_goal_has_no_next_action(tmp_path
 def test_goal_continuity_falls_on_a_duplicate_id(tmp_path):
     """Two goals sharing an id collapse into one on restart, so one is silently lost."""
     _write_register(tmp_path, [_goal("same"), _goal("same")])
-    _commit_repo(tmp_path, "oddfellow/cognition/GOALS.json")
+    _git_repo(tmp_path, "oddfellow/cognition/GOALS.json")
 
     m = goal_continuity(Context(repo_root=tmp_path, memory_dir=None))
     assert m.value == 0.0
@@ -413,7 +432,7 @@ def test_goal_continuity_ignores_deferred_and_done_goals(tmp_path):
     """A deferred goal is not being carried by anyone; a done goal has nothing to survive for."""
     _write_register(tmp_path, [_goal("a"), _goal("d", status="deferred"),
                                _goal("e", status="done")])
-    _commit_repo(tmp_path, "oddfellow/cognition/GOALS.json")
+    _git_repo(tmp_path, "oddfellow/cognition/GOALS.json")
 
     m = goal_continuity(Context(repo_root=tmp_path, memory_dir=None))
     assert m.value == 1.0

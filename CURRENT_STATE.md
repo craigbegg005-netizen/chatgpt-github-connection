@@ -81,9 +81,50 @@ is an observation, and it needs a date and a re-check like any other.
 
 ---
 
-# ✅ LATEST CYCLE — 2026-10-07 22:00 UTC
+# ✅ LATEST CYCLE — 2026-10-07 23:00 UTC
 
 **This supersedes every contradicting line below it.**
+
+## 🔑 Read `oddfellow/cognition/GOALS.json` before starting anything
+
+**It is the durable open-goal register, and it is the answer to a specific failure:** nineteen
+consecutive cycles re-confirmed a known blocker and produced nothing, because there was nowhere
+a goal could be left **open**. The cycle log records work **done**; it cannot record work not yet
+done, so a goal that outlived its session got re-discovered instead of resumed.
+
+**If you are picking this up cold, open that file first.** It lists every open goal with a stable
+id, who or what blocks it, and the single next action. Pick the highest-leverage goal that is not
+owner-blocked and move it — or record honestly that nothing non-blocked remains. That is what
+makes `autonomous_task_completion` mean something.
+
+- **`goal_continuity` is now a measured dimension** (was reported as an unmeasurable gap). It
+  reads the register **twice** — from the working tree, and from the committed blob — so a goal
+  that exists only in the working tree is counted as **lost**. That is deliberately the
+  "done is not shipped" failure already recorded as a lesson on 2026-10-05.
+- **Demonstrated on the real artifact, not just in a probe:** the same measurement read **0.0**
+  before the commit and **1.0** after it.
+- Three mutations were applied and each was caught by exactly one test and no other.
+
+**The instrument caught two bugs in itself while this was built**, both worth knowing:
+
+1. `memory_accuracy` fell to **0.333** — two claims in agent memory were stale (test count 666,
+   head `434af8c`), made stale by *that session's own work*. The dimension worked as designed.
+2. Its falsifier probe only pushed **down**, so against an already-depressed value it demonstrated
+   nothing and the dimension reported a number it could not show could move — the false-control
+   shape, inside the instrument's own probe. Fixed: the probe now runs in a fixture with a known
+   HEAD and offers both directions.
+
+**⚠️ The rehearsal is DOWN.** It died with the sandbox reset at 22:46 UTC — no tunnel, no uvicorn,
+no `/root/.oddfellow/url.txt`. The 2026-10-06 note calling it "a working instance Craig can run
+phone acceptance against today" is currently false until it is restored.
+
+**Suite: 674 pass** (up from 666). 10/13 dimensions measurable, 10 falsifiers demonstrated.
+**Branch head:** `9eec62f`.
+
+---
+# ✅ PREVIOUS CYCLE — 2026-10-07 22:00 UTC
+
+**Superseded by the section above; kept for the detail it carries.**
 
 ## Read this first: the one thing that has not moved
 
