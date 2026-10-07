@@ -81,13 +81,13 @@ is an observation, and it needs a date and a re-check like any other.
 
 ---
 
-# ✅ LATEST CYCLE — 2026-10-07 21:00 UTC
+# ✅ LATEST CYCLE — 2026-10-07 22:00 UTC
 
 **This supersedes every contradicting line below it.**
 
 ## Read this first: the one thing that has not moved
 
-**Gate A is unchanged and is still the sole blocker.** Probed 2026-10-07 21:00 UTC:
+**Gate A is unchanged and is still the sole blocker.** Probed 2026-10-07 22:00 UTC:
 
 ```
 GET https://oddfellow-letta-backend-v0206.onrender.com/livez
@@ -106,7 +106,11 @@ of the live one caused a 20-hour blind spot on 2026-10-01.
 
 ## Where the branch actually is
 
-- `letta/combined-single-service-v0.20.4` @ **`d2b2ebb`** (2026-10-05 20:31 UTC). **636 tests pass** (up from 579; parallel session added Workforce Phase 3: Command Center roster endpoints).
+- `letta/combined-single-service-v0.20.4` @ **`d9a3f15`** (2026-10-07 21:45 UTC). **666 tests pass** (up from 638; parallel sessions added the Cognitive Capability Profile, `oddfellow/cognition/`, 28 tests).
+
+## ⚠️ NEW P0 — Render DB `begg-ai-core-db` expires 2026-10-27T23:21:01Z
+
+**20 days from today.** Render free Postgres lives 30 days, then goes read-blocked unless paid; deletion ~14 days after. **No backups of any kind on the free plan.** The tooling is written and proven (`oddfellow/db_preserve.sh`, tested end-to-end against a real PostgreSQL 18) — blocked only on **owner access**: the DB password, and replacing the IP allowlist with a single `/32` (remove `0.0.0.0/0` first, never join it). Full runbook: `oddfellow/RENDER-DB-PRESERVATION-2026-10-07.md`.
 - The branch is *named* v0.20.4 but the code reports **0.20.6**. Report both.
 - **Repo access is unchanged and still limited to one repository** — re-checked via the
   API 2026-10-05: `craigbegg005-netizen/chatgpt-github-connection` only. The Oddfellow /
@@ -355,7 +359,7 @@ The running commit is `11b3901`, verified to be a real ancestor of the canonical
 
 ## Read these for detail
 
-- `oddfellow/HANDOFF-UNIVERSAL-2026-10-07-2100Z.md` — **newest handoff** (2026-10-07 21:00 UTC).
+- `oddfellow/HANDOFF-UNIVERSAL-2026-10-07-2200Z.md` — **newest handoff** (2026-10-07 22:00 UTC).
   ⚠️ Superseding the 21:07 entry: **workforce Phase 2 is now committed** — synthetic heads
   cannot create a job without naming its origin, and the origin rule is enforced at
   construction rather than documented. Fixed a real persistence bug in the same pass: the
