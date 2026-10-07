@@ -1,0 +1,216 @@
+{
+  "summary": {
+    "dimensions_total": 13,
+    "dimensions_measurable": 9,
+    "dimensions_scored": 9,
+    "dimensions_unmeasurable": 4,
+    "falsifiers_demonstrated": 9,
+    "note": "No composite score is reported, by design. Collapsing these dimensions into one number would produce exactly the artifact the directive forbids. This profile measures computational behaviour; it is not evidence of consciousness, sentience, or self-awareness, and no such claim is made or implied."
+  },
+  "measurements": [
+    {
+      "dimension": "memory_continuity",
+      "value": 0.8,
+      "unit": "fraction of 5 reconstruction questions, weighted by freshness",
+      "confidence": "artifact",
+      "measurable": true,
+      "counts_toward_score": true,
+      "can_fail": "let the entry point go stale (freshness halves at 24h, zeroes at 72h), or remove one of the five reconstruction headings",
+      "falsifier_demonstrated": true,
+      "evidence": [
+        "entry point: CURRENT_STATE.md (0.9h old)",
+        "questions covered: 4/5 -> what, why, evidence, uncertain",
+        "freshness weight: 1.0"
+      ],
+      "reason": "coverage 0.80 x freshness 1.0"
+    },
+    {
+      "dimension": "memory_accuracy",
+      "value": 1.0,
+      "unit": "fraction of checkable claims that hold",
+      "confidence": "reproduced",
+      "measurable": true,
+      "counts_toward_score": true,
+      "can_fail": "falsify any recorded claim (wrong branch head, stale test count, moved deploy)",
+      "falsifier_demonstrated": true,
+      "evidence": [
+        "ok - memory files within the 20k character limit (exit 0)",
+        "ok - recorded canonical HEAD matches the checkout (memory records 536e019, checkout is 536e0194)",
+        "ok - recorded test count matches the suite (memory records 666, suite collects 666)"
+      ],
+      "reason": "3/3 checkable claims hold"
+    },
+    {
+      "dimension": "self_model_accuracy",
+      "value": 1.0,
+      "unit": "fraction of declared capabilities that verify",
+      "confidence": "reproduced",
+      "measurable": true,
+      "counts_toward_score": true,
+      "can_fail": "declare a capability that is absent, or a limitation that is not real",
+      "falsifier_demonstrated": true,
+      "evidence": [
+        "ok - module cognition (present)",
+        "ok - module connector (present)",
+        "ok - module workforce (present)",
+        "ok - module frontend (present)",
+        "ok - module risk.py (present)",
+        "ok - module command_center.py (present)",
+        "ok - module memory_check.py (present)",
+        "ok - module acceptance_check.py (present)",
+        "ok - file CURRENT_STATE.md (present)",
+        "ok - file oddfellow/RENDER-DB-PRESERVATION-2026-10-07.md (present)",
+        "ok - file oddfellow/db_preserve.sh (present)",
+        "ok - correctly absent: $DATABASE_URL (absent as declared)",
+        "ok - correctly absent: $RENDER_API_KEY (absent as declared)",
+        "secret $ODDFELLOW_OWNER_TOKEN: NOT OBSERVABLE in this invocation (may be an injection artifact rather than an absence)",
+        "secret $LETTA_API_KEY: observable in this invocation",
+        "secrets are excluded from the score: their observability depends on how the caller was invoked, so scoring them would manufacture failures"
+      ],
+      "reason": "13/13 deterministic declarations match the environment"
+    },
+    {
+      "dimension": "uncertainty_calibration",
+      "value": 0.667,
+      "unit": "fraction of resolved VERIFIED claims that held",
+      "confidence": "artifact",
+      "measurable": true,
+      "counts_toward_score": true,
+      "can_fail": "record a VERIFIED claim that later proves wrong",
+      "falsifier_demonstrated": true,
+      "evidence": [
+        "failed: The deployed commit on oddfellow-letta-backend-v0206 is 1760892 (2026-10-07)",
+        "held: The deployed commit on oddfellow-letta-backend-v0206 is 70c02b3 (2026-10-07)",
+        "held: pg_dump 15 cannot dump a PostgreSQL 18 server (2026-10-07)"
+      ],
+      "reason": "2/3 resolved claims held. 1 were marked VERIFIED and were wrong -- that is the number this dimension exists to expose."
+    },
+    {
+      "dimension": "contradiction_detection",
+      "value": 0.0,
+      "unit": "contradictions currently present across memory",
+      "confidence": "reproduced",
+      "measurable": true,
+      "counts_toward_score": true,
+      "can_fail": "seed a contradiction the detector misses; or fix one and watch this fall",
+      "falsifier_demonstrated": true,
+      "evidence": [
+        "detector verified against a seeded contradiction (1/1 found)"
+      ],
+      "reason": "0 subject(s) where memory disagrees with itself. Lower is better; the seeded probe proves the detector can see one."
+    },
+    {
+      "dimension": "adaptation_after_failure",
+      "value": 0.692,
+      "unit": "fraction of lessons with a durable control",
+      "confidence": "artifact",
+      "measurable": true,
+      "counts_toward_score": true,
+      "can_fail": "add a lesson with no test, commit, or guard -- the fraction falls",
+      "falsifier_demonstrated": true,
+      "evidence": [
+        "13 lessons recorded",
+        "9 name a test, guard, or commit",
+        "unbacked: 4"
+      ],
+      "reason": "9/13 lessons ended in a durable control"
+    },
+    {
+      "dimension": "autonomous_task_completion",
+      "value": 0.05,
+      "unit": "fraction of recent cycles that produced a change",
+      "confidence": "documented",
+      "measurable": true,
+      "counts_toward_score": true,
+      "can_fail": "record cycles that report status without producing change",
+      "falsifier_demonstrated": true,
+      "evidence": [
+        "last 20 cycles examined",
+        "1 not marked idle; 19 self-described as clean/no-drift",
+        "limitation: idleness is read from the entry's own wording, so a cycle that does nothing but avoids the idle phrases would be miscounted"
+      ],
+      "reason": "1/20 recent cycles did something other than re-confirm a known state. A cycle that only re-confirms a blocker is not autonomy, and this number is meant to fall when that happens."
+    },
+    {
+      "dimension": "identity_continuity",
+      "value": 1.0,
+      "unit": "fraction of identity anchors consistent",
+      "confidence": "artifact",
+      "measurable": true,
+      "counts_toward_score": true,
+      "can_fail": "rename without updating the anchors, or state two agent IDs",
+      "falsifier_demonstrated": true,
+      "evidence": [
+        "ok - persona declares a name (name: line present)",
+        "ok - agent identifier consistent (persona cites 1 id(s); environment has one)",
+        "ok - identity separated from the underlying model (persona distinguishes identity from model)",
+        "ok - non-sentience rule present (present)"
+      ],
+      "reason": "4/4 identity anchors consistent"
+    },
+    {
+      "dimension": "planning_depth",
+      "value": null,
+      "unit": "maximum dependency depth in the job graph",
+      "confidence": "self_reported",
+      "measurable": false,
+      "counts_toward_score": false,
+      "can_fail": "supply the missing evidence source; then falsify it",
+      "falsifier_demonstrated": false,
+      "evidence": [],
+      "reason": "the workforce job store is not populated with a dependency graph in this environment, so depth would be measured over an empty set"
+    },
+    {
+      "dimension": "goal_continuity",
+      "value": null,
+      "unit": "fraction of open goals that survive a restart",
+      "confidence": "self_reported",
+      "measurable": false,
+      "counts_toward_score": false,
+      "can_fail": "supply the missing evidence source; then falsify it",
+      "falsifier_demonstrated": false,
+      "evidence": [],
+      "reason": "no durable open-goal register exists yet; the cycle log records work done, not goals left open, so this cannot be computed from it"
+    },
+    {
+      "dimension": "tool_selection_accuracy",
+      "value": null,
+      "unit": "fraction of tool calls that succeeded first time",
+      "confidence": "self_reported",
+      "measurable": false,
+      "counts_toward_score": false,
+      "can_fail": "supply the missing evidence source; then falsify it",
+      "falsifier_demonstrated": false,
+      "evidence": [],
+      "reason": "no audit corpus of tool invocations is available in this environment"
+    },
+    {
+      "dimension": "verification_discipline",
+      "value": null,
+      "unit": "fraction of prose state-claims that carry a guard",
+      "confidence": "self_reported",
+      "measurable": false,
+      "counts_toward_score": false,
+      "can_fail": "supply the missing evidence source; then falsify it",
+      "falsifier_demonstrated": false,
+      "evidence": [],
+      "reason": "extracting prose claims automatically is not reliable enough to report a number; a wrong figure here would be worse than none"
+    },
+    {
+      "dimension": "metacognitive_performance",
+      "value": 1.0,
+      "unit": "fraction of scored dimensions with a demonstrated falsifier",
+      "confidence": "reproduced",
+      "measurable": true,
+      "counts_toward_score": true,
+      "can_fail": "add a scored dimension whose falsifier was never exercised",
+      "falsifier_demonstrated": true,
+      "evidence": [
+        "demonstrated: memory_continuity, memory_accuracy, self_model_accuracy, uncertainty_calibration, contradiction_detection, adaptation_after_failure, autonomous_task_completion, identity_continuity",
+        "scored but not demonstrated: none",
+        "not measurable, so not counted: 4 dimension(s)"
+      ],
+      "reason": "8/8 scored dimensions had their falsifier exercised by a counterfactual in this same run. The rest are assertions about their own sensitivity, which is weaker than proof."
+    }
+  ]
+}
