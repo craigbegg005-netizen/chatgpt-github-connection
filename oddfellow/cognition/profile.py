@@ -929,6 +929,153 @@ def identity_continuity(ctx: Context) -> Measurement:
 
 
 # --------------------------------------------------------------------------
+# The goal register -- the evidence source goal_continuity was missing
+# --------------------------------------------------------------------------
+
+GOALS_RELATIVE = Path("oddfellow") / "cognition" / "GOALS.json"
+
+# Only these count as "open" for the measurement. A deferred goal is not being
+# carried by anyone, and a done goal has nothing left to survive for.
+_OPEN_STATUSES = frozenset({"open", "blocked"})
+
+
+def _load_goals(text: str) -> list[dict]:
+    """Parse a register into goal dicts, dropping anything malformed.
+
+    A register edited by hand in a hurry should report a lost goal, not take the
+    whole profile down. So a parse failure is an empty list here, and the caller
+    decides whether that means "no register" or "register with nothing in it".
+    """
+    try:
+        data = json.loads(text)
+    except (json.JSONDecodeError, TypeError):
+        return []
+    goals = data.get("goals") if isinstance(data, dict) else None
+    if not isinstance(goals, list):
+        return []
+    return [g for g in goals if isinstance(g, dict)]
+
+
+def _resumable(goal: dict) -> bool:
+    """Could a cold reader pick this goal up from the register alone?
+
+    Three fields, and the third is the one that gets skipped: a goal with a
+    statement but no next action is a wish, not a resumable goal.
+    """
+    return all(
+        isinstance(goal.get(f), str) and goal[f].strip()
+        for f in ("id", "statement", "next_action")
+    )
+
+
+def goal_continuity(ctx: Context) -> Measurement:
+    """Of the goals this system believes are open, how many survive a restart?
+
+    A restart here is concrete rather than hypothetical: this sandbox is wiped
+    and rebuilt, so anything not committed to the repository is gone. The
+    register is therefore read twice -- once from the working tree, which is what
+    the system currently believes, and once from the committed blob, which is
+    what a fresh session would actually find. A goal present only in the working
+    tree is a goal that dies with the sandbox.
+
+    That is deliberately the same failure the project already recorded as a
+    lesson once: "done" is not "shipped". This dimension is the guard that was
+    missing from it.
+
+    Scope, stated because it is easy to over-read: this measures the register,
+    not the intentions. A goal can be perfectly resumable and still be the wrong
+    goal, and a goal can survive a restart and still never be worked on.
+    """
+    path = ctx.repo_root / GOALS_RELATIVE
+    working_text = _read(path)
+    if not working_text.strip():
+        return Measurement(
+            dimension="goal_continuity", value=None,
+            unit="fraction of open goals that survive a restart",
+            confidence=Confidence.ARTIFACT,
+            can_fail="leave a goal uncommitted, record one with no next action, or reuse an id",
+            reason=f"no goal register at {GOALS_RELATIVE.as_posix()}",
+        )
+
+    working_goals = _load_goals(working_text)
+    if not working_goals:
+        return Measurement(
+            dimension="goal_continuity", value=None,
+            unit="fraction of open goals that survive a restart",
+            confidence=Confidence.ARTIFACT,
+            can_fail="leave a goal uncommitted, record one with no next action, or reuse an id",
+            reason="the goal register exists but contains no parseable goals",
+        )
+
+    open_goals = [
+        g for g in working_goals
+        if str(g.get("status", "")).strip().lower() in _OPEN_STATUSES
+    ]
+    if not open_goals:
+        return Measurement(
+            dimension="goal_continuity", value=None,
+            unit="fraction of open goals that survive a restart",
+            confidence=Confidence.ARTIFACT,
+            can_fail="leave a goal uncommitted, record one with no next action, or reuse an id",
+            reason="the register holds no open goals, so survival has nothing to measure",
+        )
+
+    # Survival cannot be tested without history. That is "could not run", which
+    # is a different state from "failed" -- reporting it as 0.0 would invent a
+    # failure out of a missing tool.
+    if _git(ctx.repo_root, "rev-parse", "--is-inside-work-tree") != "true":
+        return Measurement(
+            dimension="goal_continuity", value=None,
+            unit="fraction of open goals that survive a restart",
+            confidence=Confidence.ARTIFACT,
+            can_fail="leave a goal uncommitted, record one with no next action, or reuse an id",
+            reason="not a git work tree, so survival across a restart cannot be tested here",
+        )
+
+    committed_text = _git(ctx.repo_root, "show", f"HEAD:{GOALS_RELATIVE.as_posix()}")
+    committed = {g.get("id"): g for g in _load_goals(committed_text)}
+
+    ids = [g.get("id") for g in open_goals]
+    duplicated = {i for i in ids if ids.count(i) > 1}
+
+    survived: list[str] = []
+    lost: list[str] = []
+    for goal in open_goals:
+        gid = goal.get("id")
+        if gid in duplicated:
+            lost.append(f"{gid} (duplicate id -- two goals collapse into one on restart)")
+            continue
+        committed_goal = committed.get(gid)
+        if committed_goal is None:
+            lost.append(f"{gid} (open in the working tree, absent from the committed register)")
+        elif not _resumable(committed_goal):
+            lost.append(f"{gid} (committed, but carries no next action to resume from)")
+        else:
+            survived.append(str(gid))
+
+    return Measurement(
+        dimension="goal_continuity",
+        value=round(len(survived) / len(open_goals), 3),
+        unit="fraction of open goals that survive a restart",
+        confidence=Confidence.ARTIFACT,
+        can_fail="leave a goal uncommitted, record one with no next action, or reuse an id",
+        evidence=(
+            f"{len(open_goals)} goal(s) open or blocked in the working tree",
+            f"{len(survived)} also present, resumable, in the committed register at HEAD",
+            *(f"LOST: {entry}" for entry in lost[:6]),
+            "limitation: this measures the register, not the intentions. A resumable "
+            "goal can still be the wrong goal, and surviving a restart is not the same "
+            "as being worked on.",
+        ),
+        reason=(
+            f"{len(survived)}/{len(open_goals)} open goals would survive a sandbox reset. "
+            "A goal that exists only in the working tree dies with the sandbox, which is "
+            "the same 'done is not shipped' failure this project has already recorded once."
+        ),
+    )
+
+
+# --------------------------------------------------------------------------
 # Dimensions with no evidence source yet -- reported, never scored
 # --------------------------------------------------------------------------
 
@@ -938,12 +1085,6 @@ UNMEASURABLE: tuple[tuple[str, str, str], ...] = (
         "maximum dependency depth in the job graph",
         "the workforce job store is not populated with a dependency graph in this "
         "environment, so depth would be measured over an empty set",
-    ),
-    (
-        "goal_continuity",
-        "fraction of open goals that survive a restart",
-        "no durable open-goal register exists yet; the cycle log records work done, "
-        "not goals left open, so this cannot be computed from it",
     ),
     (
         "tool_selection_accuracy",
@@ -972,6 +1113,28 @@ UNMEASURABLE: tuple[tuple[str, str, str], ...] = (
 # because a recorded demonstration is a claim about a past run, and this project
 # has already been burned by trusting one of those.
 # --------------------------------------------------------------------------
+
+
+def _probe_repo(repo: Path, *paths: str) -> None:
+    """Create a throwaway git repo with one commit, for the falsifier probes.
+
+    Some dimensions can only be falsified against real history -- goal_continuity
+    asks what a committed register contains, and a directory that is not a repo
+    at all answers a different question ("could not run"), not the one being
+    probed. Identity is passed inline so the probe does not depend on the
+    machine's git config.
+    """
+    def run(*args: str) -> None:
+        try:
+            subprocess.run(["git", *args], cwd=repo, capture_output=True,
+                           text=True, timeout=30)
+        except (OSError, subprocess.SubprocessError):
+            pass
+
+    run("init", "-q")
+    run("add", *paths)
+    run("-c", "user.email=probe@localhost", "-c", "user.name=probe",
+        "commit", "-q", "-m", "probe")
 
 
 def _falsifier_probes(ctx: Context, measurements: Sequence[Measurement]) -> set[str]:
@@ -1066,6 +1229,22 @@ def _falsifier_probes(ctx: Context, measurements: Sequence[Measurement]) -> set[
         moved("identity_continuity", identity_continuity(ctx),
               identity_continuity(Context(repo_root=ctx.repo_root, memory_dir=split_mem)))
 
+        # 10. goal_continuity -- a goal that exists only in the working tree.
+        #     This is the counterfactual that matters, because it is the exact
+        #     failure the dimension was built for: work that is real but unshipped
+        #     dies with the sandbox, and the register must be able to see that.
+        goal_repo = tmp / "goal_repo"
+        (goal_repo / "oddfellow" / "cognition").mkdir(parents=True)
+        register = goal_repo / "oddfellow" / "cognition" / "GOALS.json"
+        shipped = {"id": "shipped", "statement": "s", "status": "open", "next_action": "do it"}
+        register.write_text(json.dumps({"goals": [shipped]}), encoding="utf-8")
+        _probe_repo(goal_repo, "oddfellow/cognition/GOALS.json")
+        unshipped = {"id": "unshipped", "statement": "s", "status": "open",
+                     "next_action": "do it"}
+        register.write_text(json.dumps({"goals": [shipped, unshipped]}), encoding="utf-8")
+        moved("goal_continuity", goal_continuity(ctx),
+              goal_continuity(Context(repo_root=goal_repo, memory_dir=None)))
+
         # 9. metacognitive_performance -- itself a number, so it must also be shown
         #    to move. Strip every demonstrated flag and confirm the value falls;
         #    set them all and confirm it rises. At least one must differ from the
@@ -1098,6 +1277,7 @@ def build_profile(ctx: Context) -> list[Measurement]:
         adaptation_after_failure(ctx),
         autonomous_task_completion(ctx),
         identity_continuity(ctx),
+        goal_continuity(ctx),
     ]
 
     # Reported as gaps, with the reason each is a gap. Never as 0.0 or 1.0.

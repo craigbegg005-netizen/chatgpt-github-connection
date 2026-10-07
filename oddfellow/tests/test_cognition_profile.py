@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
 import sys
 
 import pytest
@@ -25,6 +26,7 @@ from cognition.profile import (  # noqa: E402
     Measurement,
     build_profile,
     contradiction_detection,
+    goal_continuity,
     identity_continuity,
     memory_accuracy,
     memory_continuity,
@@ -327,6 +329,115 @@ def test_identity_requires_the_non_sentience_rule(tmp_path):
     m = identity_continuity(Context(repo_root=tmp_path, memory_dir=tmp_path))
     assert m.value < 1.0
     assert any("non-sentience" in e for e in m.evidence)
+
+
+# --------------------------------------------------------------------------
+# goal_continuity
+#
+# This dimension exists because of a specific failure: nineteen consecutive work
+# cycles re-confirmed a known blocker and produced nothing, because there was
+# nowhere a goal could be left OPEN. The tests below are all variations on one
+# question -- can the number tell the difference between a goal that survives a
+# restart and one that does not?
+# --------------------------------------------------------------------------
+
+
+def _write_register(repo, goals):
+    d = repo / "oddfellow" / "cognition"
+    d.mkdir(parents=True, exist_ok=True)
+    p = d / "GOALS.json"
+    p.write_text(json.dumps({"goals": goals}), encoding="utf-8")
+    return p
+
+
+def _goal(gid, status="open", next_action="do it"):
+    return {"id": gid, "statement": f"statement for {gid}",
+            "status": status, "next_action": next_action}
+
+
+def _commit_repo(repo, *paths):
+    """A throwaway repo with one commit, so survival can actually be tested."""
+    def run(*args):
+        subprocess.run(["git", *args], cwd=repo, capture_output=True,
+                       text=True, timeout=30)
+    run("init", "-q")
+    run("add", *paths)
+    run("-c", "user.email=t@localhost", "-c", "user.name=t",
+        "commit", "-q", "-m", "t")
+
+
+def test_goal_continuity_falls_when_a_goal_is_never_committed(tmp_path):
+    """The failure the dimension was built for: real work that dies with the sandbox.
+
+    One goal is committed and one is left in the working tree. A sandbox reset
+    keeps the first and loses the second, so the number must show it.
+    """
+    _write_register(tmp_path, [_goal("shipped")])
+    _commit_repo(tmp_path, "oddfellow/cognition/GOALS.json")
+    _write_register(tmp_path, [_goal("shipped"), _goal("unshipped")])
+
+    m = goal_continuity(Context(repo_root=tmp_path, memory_dir=None))
+    assert m.value == 0.5
+    assert any("unshipped" in e for e in m.evidence)
+
+
+def test_goal_continuity_is_one_when_every_open_goal_is_committed(tmp_path):
+    _write_register(tmp_path, [_goal("a"), _goal("b")])
+    _commit_repo(tmp_path, "oddfellow/cognition/GOALS.json")
+
+    m = goal_continuity(Context(repo_root=tmp_path, memory_dir=None))
+    assert m.value == 1.0
+
+
+def test_goal_continuity_falls_when_a_committed_goal_has_no_next_action(tmp_path):
+    """A goal with a statement but no next action is a wish, not a resumable goal."""
+    _write_register(tmp_path, [_goal("a", next_action="")])
+    _commit_repo(tmp_path, "oddfellow/cognition/GOALS.json")
+
+    m = goal_continuity(Context(repo_root=tmp_path, memory_dir=None))
+    assert m.value == 0.0
+    assert any("no next action" in e for e in m.evidence)
+
+
+def test_goal_continuity_falls_on_a_duplicate_id(tmp_path):
+    """Two goals sharing an id collapse into one on restart, so one is silently lost."""
+    _write_register(tmp_path, [_goal("same"), _goal("same")])
+    _commit_repo(tmp_path, "oddfellow/cognition/GOALS.json")
+
+    m = goal_continuity(Context(repo_root=tmp_path, memory_dir=None))
+    assert m.value == 0.0
+    assert any("duplicate id" in e for e in m.evidence)
+
+
+def test_goal_continuity_ignores_deferred_and_done_goals(tmp_path):
+    """A deferred goal is not being carried by anyone; a done goal has nothing to survive for."""
+    _write_register(tmp_path, [_goal("a"), _goal("d", status="deferred"),
+                               _goal("e", status="done")])
+    _commit_repo(tmp_path, "oddfellow/cognition/GOALS.json")
+
+    m = goal_continuity(Context(repo_root=tmp_path, memory_dir=None))
+    assert m.value == 1.0
+    assert "1 goal(s) open or blocked" in m.evidence[0]
+
+
+def test_goal_continuity_is_unmeasurable_without_a_register(tmp_path):
+    """Not measurable, never 0.0 -- zero would read as a failure that did not happen."""
+    m = goal_continuity(Context(repo_root=tmp_path, memory_dir=None))
+    assert m.value is None
+    assert "no goal register" in m.reason
+
+
+def test_goal_continuity_is_unmeasurable_outside_a_git_repo(tmp_path):
+    """'Could not run' is a different state from 'failed'.
+
+    Survival cannot be tested without history. Reporting 0.0 here would invent a
+    failure out of a missing tool, which is the mistake the first version of
+    memory_accuracy made.
+    """
+    _write_register(tmp_path, [_goal("a")])
+    m = goal_continuity(Context(repo_root=tmp_path, memory_dir=None))
+    assert m.value is None
+    assert "not a git work tree" in m.reason
 
 
 # --------------------------------------------------------------------------
