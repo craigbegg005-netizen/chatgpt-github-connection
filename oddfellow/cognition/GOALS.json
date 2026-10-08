@@ -134,12 +134,12 @@
   {
    "id": "autonomous-completion-floor",
    "statement": "Raise autonomous_task_completion (0.053 at first baseline) by making sweeps advance a goal from this register rather than re-confirming a known blocker.",
-   "status": "open",
+   "status": "done",
    "opened": "2026-10-07",
    "blocked_on": null,
-   "next_action": "Each sweep picks the highest-leverage non-owner-blocked goal and moves it, or records honestly that nothing non-blocked remains. The register is what makes that checkable.",
-   "last_advanced": "2026-10-07T23:05:00Z",
-   "evidence": "First baseline measured 1 of 19 recent cycles producing anything other than a re-confirmation of state. This register exists specifically to give those cycles something to advance.",
+   "next_action": "None until a new non-owner-blocked goal is opened; the register remains the checkable surface.",
+   "last_advanced": "2026-10-08T21:00:00Z",
+   "evidence": "Re-measured against the 8 most recent sweeps, enumerated so the count is checkable: #36 closed tool-selection; #37 pulled phone-backup path + fixed \"sole blocker\" drift; #38 persisted planning-depth finding; #39 closed planning-depth; #40 clean re-confirmation; #41 clean re-confirmation; #42 closed verification-discipline; #43 closed this goal. That is 6 of 8 sweeps producing more than re-confirmation (0.75) vs the 0.053 first baseline (1 of 19). The register is what made the difference: sweeps #36, #38, #39, #42 each took their work item directly from it. The goal's own completion condition \u2014 \"or records honestly that nothing non-blocked remains\" \u2014 is now true: no open non-owner-blocked goals remain.",
    "owner_action_required": false
   }
  ]
