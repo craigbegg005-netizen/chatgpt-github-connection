@@ -104,9 +104,9 @@
    "status": "open",
    "opened": "2026-10-07",
    "blocked_on": null,
-   "next_action": "Inspect the workforce job store for an existing dependency edge; if none exists, add one rather than inventing a depth metric over an empty set.",
-   "last_advanced": "2026-10-07T21:50:00Z",
-   "evidence": "Named as an unmeasurable dimension with a stated reason in the first profile baseline; no work started.",
+   "next_action": "Implement planning_depth(ctx) in profile.py: open Store at the known db path (command_center.py:606 chooses it), walk depends_on/origin_job_id chains with cycle protection, report max depth; None with honest reason when no store file exists. Falsifier: fixture store with a 2-deep chain vs a flat one.",
+   "last_advanced": "2026-10-08T08:02:00Z",
+   "evidence": "Investigated 2026-10-08 05:00 UTC (sweep destroyed by harness desync before write). FINDING: the dependency edges already exist in the schema \u2014 Job (oddfellow/connector/schema.py:142) carries BOTH depends_on: tuple[str,...] AND origin_job_id: str|None. Store API: oddfellow/connector/store.py Store(path) with .jobs() enumeration and .get_job(). No populated store exists in the repo environment (deployment store is server-side), so the dimension must measure over a store it opens by path, reporting None honestly when absent.",
    "owner_action_required": false
   },
   {
