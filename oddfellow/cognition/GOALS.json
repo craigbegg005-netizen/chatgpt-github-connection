@@ -1,149 +1,146 @@
 {
-  "note": "The durable open-goal register. This file is the answer to a specific failure: nineteen consecutive work cycles re-confirmed a known blocker and produced nothing, because there was nowhere a goal could be left OPEN. The cycle log records work done; it cannot record work not yet done, so a goal that outlived its session was invisible and got re-discovered instead of resumed. Every goal here carries a stable id and a named next action so that a cold reader -- a fresh session, a different agent, or this system after a sandbox reset -- can pick it up rather than re-derive it. This register is a record of computational goals. It is not evidence of consciousness, sentience, or self-awareness, and no such claim is made or implied by its existence.",
-
-  "schema": {
-    "id": "stable kebab-case slug; must not change once assigned, because the id is how a goal survives a restart",
-    "status": "open | blocked | deferred | done | abandoned",
-    "blocked_on": "who or what must move for this to progress; null when nothing external blocks it",
-    "next_action": "the single next concrete step; a goal without one is not resumable and goal_continuity counts it as lost",
-    "last_advanced": "ISO-8601 UTC timestamp of the last real advance, not the last time this file was touched",
-    "evidence": "what was produced at last_advanced, so a reader can check the claim rather than trust it"
+ "note": "The durable open-goal register. This file is the answer to a specific failure: nineteen consecutive work cycles re-confirmed a known blocker and produced nothing, because there was nowhere a goal could be left OPEN. The cycle log records work done; it cannot record work not yet done, so a goal that outlived its session was invisible and got re-discovered instead of resumed. Every goal here carries a stable id and a named next action so that a cold reader -- a fresh session, a different agent, or this system after a sandbox reset -- can pick it up rather than re-derive it. This register is a record of computational goals. It is not evidence of consciousness, sentience, or self-awareness, and no such claim is made or implied by its existence.",
+ "schema": {
+  "id": "stable kebab-case slug; must not change once assigned, because the id is how a goal survives a restart",
+  "status": "open | blocked | deferred | done | abandoned",
+  "blocked_on": "who or what must move for this to progress; null when nothing external blocks it",
+  "next_action": "the single next concrete step; a goal without one is not resumable and goal_continuity counts it as lost",
+  "last_advanced": "ISO-8601 UTC timestamp of the last real advance, not the last time this file was touched",
+  "evidence": "what was produced at last_advanced, so a reader can check the claim rather than trust it"
+ },
+ "status_legend": "open and blocked goals are 'open goals' for the purpose of the goal_continuity measurement; deferred, done and abandoned are not.",
+ "goals": [
+  {
+   "id": "gate-a-secrets",
+   "statement": "Set LETTA_API_KEY and ODDFELLOW_OWNER_TOKEN on the Render service oddfellow-letta-backend-v0206 so the backend becomes ready instead of failing closed.",
+   "status": "blocked",
+   "opened": "2026-10-01",
+   "blocked_on": "owner (Craig) \u2014 Render dashboard access; this system cannot set env vars on Render and must not be given a RENDER_API_KEY",
+   "next_action": "Craig: Render -> oddfellow-letta-backend-v0206 -> Environment -> set both vars -> Save. Then confirm /livez reports ready:true.",
+   "last_advanced": "2026-10-01T19:14:00Z",
+   "evidence": "Direct probe of /livez returned 200 with ready:false and checks_failed:[LETTA_API_KEY, ODDFELLOW_OWNER_TOKEN]. The service runs v0.20.6 and needs only these two values.",
+   "owner_action_required": true
   },
-
-  "status_legend": "open and blocked goals are 'open goals' for the purpose of the goal_continuity measurement; deferred, done and abandoned are not.",
-
-  "goals": [
-    {
-      "id": "gate-a-secrets",
-      "statement": "Set LETTA_API_KEY and ODDFELLOW_OWNER_TOKEN on the Render service oddfellow-letta-backend-v0206 so the backend becomes ready instead of failing closed.",
-      "status": "blocked",
-      "opened": "2026-10-01",
-      "blocked_on": "owner (Craig) — Render dashboard access; this system cannot set env vars on Render and must not be given a RENDER_API_KEY",
-      "next_action": "Craig: Render -> oddfellow-letta-backend-v0206 -> Environment -> set both vars -> Save. Then confirm /livez reports ready:true.",
-      "last_advanced": "2026-10-01T19:14:00Z",
-      "evidence": "Direct probe of /livez returned 200 with ready:false and checks_failed:[LETTA_API_KEY, ODDFELLOW_OWNER_TOKEN]. The service runs v0.20.6 and needs only these two values.",
-      "owner_action_required": true
-    },
-    {
-      "id": "phone-acceptance",
-      "statement": "Craig runs phone acceptance against the live deployment: install the PWA, sign in, send a message, hear a spoken reply, reload and confirm history.",
-      "status": "blocked",
-      "opened": "2026-09-29",
-      "blocked_on": "gate-a-secrets",
-      "next_action": "Once /livez reports ready:true, load https://oddfellow-letta-backend-v0206.onrender.com on the phone. Expect a ~20-30 s cold start on the first load; that is free-tier wake-up, not a failure.",
-      "last_advanced": "2026-10-06T23:00:00Z",
-      "evidence": "All four acceptance gates passed against the rehearsal instance (v0.20.6, real Letta reply in 2.6 s, history and new-session isolation verified). Everything server-side is verified; only the human gate remains.",
-      "owner_action_required": true
-    },
-    {
-      "id": "render-db-preservation",
-      "statement": "Preserve begg-ai-core-db (PostgreSQL 18, Render free tier, dpg-dasq9ne0tbcc738ifeug-a) before it becomes unreadable on 2026-10-27T23:21:01Z and is deleted around 2026-11-10. The free tier has no backups of any kind.",
-      "status": "blocked",
-      "opened": "2026-10-07",
-      "blocked_on": "owner — the dump requires the sandbox egress IP to be added to the Render database allowlist, or a Render-side dump; both need dashboard access",
-      "next_action": "Craig: read oddfellow/RENDER-DB-PRESERVATION-2026-10-07.md and either allowlist the current egress IP or run the dump from a Render shell. Deadline is 19 days out.",
-      "last_advanced": "2026-10-07T21:00:00Z",
-      "evidence": "Tooling written and tested (oddfellow/db_preserve.sh, commit 536e019). The version-mismatch trap is proven, not asserted: pg_dump 15.19 against a real PG18 server aborts and leaves a 0-byte file, so the script verifies size > 0 AND that pg_restore --list parses the output.",
-      "owner_action_required": true
-    },
-    {
-      "id": "deploy-drift-decision",
-      "statement": "Decide whether to deploy canonical (125 commits ahead of the deployed 70c02b3) or hold. Craig's explicit instruction is that being ahead is not a reason to deploy.",
-      "status": "blocked",
-      "opened": "2026-10-07",
-      "blocked_on": "owner decision",
-      "next_action": "Hold until Gate A is closed and phone acceptance has run against the known-good deployed commit. Deploying two variables at once would make a failure unattributable.",
-      "last_advanced": "2026-10-07T21:40:00Z",
-      "evidence": "Deployed-commit identity VERIFIED as 70c02b3 by sha256 of the live / and /command.html against the repo blobs — not by comparing sizes. Canonical head is 434af8c, 125 commits ahead, 0 behind.",
-      "owner_action_required": true
-    },
-    {
-      "id": "owner-letta-key",
-      "statement": "Install Craig's own Letta API key for production use instead of the platform-managed sandbox key, which he cannot rotate.",
-      "status": "blocked",
-      "opened": "2026-09-29",
-      "blocked_on": "owner — the key must be created in Craig's Letta account and set as a Render env var, never pasted into chat.",
-      "next_action": "Craig creates a key in his own Letta account and sets it on oddfellow-letta-backend-v0206 as LETTA_API_KEY. Do not paste the value into chat.",
-      "last_advanced": "2026-09-29T23:36:00Z",
-      "evidence": "Recorded as an open decision owed by Craig; no progress since the original handoff.",
-      "owner_action_required": true
-    },
-    {
-      "id": "main-canonical-decision",
-      "statement": "Decide whether main becomes the canonical state. main is currently an index only; the working branches are deliberately kept off it so a half-finished revision cannot be mistaken for the deployed one.",
-      "status": "blocked",
-      "opened": "2026-09-30",
-      "blocked_on": "owner decision",
-      "next_action": "Craig decides. If yes, the merge must preserve the deployable branch head exactly; if no, record that the index-only design is intentional so no future session 'fixes' it.",
-      "last_advanced": "2026-09-30T07:50:00Z",
-      "evidence": "main @ 8ddfe32 is a README index; canonical code lives on letta/combined-single-service-v0.20.4 @ 434af8c.",
-      "owner_action_required": true
-    },
-    {
-      "id": "early-agents-disposition",
-      "statement": "Decide the disposition of the two early agents (Oddfellow agent-78aa8e9d..., Oddfellow-POC agent-0a2de0cc...). Craig said 'delete nothing yet'.",
-      "status": "deferred",
-      "opened": "2026-09-29",
-      "blocked_on": "owner decision; no cost to leaving them",
-      "next_action": "Leave in place. The free plan caps agents at 3 and all 3 slots are used, so deleting is only worth revisiting if a fourth agent is ever needed.",
-      "last_advanced": "2026-09-30T07:00:00Z",
-      "evidence": "Their memory blocks are what the live agent uses, not the other way round — the original caution was backwards. Recorded in oddfellow/backend.md.",
-      "owner_action_required": true
-    },
-    {
-      "id": "cognition-goal-continuity",
-      "statement": "Make goal_continuity a measured dimension by building this register, so that a goal can outlive the session that opened it.",
-      "status": "done",
-      "opened": "2026-10-07",
-      "blocked_on": null,
-      "next_action": "None. Superseded by the register's own maintenance: any new goal gets an id and a next_action, or goal_continuity drops.",
-      "last_advanced": "2026-10-07T23:05:00Z",
-      "evidence": "goal_continuity is measured from the committed blob of this file, so a goal left uncommitted is counted as lost. Falsifier probe and regression tests added alongside.",
-      "owner_action_required": false
-    },
-    {
-      "id": "cognition-planning-depth",
-      "statement": "Make planning_depth measurable by populating the workforce job graph, or by measuring dependency depth over the existing workforce schema.",
-      "status": "open",
-      "opened": "2026-10-07",
-      "blocked_on": null,
-      "next_action": "Inspect the workforce job store for an existing dependency edge; if none exists, add one rather than inventing a depth metric over an empty set.",
-      "last_advanced": "2026-10-07T21:50:00Z",
-      "evidence": "Named as an unmeasurable dimension with a stated reason in the first profile baseline; no work started.",
-      "owner_action_required": false
-    },
-    {
-      "id": "cognition-tool-selection",
-      "statement": "Make tool_selection_accuracy measurable by recording an audit corpus of tool invocations and their outcomes.",
-      "status": "open",
-      "opened": "2026-10-07",
-      "blocked_on": null,
-      "next_action": "Record tool invocations with outcome and first-attempt success into a durable log; the dimension stays unmeasurable until a corpus exists.",
-      "last_advanced": "2026-10-07T21:50:00Z",
-      "evidence": "Named as an unmeasurable dimension with a stated reason in the first profile baseline; no corpus exists.",
-      "owner_action_required": false
-    },
-    {
-      "id": "cognition-verification-discipline",
-      "statement": "Make verification_discipline measurable by building a prose-claim extractor reliable enough to report a number.",
-      "status": "open",
-      "opened": "2026-10-07",
-      "blocked_on": null,
-      "next_action": "Build and falsify a claim extractor against the known false controls in the ledger; until it can be shown to catch a planted claim, this stays unmeasurable rather than guessed.",
-      "last_advanced": "2026-10-07T21:50:00Z",
-      "evidence": "Named as an unmeasurable dimension with a stated reason in the first profile baseline. A wrong figure here would be worse than none.",
-      "owner_action_required": false
-    },
-    {
-      "id": "autonomous-completion-floor",
-      "statement": "Raise autonomous_task_completion (0.053 at first baseline) by making sweeps advance a goal from this register rather than re-confirming a known blocker.",
-      "status": "open",
-      "opened": "2026-10-07",
-      "blocked_on": null,
-      "next_action": "Each sweep picks the highest-leverage non-owner-blocked goal and moves it, or records honestly that nothing non-blocked remains. The register is what makes that checkable.",
-      "last_advanced": "2026-10-07T23:05:00Z",
-      "evidence": "First baseline measured 1 of 19 recent cycles producing anything other than a re-confirmation of state. This register exists specifically to give those cycles something to advance.",
-      "owner_action_required": false
-    }
-  ]
+  {
+   "id": "phone-acceptance",
+   "statement": "Craig runs phone acceptance against the live deployment: install the PWA, sign in, send a message, hear a spoken reply, reload and confirm history.",
+   "status": "blocked",
+   "opened": "2026-09-29",
+   "blocked_on": "gate-a-secrets",
+   "next_action": "Once /livez reports ready:true, load https://oddfellow-letta-backend-v0206.onrender.com on the phone. Expect a ~20-30 s cold start on the first load; that is free-tier wake-up, not a failure.",
+   "last_advanced": "2026-10-06T23:00:00Z",
+   "evidence": "All four acceptance gates passed against the rehearsal instance (v0.20.6, real Letta reply in 2.6 s, history and new-session isolation verified). Everything server-side is verified; only the human gate remains.",
+   "owner_action_required": true
+  },
+  {
+   "id": "render-db-preservation",
+   "statement": "Preserve begg-ai-core-db (PostgreSQL 18, Render free tier, dpg-dasq9ne0tbcc738ifeug-a) before it becomes unreadable on 2026-10-27T23:21:01Z and is deleted around 2026-11-10. The free tier has no backups of any kind.",
+   "status": "blocked",
+   "opened": "2026-10-07",
+   "blocked_on": "owner \u2014 the dump requires the sandbox egress IP to be added to the Render database allowlist, or a Render-side dump; both need dashboard access",
+   "next_action": "Craig: read oddfellow/RENDER-DB-PRESERVATION-2026-10-07.md and either allowlist the current egress IP or run the dump from a Render shell. Deadline is 19 days out.",
+   "last_advanced": "2026-10-07T21:00:00Z",
+   "evidence": "Tooling written and tested (oddfellow/db_preserve.sh, commit 536e019). The version-mismatch trap is proven, not asserted: pg_dump 15.19 against a real PG18 server aborts and leaves a 0-byte file, so the script verifies size > 0 AND that pg_restore --list parses the output.",
+   "owner_action_required": true
+  },
+  {
+   "id": "deploy-drift-decision",
+   "statement": "Decide whether to deploy canonical (125 commits ahead of the deployed 70c02b3) or hold. Craig's explicit instruction is that being ahead is not a reason to deploy.",
+   "status": "blocked",
+   "opened": "2026-10-07",
+   "blocked_on": "owner decision",
+   "next_action": "Hold until Gate A is closed and phone acceptance has run against the known-good deployed commit. Deploying two variables at once would make a failure unattributable.",
+   "last_advanced": "2026-10-07T21:40:00Z",
+   "evidence": "Deployed-commit identity VERIFIED as 70c02b3 by sha256 of the live / and /command.html against the repo blobs \u2014 not by comparing sizes. Canonical head is 434af8c, 125 commits ahead, 0 behind.",
+   "owner_action_required": true
+  },
+  {
+   "id": "owner-letta-key",
+   "statement": "Install Craig's own Letta API key for production use instead of the platform-managed sandbox key, which he cannot rotate.",
+   "status": "blocked",
+   "opened": "2026-09-29",
+   "blocked_on": "owner \u2014 the key must be created in Craig's Letta account and set as a Render env var, never pasted into chat.",
+   "next_action": "Craig creates a key in his own Letta account and sets it on oddfellow-letta-backend-v0206 as LETTA_API_KEY. Do not paste the value into chat.",
+   "last_advanced": "2026-09-29T23:36:00Z",
+   "evidence": "Recorded as an open decision owed by Craig; no progress since the original handoff.",
+   "owner_action_required": true
+  },
+  {
+   "id": "main-canonical-decision",
+   "statement": "Decide whether main becomes the canonical state. main is currently an index only; the working branches are deliberately kept off it so a half-finished revision cannot be mistaken for the deployed one.",
+   "status": "blocked",
+   "opened": "2026-09-30",
+   "blocked_on": "owner decision",
+   "next_action": "Craig decides. If yes, the merge must preserve the deployable branch head exactly; if no, record that the index-only design is intentional so no future session 'fixes' it.",
+   "last_advanced": "2026-09-30T07:50:00Z",
+   "evidence": "main @ 8ddfe32 is a README index; canonical code lives on letta/combined-single-service-v0.20.4 @ 434af8c.",
+   "owner_action_required": true
+  },
+  {
+   "id": "early-agents-disposition",
+   "statement": "Decide the disposition of the two early agents (Oddfellow agent-78aa8e9d..., Oddfellow-POC agent-0a2de0cc...). Craig said 'delete nothing yet'.",
+   "status": "deferred",
+   "opened": "2026-09-29",
+   "blocked_on": "owner decision; no cost to leaving them",
+   "next_action": "Leave in place. The free plan caps agents at 3 and all 3 slots are used, so deleting is only worth revisiting if a fourth agent is ever needed.",
+   "last_advanced": "2026-09-30T07:00:00Z",
+   "evidence": "Their memory blocks are what the live agent uses, not the other way round \u2014 the original caution was backwards. Recorded in oddfellow/backend.md.",
+   "owner_action_required": true
+  },
+  {
+   "id": "cognition-goal-continuity",
+   "statement": "Make goal_continuity a measured dimension by building this register, so that a goal can outlive the session that opened it.",
+   "status": "done",
+   "opened": "2026-10-07",
+   "blocked_on": null,
+   "next_action": "None. Superseded by the register's own maintenance: any new goal gets an id and a next_action, or goal_continuity drops.",
+   "last_advanced": "2026-10-07T23:05:00Z",
+   "evidence": "goal_continuity is measured from the committed blob of this file, so a goal left uncommitted is counted as lost. Falsifier probe and regression tests added alongside.",
+   "owner_action_required": false
+  },
+  {
+   "id": "cognition-planning-depth",
+   "statement": "Make planning_depth measurable by populating the workforce job graph, or by measuring dependency depth over the existing workforce schema.",
+   "status": "open",
+   "opened": "2026-10-07",
+   "blocked_on": null,
+   "next_action": "Inspect the workforce job store for an existing dependency edge; if none exists, add one rather than inventing a depth metric over an empty set.",
+   "last_advanced": "2026-10-07T21:50:00Z",
+   "evidence": "Named as an unmeasurable dimension with a stated reason in the first profile baseline; no work started.",
+   "owner_action_required": false
+  },
+  {
+   "id": "cognition-tool-selection",
+   "statement": "Make tool_selection_accuracy measurable by recording an audit corpus of tool invocations and their outcomes.",
+   "status": "done",
+   "opened": "2026-10-07",
+   "blocked_on": null,
+   "next_action": "None. Corpus continues to be appended by future sweeps; the measurement reads it live.",
+   "last_advanced": "2026-10-08T00:10:00Z",
+   "evidence": "oddfellow/cognition/tool_log.py (append-only JSONL corpus), tool_selection_accuracy() in profile.py (floor: 10 entries; below that the dimension reports None, never 0.0), seeded corpus tool_invocations.jsonl with 51 real entries from this session (48 first-attempt successes, 3 honest failures incl. the harness desyncs), 8 tests, falsifier probe moves the number both ways.",
+   "owner_action_required": false
+  },
+  {
+   "id": "cognition-verification-discipline",
+   "statement": "Make verification_discipline measurable by building a prose-claim extractor reliable enough to report a number.",
+   "status": "open",
+   "opened": "2026-10-07",
+   "blocked_on": null,
+   "next_action": "Build and falsify a claim extractor against the known false controls in the ledger; until it can be shown to catch a planted claim, this stays unmeasurable rather than guessed.",
+   "last_advanced": "2026-10-07T21:50:00Z",
+   "evidence": "Named as an unmeasurable dimension with a stated reason in the first profile baseline. A wrong figure here would be worse than none.",
+   "owner_action_required": false
+  },
+  {
+   "id": "autonomous-completion-floor",
+   "statement": "Raise autonomous_task_completion (0.053 at first baseline) by making sweeps advance a goal from this register rather than re-confirming a known blocker.",
+   "status": "open",
+   "opened": "2026-10-07",
+   "blocked_on": null,
+   "next_action": "Each sweep picks the highest-leverage non-owner-blocked goal and moves it, or records honestly that nothing non-blocked remains. The register is what makes that checkable.",
+   "last_advanced": "2026-10-07T23:05:00Z",
+   "evidence": "First baseline measured 1 of 19 recent cycles producing anything other than a re-confirmation of state. This register exists specifically to give those cycles something to advance.",
+   "owner_action_required": false
+  }
+ ]
 }

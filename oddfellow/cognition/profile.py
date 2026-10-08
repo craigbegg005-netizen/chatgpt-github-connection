@@ -61,6 +61,12 @@ from enum import Enum
 from pathlib import Path
 from typing import Callable, Iterable, Sequence
 
+from oddfellow.cognition.tool_log import (
+    CORPUS_RELATIVE as TOOL_CORPUS_RELATIVE,
+    MIN_CORPUS_SIZE as TOOL_CORPUS_MIN,
+    load_corpus as _load_tool_corpus,
+)
+
 # --------------------------------------------------------------------------
 # Core types
 # --------------------------------------------------------------------------
@@ -1075,6 +1081,63 @@ def goal_continuity(ctx: Context) -> Measurement:
     )
 
 
+def tool_selection_accuracy(ctx: Context) -> Measurement:
+    """Which fraction of recorded tool invocations succeeded on the first attempt?
+
+    The corpus is the evidence, and the corpus is honest about its own limits:
+    it records what was recorded. Selection bias in what gets logged is real,
+    so the evidence names the corpus size and the limitation in the open.
+
+    A corpus below MIN_CORPUS_SIZE entries is reported as unmeasurable -- a
+    fraction over two lines is a coin flip wearing a measurement's clothes.
+    """
+    corpus_path = ctx.repo_root / TOOL_CORPUS_RELATIVE
+    entries = _load_tool_corpus(corpus_path)
+
+    if not corpus_path.exists():
+        return Measurement(
+            dimension="tool_selection_accuracy", value=None,
+            unit="fraction of recorded invocations that succeeded first time",
+            confidence=Confidence.ARTIFACT,
+            can_fail="record an invocation whose first attempt failed; the fraction falls",
+            reason="no audit corpus exists, so there is nothing to measure over",
+        )
+    if len(entries) < TOOL_CORPUS_MIN:
+        return Measurement(
+            dimension="tool_selection_accuracy", value=None,
+            unit="fraction of recorded invocations that succeeded first time",
+            confidence=Confidence.ARTIFACT,
+            can_fail="record an invocation whose first attempt failed; the fraction falls",
+            reason=(
+                f"corpus holds {len(entries)} entries, below the {TOOL_CORPUS_MIN}-entry "
+                "floor; a fraction this small would be a coin flip, not a measurement"
+            ),
+        )
+
+    successes = sum(1 for e in entries if e.get("first_attempt_success"))
+    failures = len(entries) - successes
+    tool_names = sorted({str(e.get("tool", "?")) for e in entries})
+    return Measurement(
+        dimension="tool_selection_accuracy",
+        value=round(successes / len(entries), 3),
+        unit="fraction of recorded invocations that succeeded first time",
+        confidence=Confidence.ARTIFACT,
+        can_fail="record an invocation whose first attempt failed; the fraction falls",
+        evidence=(
+            f"corpus: {len(entries)} invocations at {TOOL_CORPUS_RELATIVE.as_posix()}",
+            f"{successes} first-attempt successes, {failures} required a retry or failed",
+            f"tools seen: {', '.join(tool_names[:8])}",
+            "limitation: the corpus records what was recorded. What never gets "
+            "logged never lowers the number, so selection bias inflates it.",
+        ),
+        reason=(
+            f"{successes}/{len(entries)} recorded invocations succeeded first time. "
+            "First-attempt failure is the honest signal that the wrong tool was "
+            "chosen for the job."
+        ),
+    )
+
+
 # --------------------------------------------------------------------------
 # Dimensions with no evidence source yet -- reported, never scored
 # --------------------------------------------------------------------------
@@ -1085,11 +1148,6 @@ UNMEASURABLE: tuple[tuple[str, str, str], ...] = (
         "maximum dependency depth in the job graph",
         "the workforce job store is not populated with a dependency graph in this "
         "environment, so depth would be measured over an empty set",
-    ),
-    (
-        "tool_selection_accuracy",
-        "fraction of tool calls that succeeded first time",
-        "no audit corpus of tool invocations is available in this environment",
     ),
     (
         "verification_discipline",
@@ -1262,7 +1320,24 @@ def _falsifier_probes(ctx: Context, measurements: Sequence[Measurement]) -> set[
         moved("goal_continuity", goal_continuity(ctx),
               goal_continuity(Context(repo_root=goal_repo, memory_dir=None)))
 
-        # 9. metacognitive_performance -- itself a number, so it must also be shown
+        # 11. tool_selection_accuracy -- a corpus whose outcomes differ from the real
+        #     one. Both directions: the fixture is built with every invocation
+        #     failing, so if the real corpus is already depressed the probe still
+        #     moves -- and an all-success fixture covers the other direction.
+        tool_repo = tmp / "tool_repo"
+        corpus_dir = tool_repo / "oddfellow" / "cognition"
+        corpus_dir.mkdir(parents=True)
+        all_fail = corpus_dir / "tool_invocations.jsonl"
+        all_fail.write_text(
+            "".join(json.dumps({"ts": "t", "tool": "probe",
+                                "first_attempt_success": False, "note": ""}) + "\n"
+                    for _ in range(12)),
+            encoding="utf-8",
+        )
+        moved("tool_selection_accuracy", tool_selection_accuracy(ctx),
+              tool_selection_accuracy(Context(repo_root=tool_repo, memory_dir=None)))
+
+                # 9. metacognitive_performance -- itself a number, so it must also be shown
         #    to move. Strip every demonstrated flag and confirm the value falls;
         #    set them all and confirm it rises. At least one must differ from the
         #    real value, or the measure is a constant.
@@ -1295,6 +1370,7 @@ def build_profile(ctx: Context) -> list[Measurement]:
         autonomous_task_completion(ctx),
         identity_continuity(ctx),
         goal_continuity(ctx),
+        tool_selection_accuracy(ctx),
     ]
 
     # Reported as gaps, with the reason each is a gap. Never as 0.0 or 1.0.

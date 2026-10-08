@@ -530,3 +530,89 @@ def test_unmeasurable_dimensions_are_reported_not_zeroed():
     assert gaps, "the profile should be honest about what it cannot measure"
     for m in gaps:
         assert m.reason.strip(), f"{m.dimension} is a gap with no explanation"
+
+
+# --------------------------------------------------------------------------
+# tool_selection_accuracy -- the audit corpus that makes the dimension real
+# --------------------------------------------------------------------------
+
+from oddfellow.cognition.profile import tool_selection_accuracy
+from oddfellow.cognition.tool_log import (
+    MIN_CORPUS_SIZE, load_corpus, record_invocation,
+)
+
+
+def _ctx(root):
+    return Context(repo_root=root, memory_dir=None)
+
+
+def _seed(root, n_ok, n_fail):
+    corpus = root / "oddfellow" / "cognition" / "tool_invocations.jsonl"
+    for _ in range(n_ok):
+        record_invocation(corpus, "probe_tool", True, "seed-ok")
+    for _ in range(n_fail):
+        record_invocation(corpus, "probe_tool", False, "seed-fail")
+    return corpus
+
+
+class TestToolLog:
+    def test_record_appends_and_loads(self, tmp_path):
+        corpus = tmp_path / "c.jsonl"
+        record_invocation(corpus, "git", True, "one")
+        record_invocation(corpus, "curl", False, "two")
+        entries = load_corpus(corpus)
+        assert len(entries) == 2
+        assert entries[0]["tool"] == "git"
+        assert entries[1]["first_attempt_success"] is False
+
+    def test_load_missing_file_is_empty_not_error(self, tmp_path):
+        assert load_corpus(tmp_path / "nope.jsonl") == []
+
+    def test_malformed_lines_are_dropped_not_fatal(self, tmp_path):
+        corpus = tmp_path / "c.jsonl"
+        corpus.write_text(
+            '{"tool": "a", "first_attempt_success": true}\n'
+            'not json at all\n'
+            '{"no_outcome_field": true}\n',
+            encoding="utf-8",
+        )
+        assert len(load_corpus(corpus)) == 1
+
+
+class TestToolSelectionAccuracy:
+    def test_no_corpus_is_unmeasurable_not_zero(self, tmp_path):
+        m = tool_selection_accuracy(_ctx(tmp_path))
+        assert m.value is None, (
+            "a missing corpus must report None -- 0.0 would invent a failure, "
+            "1.0 would invent a success"
+        )
+
+    def test_small_corpus_is_unmeasurable_with_the_count_named(self, tmp_path):
+        _seed(tmp_path, n_ok=3, n_fail=0)
+        m = tool_selection_accuracy(_ctx(tmp_path))
+        assert m.value is None
+        assert "3" in m.reason, "the reason must name the actual corpus size"
+
+    def test_adequate_corpus_reports_exact_fraction(self, tmp_path):
+        _seed(tmp_path, n_ok=MIN_CORPUS_SIZE - 2, n_fail=2)
+        m = tool_selection_accuracy(_ctx(tmp_path))
+        assert m.value == round((MIN_CORPUS_SIZE - 2) / MIN_CORPUS_SIZE, 3)
+        assert any("corpus" in e for e in m.evidence)
+
+    def test_falsifier_a_failed_invocation_moves_the_number(self, tmp_path):
+        corpus = _seed(tmp_path, n_ok=MIN_CORPUS_SIZE, n_fail=0)
+        before = tool_selection_accuracy(_ctx(tmp_path)).value
+        record_invocation(corpus, "probe_tool", False, "the falsifier")
+        after = tool_selection_accuracy(_ctx(tmp_path)).value
+        assert after < before, (
+            "a measurement that does not move when a failure is recorded is not "
+            "a measurement -- it is a constant"
+        )
+
+    def test_names_selection_bias_limitation_in_evidence(self, tmp_path):
+        _seed(tmp_path, n_ok=MIN_CORPUS_SIZE, n_fail=0)
+        m = tool_selection_accuracy(_ctx(tmp_path))
+        assert any("selection bias" in e for e in m.evidence), (
+            "the corpus records what was recorded; the evidence must say so "
+            "rather than letting the number read as representative"
+        )

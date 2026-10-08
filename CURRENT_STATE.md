@@ -147,7 +147,7 @@ of the live one caused a 20-hour blind spot on 2026-10-01.
 
 ## Where the branch actually is
 
-- `letta/combined-single-service-v0.20.4` @ **`d222849`** (2026-10-07 23:45 UTC). **674 tests pass** (up from 638; parallel sessions added the Cognitive Capability Profile, `oddfellow/cognition/`, plus a durable open-goal register `GOALS.json`).
+- `letta/combined-single-service-v0.20.4` @ **`d222849`** (2026-10-07 23:45 UTC). **682 tests pass** (up from 638; parallel sessions added the Cognitive Capability Profile, `oddfellow/cognition/`, a durable open-goal register `GOALS.json`, and the tool-invocation audit corpus).
 
 ## ⚠️ NEW P0 — Render DB `begg-ai-core-db` expires 2026-10-27T23:21:01Z
 
