@@ -616,3 +616,72 @@ class TestToolSelectionAccuracy:
             "the corpus records what was recorded; the evidence must say so "
             "rather than letting the number read as representative"
         )
+
+
+# --------------------------------------------------------------------------
+# planning_depth -- longest dependency chain in the workforce job graph
+# --------------------------------------------------------------------------
+
+from oddfellow.cognition.profile import planning_depth, _seed_job_store
+from pathlib import Path as _Path
+
+
+def _pctx(store):
+    return Context(repo_root=_Path("."), memory_dir=None, store_path=store)
+
+
+class TestPlanningDepth:
+    def test_no_store_configured_is_unmeasurable(self, tmp_path, monkeypatch):
+        monkeypatch.delenv("ODDFELLOW_QUEUE_DB", raising=False)
+        m = planning_depth(Context(repo_root=tmp_path, memory_dir=None))
+        assert m.value is None, "absent store must report None, never a depth over an empty set"
+
+    def test_missing_store_file_is_unmeasurable_with_path_named(self, tmp_path):
+        m = planning_depth(_pctx(tmp_path / "nope.db"))
+        assert m.value is None
+        assert "nope.db" in m.reason
+
+    def test_empty_store_is_unmeasurable(self, tmp_path):
+        _seed_job_store(tmp_path / "empty.db", chains=[])
+        m = planning_depth(_pctx(tmp_path / "empty.db"))
+        assert m.value is None
+
+    def test_depth_tracks_chain_length(self, tmp_path):
+        _seed_job_store(tmp_path / "flat.db", chains=[["a", "b"]])
+        _seed_job_store(tmp_path / "deep.db", chains=[["a", "b", "c"]])
+        assert planning_depth(_pctx(tmp_path / "flat.db")).value == 2.0
+        assert planning_depth(_pctx(tmp_path / "deep.db")).value == 3.0
+
+    def test_independent_chains_report_the_longest(self, tmp_path):
+        _seed_job_store(tmp_path / "multi.db",
+                        chains=[["a"], ["p", "q", "r"], ["x", "y"]])
+        m = planning_depth(_pctx(tmp_path / "multi.db"))
+        assert m.value == 3.0
+
+    def test_falsifier_adding_a_dependency_moves_the_number(self, tmp_path):
+        db = tmp_path / "grow.db"
+        _seed_job_store(db, chains=[["a"], ["b"]])
+        before = planning_depth(_pctx(db)).value
+        _seed_job_store(db, chains=[["b", "c"]])
+        after = planning_depth(_pctx(db)).value
+        assert after > before, "a measurement that does not move when the graph deepens is not a measurement"
+
+    def test_cycle_does_not_hang_and_is_named_in_evidence(self, tmp_path):
+        import oddfellow.connector.schema as sch
+        import oddfellow.connector.store as st
+        db = tmp_path / "cyc.db"
+        store = st.Store(db)
+        store.create_job(sch.Job(job_id="x", kind=sch.TaskKind.RESEARCH,
+                                 title="x", depends_on=("y",)), actor="f")
+        store.create_job(sch.Job(job_id="y", kind=sch.TaskKind.RESEARCH,
+                                 title="y", depends_on=("x",)), actor="f")
+        m = planning_depth(_pctx(db))
+        assert any("cycle" in e for e in m.evidence), (
+            "a cyclic graph must be named in evidence -- a measurement that "
+            "silently swallows an anomaly is a false control"
+        )
+
+    def test_limitation_is_stated(self, tmp_path):
+        _seed_job_store(tmp_path / "lim.db", chains=[["a", "b"]])
+        m = planning_depth(_pctx(tmp_path / "lim.db"))
+        assert any("limitation" in e for e in m.evidence)

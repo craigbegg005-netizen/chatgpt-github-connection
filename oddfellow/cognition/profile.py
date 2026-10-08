@@ -151,6 +151,11 @@ class Context:
     memory_dir: Path | None
     live: bool = False          # may this run touch the network?
     recorded_claims: dict = field(default_factory=dict)
+    #: Where the workforce queue store lives. None means "consult the
+    #: environment" (ODDFELLOW_QUEUE_DB, the same source command_center uses);
+    #: tests pass an explicit fixture path so the dimension can be falsified
+    #: without touching the deployment's configuration.
+    store_path: Path | None = None
 
     def __post_init__(self) -> None:
         # Coerce rather than crash. A dimension asked to measure a directory that
@@ -1138,17 +1143,127 @@ def tool_selection_accuracy(ctx: Context) -> Measurement:
     )
 
 
+def planning_depth(ctx: Context) -> Measurement:
+    """The longest dependency chain in the workforce job graph.
+
+    Two edge types exist in the schema and both count, because both express
+    "this job exists because of that one": ``depends_on`` (a job waits on
+    others) and ``origin_job_id`` (a job was spawned by another). A chain of
+    zero-depth jobs is a plan of breadth one; the depth is what a plan's
+    ambition looks like structurally.
+
+    The store is the deployment's own SQLite queue. When it is absent -- as it
+    is in this repository environment, where the queue lives server-side --
+    the dimension reports NOT MEASURABLE with the reason, never a depth over an
+    empty set.
+    """
+    store_file = ctx.store_path
+    if store_file is None:
+        env = os.environ.get("ODDFELLOW_QUEUE_DB", "").strip()
+        store_file = Path(env) if env else None
+
+    unmeasurable_reason = None
+    if store_file is None:
+        unmeasurable_reason = ("no store path configured (ODDFELLOW_QUEUE_DB unset), "
+                               "and depth over an empty set is not a measurement")
+    elif not Path(store_file).exists():
+        unmeasurable_reason = f"store file does not exist: {store_file}"
+
+    if unmeasurable_reason is not None:
+        return Measurement(
+            dimension="planning_depth", value=None,
+            unit="longest depends_on / origin_job_id chain",
+            confidence=Confidence.ARTIFACT,
+            can_fail="add a job that depends on another job; depth rises",
+            reason=unmeasurable_reason,
+        )
+
+    try:
+        from oddfellow.connector.store import Store
+        jobs = Store(store_file).jobs()
+    except Exception as exc:  # store unreadable is a gap, not a crash
+        return Measurement(
+            dimension="planning_depth", value=None,
+            unit="longest depends_on / origin_job_id chain",
+            confidence=Confidence.ARTIFACT,
+            can_fail="add a job that depends on another job; depth rises",
+            reason=f"store could not be opened: {type(exc).__name__}: {exc}",
+        )
+
+    if not jobs:
+        return Measurement(
+            dimension="planning_depth", value=None,
+            unit="longest depends_on / origin_job_id chain",
+            confidence=Confidence.ARTIFACT,
+            can_fail="add a job that depends on another job; depth rises",
+            reason="the store holds no jobs, so there is no graph to measure depth over",
+        )
+
+    parents: dict[str, list[str]] = {}
+    for j in jobs:
+        edges = list(getattr(j, "depends_on", ()) or ())
+        origin = getattr(j, "origin_job_id", None)
+        if origin:
+            edges.append(origin)
+        parents[j.job_id] = edges
+
+    cycle_nodes: set[str] = set()
+
+    def depth(job_id: str, seen: frozenset[str]) -> int:
+        if job_id in seen:
+            # A cycle. Record EVERY member of the loop, not just the revisited
+            # node -- a warning that names one node of a three-node cycle points
+            # the reader at the wrong repair.
+            cycle_nodes.update(seen | {job_id})
+            return -1
+        ups = [p for p in parents.get(job_id, []) if p in parents]
+        if not ups:
+            return 0
+        best = 0
+        for p in ups:
+            d = depth(p, seen | {job_id})
+            if d >= 0:
+                best = max(best, d + 1)
+        return best
+
+    max_depth = 0
+    for j in jobs:
+        d = depth(j.job_id, frozenset())
+        if d >= 0:
+            max_depth = max(max_depth, d)
+    cycles = len(cycle_nodes)
+
+    # Convert depth-in-edges to depth-in-jobs: a 2-job chain reports 2, because
+    # "how many jobs deep is the plan" is the question a reader asks.
+    value = float(max_depth + 1) if jobs else None
+    evidence = [
+        f"store: {store_file}",
+        f"{len(jobs)} jobs, longest chain {max_depth + 1} job(s) deep",
+        "edges counted: depends_on (waits on) and origin_job_id (spawned by)",
+        "limitation: depth measures the graph as filed, not the plan as intended. "
+        "A deep chain of trivial jobs reads deeper than a shallow chain of hard ones.",
+    ]
+    if cycles:
+        evidence.append(f"WARNING: {cycles} job(s) sit in a dependency cycle -- "
+                        "depth reported over acyclic chains only")
+    return Measurement(
+        dimension="planning_depth",
+        value=value,
+        unit="longest depends_on / origin_job_id chain, in jobs",
+        confidence=Confidence.ARTIFACT,
+        can_fail="add a job that depends on another job; depth rises",
+        evidence=tuple(evidence),
+        reason=(f"the longest chain in the store runs {max_depth + 1} job(s) deep. "
+                "A flat graph is a plan that never decomposes; a deep one at least "
+                "shows the ambition of subordination."),
+    )
+
+
 # --------------------------------------------------------------------------
 # Dimensions with no evidence source yet -- reported, never scored
 # --------------------------------------------------------------------------
 
 UNMEASURABLE: tuple[tuple[str, str, str], ...] = (
-    (
-        "planning_depth",
-        "maximum dependency depth in the job graph",
-        "the workforce job store is not populated with a dependency graph in this "
-        "environment, so depth would be measured over an empty set",
-    ),
     (
         "verification_discipline",
         "fraction of prose state-claims that carry a guard",
@@ -1193,6 +1308,26 @@ def _probe_repo(repo: Path, *paths: str) -> None:
     run("add", *paths)
     run("-c", "user.email=probe@localhost", "-c", "user.name=probe",
         "commit", "-q", "-m", "probe")
+
+
+def _seed_job_store(path: Path, chains: list[list[str]]) -> None:
+    """Write a minimal fixture job store: each chain is a depends_on sequence.
+
+    Uses the real Store so the fixture exercises the same schema the dimension
+    reads -- a fixture that bypasses the schema would prove the fixture, not
+    the measurement.
+    """
+    from oddfellow.connector.schema import Job, TaskKind
+    from oddfellow.connector.store import Store
+
+    store = Store(path)
+    for chain in chains:
+        prev: str | None = None
+        for jid in chain:
+            store.create_job(Job(job_id=jid, kind=TaskKind.RESEARCH, title=f"fixture {jid}",
+                                 depends_on=(prev,) if prev else ()),
+                             actor="fixture")
+            prev = jid
 
 
 def _falsifier_probes(ctx: Context, measurements: Sequence[Measurement]) -> set[str]:
@@ -1337,6 +1472,23 @@ def _falsifier_probes(ctx: Context, measurements: Sequence[Measurement]) -> set[
         moved("tool_selection_accuracy", tool_selection_accuracy(ctx),
               tool_selection_accuracy(Context(repo_root=tool_repo, memory_dir=None)))
 
+                # 12. planning_depth -- a fixture store with a chain vs one without.
+        #     Both directions, and entirely in fixtures: the real environment has
+        #     no store file, so the real value is None and any fixture with jobs
+        #     differs from it -- but a flat fixture alone would leave the deeper
+        #     direction unproven.
+        flat_store = tmp / "flat.db"
+        deep_store = tmp / "deep.db"
+        _seed_job_store(flat_store, chains=[["a", "b"]])
+        _seed_job_store(deep_store, chains=[["a", "b", "c"]])
+        moved(
+            "planning_depth", planning_depth(ctx),
+            planning_depth(Context(repo_root=ctx.repo_root, memory_dir=None,
+                                   store_path=flat_store)),
+            planning_depth(Context(repo_root=ctx.repo_root, memory_dir=None,
+                                   store_path=deep_store)),
+        )
+
                 # 9. metacognitive_performance -- itself a number, so it must also be shown
         #    to move. Strip every demonstrated flag and confirm the value falls;
         #    set them all and confirm it rises. At least one must differ from the
@@ -1371,6 +1523,7 @@ def build_profile(ctx: Context) -> list[Measurement]:
         identity_continuity(ctx),
         goal_continuity(ctx),
         tool_selection_accuracy(ctx),
+        planning_depth(ctx),
     ]
 
     # Reported as gaps, with the reason each is a gap. Never as 0.0 or 1.0.
