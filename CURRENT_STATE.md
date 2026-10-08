@@ -81,7 +81,7 @@ is an observation, and it needs a date and a re-check like any other.
 
 ---
 
-# ✅ LATEST CYCLE — 2026-10-08 00:00 UTC
+# ✅ LATEST CYCLE — 2026-10-08 04:00 UTC
 
 **This supersedes every contradicting line below it.**
 
@@ -128,7 +128,7 @@ phone acceptance against today" is currently false until it is restored.
 
 ## Read this first: the one thing that has not moved
 
-**Gate A is unchanged and is still the sole blocker.** Probed 2026-10-08 00:00 UTC:
+**Gate A is unchanged; the two owner-action items are Gate A and DB preservation (below).** Probed 2026-10-08 04:00 UTC:
 
 ```
 GET https://oddfellow-letta-backend-v0206.onrender.com/livez
@@ -147,7 +147,7 @@ of the live one caused a 20-hour blind spot on 2026-10-01.
 
 ## Where the branch actually is
 
-- `letta/combined-single-service-v0.20.4` @ **`d222849`** (2026-10-07 23:45 UTC). **682 tests pass** (up from 638; parallel sessions added the Cognitive Capability Profile, `oddfellow/cognition/`, a durable open-goal register `GOALS.json`, and the tool-invocation audit corpus).
+- `letta/combined-single-service-v0.20.4` @ **`ef176c2`** (2026-10-08 03:04 UTC). **682 tests pass** (up from 638; parallel sessions added the Cognitive Capability Profile, `oddfellow/cognition/`, a durable open-goal register `GOALS.json`, and the tool-invocation audit corpus).
 
 ## ⚠️ NEW P0 — Render DB `begg-ai-core-db` expires 2026-10-27T23:21:01Z
 
@@ -400,7 +400,7 @@ The running commit is `11b3901`, verified to be a real ancestor of the canonical
 
 ## Read these for detail
 
-- `oddfellow/HANDOFF-UNIVERSAL-2026-10-08-0000Z.md` — **newest handoff** (2026-10-08 00:00 UTC).
+- `oddfellow/HANDOFF-UNIVERSAL-2026-10-08-0400Z.md` — **newest handoff** (2026-10-08 04:00 UTC).
   ⚠️ Superseding the 21:07 entry: **workforce Phase 2 is now committed** — synthetic heads
   cannot create a job without naming its origin, and the origin rule is enforced at
   construction rather than documented. Fixed a real persistence bug in the same pass: the
