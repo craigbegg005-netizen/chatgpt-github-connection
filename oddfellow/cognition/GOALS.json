@@ -123,12 +123,12 @@
   {
    "id": "cognition-verification-discipline",
    "statement": "Make verification_discipline measurable by building a prose-claim extractor reliable enough to report a number.",
-   "status": "open",
+   "status": "done",
    "opened": "2026-10-07",
    "blocked_on": null,
-   "next_action": "Build and falsify a claim extractor against the known false controls in the ledger; until it can be shown to catch a planted claim, this stays unmeasurable rather than guessed.",
-   "last_advanced": "2026-10-07T21:50:00Z",
-   "evidence": "Named as an unmeasurable dimension with a stated reason in the first profile baseline. A wrong figure here would be worse than none.",
+   "next_action": "None. The instrument reads CURRENT_STATE.md live each profile run; guard constants update per sweep.",
+   "last_advanced": "2026-10-08T20:01:00Z",
+   "evidence": "verification_discipline() in profile.py: conservative 4-shape extractor over CURRENT_STATE.md; a claim is guarded when a test file contains its value (word-boundary for numbers, 6-char floor for non-numerics so \"true\" stays unguardable). Falsifier probe plants an unguarded claim (fraction falls) and a guarded one (rises) \u2014 the goal's acceptance bar. First live measurement: 0.286 \u2192 instrument found the test-count claim unguarded \u2192 test_state_claims.py guard added (prose==constant==real collection count; caught its own off-by-self immediately: 699 vs 700) \u2192 live value 0.429. Remaining unguarded: 2 dated commit refs (historical records, guarding them would be wrong) + 2 readiness=false (unguardable by construction, documented).",
    "owner_action_required": false
   },
   {

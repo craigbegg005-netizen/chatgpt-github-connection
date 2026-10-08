@@ -1259,17 +1259,127 @@ def planning_depth(ctx: Context) -> Measurement:
     )
 
 
+# Patterns that extract a *checkable value* from a prose state-claim. Each
+# pattern must capture the value itself, because the guard test is "does any
+# test file contain this value" -- a pattern that matches a claim without
+# capturing its value cannot be guarded, only counted.
+_CLAIM_PATTERNS: tuple[tuple[str, str], ...] = (
+    ("test_count", r"(\d[\d,]*)\s+tests?\s+pass"),
+    ("commit_ref", r"\*\*`([0-9a-f]{7,40})`\*\*"),
+    ("version", r"[Vv]ersion[:\s\"]+([0-9]+\.[0-9]+\.[0-9]+)"),
+    ("readiness", r"ready:(true|false)"),
+)
+
+
+def extract_state_claims(text: str) -> list[tuple[str, str]]:
+    """Pull (kind, value) pairs out of prose. Conservative by design:
+    a pattern that might match a non-claim is a pattern that invents
+    unguarded claims, and a false positive here reads as a false defect.
+    """
+    claims: list[tuple[str, str]] = []
+    for kind, pattern in _CLAIM_PATTERNS:
+        for m in re.finditer(pattern, text):
+            claims.append((kind, m.group(1)))
+    return claims
+
+
+def claim_is_guarded(value: str, tests_dir: Path) -> bool:
+    """A claim is guarded when some test file contains its value -- meaning
+    the suite fails if the claim goes stale. Values too short to be
+    distinctive (a bare "true") are unguardable by construction and are
+    reported as such rather than matched against every 'true' in the suite.
+    """
+    if not tests_dir.is_dir():
+        return False
+    if value.replace(",", "").isdigit():
+        # A 3+ digit number matched on word boundaries is deliberate far more
+        # often than coincidence; a test count is the claim this rule exists for.
+        needle = value.replace(",", "")
+        if len(needle) < 3:
+            return False
+        pattern = re.compile(r"(?<![0-9])" + re.escape(needle) + r"(?![0-9])")
+    else:
+        # A short non-numeric value ('true', 'false') matches everything and
+        # therefore guards nothing.
+        if len(value) < 6:
+            return False
+        pattern = re.compile(re.escape(value))
+    for test_file in sorted(tests_dir.rglob("test_*.py")):
+        try:
+            body = test_file.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        if pattern.search(body):
+            return True
+    return False
+
+
+def verification_discipline(ctx: Context) -> Measurement:
+    """Which fraction of prose state-claims in the entry point carry a guard?
+
+    Scope is deliberately the entry point alone (CURRENT_STATE.md): it is the
+    document whose stale claims have repeatedly misdirected sessions, and
+    scanning every handoff would count historical records as live claims.
+
+    A claim is guarded when a test file contains its value -- the suite is
+    then the thing that notices when the claim goes stale. The extractor is
+    shown to work by a falsifier probe that plants a claim, not by assertion.
+    """
+    entry = ctx.repo_root / "CURRENT_STATE.md"
+    if not entry.exists():
+        return Measurement(
+            dimension="verification_discipline", value=None,
+            unit="fraction of extracted state-claims carrying a guard",
+            confidence=Confidence.ARTIFACT,
+            can_fail="write a state-claim no test asserts; the fraction falls",
+            reason="no entry-point document found, so there are no claims to audit",
+        )
+
+    claims = extract_state_claims(_read(entry))
+    if not claims:
+        return Measurement(
+            dimension="verification_discipline", value=None,
+            unit="fraction of extracted state-claims carrying a guard",
+            confidence=Confidence.ARTIFACT,
+            can_fail="write a state-claim no test asserts; the fraction falls",
+            reason="the extractor found no state-claims, so there is nothing to fraction",
+        )
+
+    tests_dir = ctx.repo_root / "oddfellow" / "tests"
+    guarded: list[str] = []
+    unguarded: list[str] = []
+    for kind, value in claims:
+        (guarded if claim_is_guarded(value, tests_dir) else unguarded).append(
+            f"{kind}={value}")
+
+    value_out = round(len(guarded) / len(claims), 3)
+    return Measurement(
+        dimension="verification_discipline",
+        value=value_out,
+        unit="fraction of extracted state-claims carrying a guard",
+        confidence=Confidence.ARTIFACT,
+        can_fail="write a state-claim no test asserts; the fraction falls",
+        evidence=(
+            f"{len(claims)} state-claims extracted from CURRENT_STATE.md",
+            f"{len(guarded)} guarded (a test file contains the value)",
+            *(f"UNGUARDED: {c}" for c in unguarded[:8]),
+            "limitation: the extractor sees four claim shapes only. A claim in a "
+            "shape it does not know is neither counted nor guarded -- the fraction "
+            "is over the claims it can see, and it says so.",
+        ),
+        reason=(
+            f"{len(guarded)}/{len(claims)} extracted claims would be caught by the "
+            "suite if they went stale. An unguarded claim is a future misdirection: "
+            "this project has repeatedly been burned by prose that outlived its truth."
+        ),
+    )
+
+
 # --------------------------------------------------------------------------
 # Dimensions with no evidence source yet -- reported, never scored
 # --------------------------------------------------------------------------
 
 UNMEASURABLE: tuple[tuple[str, str, str], ...] = (
-    (
-        "verification_discipline",
-        "fraction of prose state-claims that carry a guard",
-        "extracting prose claims automatically is not reliable enough to report a "
-        "number; a wrong figure here would be worse than none",
-    ),
 )
 
 
@@ -1489,6 +1599,28 @@ def _falsifier_probes(ctx: Context, measurements: Sequence[Measurement]) -> set[
                                    store_path=deep_store)),
         )
 
+                # 13. verification_discipline -- a planted unguarded claim must lower the
+        #     fraction, and a planted guarded one must raise it. Both fixtures
+        #     live in throwaway repos; the probe is the acceptance bar the goal
+        #     set ("shown to catch a planted claim, or stay unmeasurable").
+        vd_guarded = tmp / "vd_guarded"
+        (vd_guarded / "oddfellow" / "tests").mkdir(parents=True)
+        (vd_guarded / "CURRENT_STATE.md").write_text(
+            "branch at **`abc1234`**\n\n777 tests pass\n", encoding="utf-8")
+        (vd_guarded / "oddfellow" / "tests" / "test_guard.py").write_text(
+            "EXPECTED = 'abc1234'\nCOUNT = 777\n", encoding="utf-8")
+        vd_planted = tmp / "vd_planted"
+        (vd_planted / "oddfellow" / "tests").mkdir(parents=True)
+        (vd_planted / "CURRENT_STATE.md").write_text(
+            "branch at **`abc1234`**\n\n999 tests pass\n", encoding="utf-8")
+        (vd_planted / "oddfellow" / "tests" / "test_guard.py").write_text(
+            "EXPECTED = 'abc1234'\nCOUNT = 777\n", encoding="utf-8")
+        moved(
+            "verification_discipline", verification_discipline(ctx),
+            verification_discipline(Context(repo_root=vd_guarded, memory_dir=None)),
+            verification_discipline(Context(repo_root=vd_planted, memory_dir=None)),
+        )
+
                 # 9. metacognitive_performance -- itself a number, so it must also be shown
         #    to move. Strip every demonstrated flag and confirm the value falls;
         #    set them all and confirm it rises. At least one must differ from the
@@ -1524,6 +1656,7 @@ def build_profile(ctx: Context) -> list[Measurement]:
         goal_continuity(ctx),
         tool_selection_accuracy(ctx),
         planning_depth(ctx),
+        verification_discipline(ctx),
     ]
 
     # Reported as gaps, with the reason each is a gap. Never as 0.0 or 1.0.

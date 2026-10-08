@@ -685,3 +685,83 @@ class TestPlanningDepth:
         _seed_job_store(tmp_path / "lim.db", chains=[["a", "b"]])
         m = planning_depth(_pctx(tmp_path / "lim.db"))
         assert any("limitation" in e for e in m.evidence)
+
+
+# --------------------------------------------------------------------------
+# verification_discipline -- fraction of prose state-claims carrying a guard
+# --------------------------------------------------------------------------
+
+from oddfellow.cognition.profile import (
+    claim_is_guarded, extract_state_claims, verification_discipline,
+)
+
+
+def _vd_repo(root, state_text, test_text=""):
+    (root / "oddfellow" / "tests").mkdir(parents=True)
+    (root / "CURRENT_STATE.md").write_text(state_text, encoding="utf-8")
+    if test_text:
+        (root / "oddfellow" / "tests" / "test_guard.py").write_text(
+            test_text, encoding="utf-8")
+    return root
+
+
+class TestClaimExtractor:
+    def test_extracts_the_four_shapes(self):
+        claims = extract_state_claims(
+            "branch at **`abc1234`** and 777 tests pass; "
+            'version "0.20.6"; ready:false'
+        )
+        kinds = {k for k, _ in claims}
+        assert {"commit_ref", "test_count", "version", "readiness"} <= kinds
+
+    def test_extracts_nothing_from_prose_without_claims(self):
+        assert extract_state_claims("a narrative with no checkable values") == []
+
+    def test_short_values_are_unguardable_by_construction(self, tmp_path):
+        tests = tmp_path / "tests"
+        tests.mkdir()
+        (tests / "test_x.py").write_text("x = True\n", encoding="utf-8")
+        assert claim_is_guarded("true", tests) is False, (
+            "a bare 'true' matches everything and therefore guards nothing"
+        )
+
+
+class TestVerificationDiscipline:
+    def test_no_entry_point_is_unmeasurable(self, tmp_path):
+        m = verification_discipline(Context(repo_root=tmp_path, memory_dir=None))
+        assert m.value is None
+
+    def test_all_guarded_scores_one(self, tmp_path):
+        repo = _vd_repo(tmp_path,
+                        "branch at **`abc1234`**\n\n777 tests pass\n",
+                        "EXPECTED = 'abc1234'\nCOUNT = 777\n")
+        m = verification_discipline(Context(repo_root=repo, memory_dir=None))
+        assert m.value == 1.0
+
+    def test_planted_unguarded_claim_lowers_the_fraction(self, tmp_path):
+        repo = _vd_repo(tmp_path,
+                        "branch at **`abc1234`**\n\n999 tests pass\n",
+                        "EXPECTED = 'abc1234'\nCOUNT = 777\n")
+        m = verification_discipline(Context(repo_root=repo, memory_dir=None))
+        assert m.value is not None and m.value < 1.0
+        assert any("999" in e for e in m.evidence), (
+            "the planted claim must be NAMED in evidence, not just lower a number"
+        )
+
+    def test_falsifier_guarding_the_claim_raises_the_fraction(self, tmp_path):
+        repo = tmp_path
+        _vd_repo(repo, "branch at **`abc1234`**\n\n999 tests pass\n",
+                 "EXPECTED = 'abc1234'\n")
+        before = verification_discipline(Context(repo_root=repo, memory_dir=None)).value
+        guard = repo / "oddfellow" / "tests" / "test_guard.py"
+        guard.write_text("EXPECTED = 'abc1234'\nCOUNT = 999\n", encoding="utf-8")
+        after = verification_discipline(Context(repo_root=repo, memory_dir=None)).value
+        assert after > before, (
+            "a measurement that does not rise when a claim gains a guard is not "
+            "measuring guardedness"
+        )
+
+    def test_extractor_blindness_is_stated(self, tmp_path):
+        repo = _vd_repo(tmp_path, "777 tests pass\n", "COUNT = 777\n")
+        m = verification_discipline(Context(repo_root=repo, memory_dir=None))
+        assert any("limitation" in e for e in m.evidence)
