@@ -209,13 +209,29 @@ find_url() {
   #
   # Newest-first matters for speed: the live tunnel is almost always the most
   # recent one, and each dead candidate costs a full curl timeout.
-  local f u
+  local f u first i
   for f in "$TUNNEL_LOG" /tmp/oddfellow-rehearsal-tunnel.log /tmp/tunnel3.log /tmp/tunnel2.log /tmp/tunnel.log; do
     [ -f "$f" ] || continue
+    first=1
     for u in $(grep -oE 'https://[a-z0-9-]+\.trycloudflare\.com' "$f" 2>/dev/null \
         | awk '!seen[$0]++' | tail -6 \
         | awk '{a[NR]=$0} END{for(i=NR;i>0;i--) print a[i]}'); do
-      if curl -fsS --max-time 5 "$u/livez" >/dev/null 2>&1; then echo "$u"; return 0; fi
+      if [ -n "$first" ]; then
+        # The newest candidate is the one almost always live, and the one most
+        # likely to have just been published. A quick-tunnel hostname takes tens
+        # of seconds to resolve at all, so a single 5s probe reads a healthy
+        # rehearsal as DOWN -- a false negative that has twice made `status`
+        # print "none answering" for a tunnel that answered moments later, and
+        # once led to an unnecessary `up` (and a duplicate tunnel).
+        # Retry only the newest candidate; older ones are cheap to reject.
+        first=
+        for i in 1 2 3 4 5 6; do
+          if curl -fsS --max-time 5 "$u/livez" >/dev/null 2>&1; then echo "$u"; return 0; fi
+          sleep 5
+        done
+      else
+        if curl -fsS --max-time 5 "$u/livez" >/dev/null 2>&1; then echo "$u"; return 0; fi
+      fi
     done
   done
   return 1
