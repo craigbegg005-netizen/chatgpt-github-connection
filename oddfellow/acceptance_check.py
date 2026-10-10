@@ -42,6 +42,10 @@ import urllib.error
 import urllib.request
 
 TIMEOUT = 60
+# A fresh quick-tunnel hostname can fail its first request while DNS settles.
+# Bounded so a genuinely dead service still reports as dead.
+TRANSPORT_RETRIES = 4
+TRANSPORT_BACKOFF = 6
 
 # The backend revision this harness expects to find. Bump it when the backend is
 # bumped: the whole point of reading /openapi.json is to answer "which build is
@@ -125,6 +129,25 @@ def call(url, method="GET", body=None, token=None, timeout=TIMEOUT):
             status = exc.code
             break
         except Exception as exc:  # network, DNS, timeout
+            # A freshly published quick-tunnel hostname does not resolve cleanly
+            # for the first seconds of its life, so the first request can fail
+            # with a transport error while the URL answers moments later -- the
+            # same shape as the 429 above, and for the same reason: it is a
+            # property of the platform and the moment, not of the build under
+            # test, so reporting a failure here is a false negative.
+            #
+            # Observed 2026-10-10: `reachable` failed with Errno 97 seconds
+            # after `up`, while curl to the same URL returned 200 immediately
+            # before and five consecutive harness runs passed minutes later.
+            # Bounded, so a genuinely dead service still reports as dead.
+            if attempt < TRANSPORT_RETRIES:
+                attempt += 1
+                print("  [ .. ] transport error from %s - retrying in %.0fs "
+                      "(attempt %d/%d): %s"
+                      % (url, TRANSPORT_BACKOFF, attempt, TRANSPORT_RETRIES, exc),
+                      flush=True)
+                time.sleep(TRANSPORT_BACKOFF)
+                continue
             return None, "transport error: %s" % exc, time.time() - started
     try:
         return status, json.loads(raw), time.time() - started
