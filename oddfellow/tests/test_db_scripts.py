@@ -87,6 +87,9 @@ def _bindir(tmp_path):
     scripts = {
         "pg_dump": _stub(
             "pg_dump",
+            # The plain-SQL pass writes to stdout, so the stub must emit a
+            # pg_dump-shaped banner or the script's own header check fails.
+            'printf -- "--\\n-- PostgreSQL database dump\\n--\\n"\n'
             'for a in "$@"; do case "$a" in --file=*) '
             'printf \'PGDMP-stub-payload\' > "${a#--file=}" ;; esac; done',
         ),
@@ -158,6 +161,21 @@ def test_engine_still_connects_from_the_url(tmp_path):
     assert f"pgpass-content={FAKE_HOST}:5432:*:oddfellow:{FAKE_PASSWORD}" in log, (
         "the password did not reach the password file, so nothing was connected"
     )
+
+
+@pytest.mark.skipif(not os.path.isfile(ENGINE), reason="engine not in this checkout")
+def test_dump_writes_both_artifacts(tmp_path):
+    """The custom dump and the plain-SQL copy come from separate pg_dump runs, so
+    one existing says nothing about the other -- both are asserted."""
+    proc, _ = _run(tmp_path, ENGINE, ["dump"], {"ODDFELLOW_DB_URL": FAKE_URL})
+    assert proc.returncode == 0, f"dump failed:\n{proc.stdout}\n{proc.stderr}"
+
+    out = tmp_path / "out"
+    dumps = sorted(p.name for p in out.glob("*.dump"))
+    sqls = sorted(p.name for p in out.glob("*.sql.gz"))
+    assert len(dumps) == 1, f"expected one custom dump, found {dumps}"
+    assert len(sqls) == 1, f"expected one plain-SQL copy, found {sqls}"
+    assert sqls[0] == dumps[0] + ".sql.gz"
 
 
 @pytest.mark.skipif(not os.path.isfile(WRAPPER), reason="wrapper not in this checkout")

@@ -4,8 +4,8 @@ The verification_discipline instrument (oddfellow/cognition/profile.py) found
 these claims unguarded on 2026-10-08: prose asserting a current fact that no
 test would notice going stale. The most drift-prone is the test count, which has gone stale at least three
 times ("579" when it was 636, "636" when it was 666, "666" when it was 682).
-On 2026-10-11 the guard caught the fourth change at commit time: six new tests
-took the suite to 706 and this file failed until the constant and
+On 2026-10-11 the guard caught two changes at commit time -- six new tests took the
+suite to 706, and a seventh to 707 -- each time failing until the constant and
 CURRENT_STATE.md were updated together, which is the behaviour it exists for.
 
 RUN IT FROM THE REPO ROOT. The canonical invocation collects both test roots
@@ -38,7 +38,7 @@ other fails here.
 import re
 from pathlib import Path
 
-EXPECTED_TEST_COUNT = 706
+EXPECTED_TEST_COUNT = 707
 
 
 def _claimed_count() -> int:

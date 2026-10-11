@@ -9,7 +9,9 @@
 #   ./db_preserve.sh verify <file>   re-verify an existing dump
 #   ./db_preserve.sh restore-verify <file>
 #                                    restore into a throwaway database and
-#                                    compare row counts against the source
+#                                    compare row counts against the source;
+#                                    accepts either the custom dump or the
+#                                    plain-SQL .sql.gz copy
 #
 # THE CONNECTION STRING IS NEVER PASSED ON THE COMMAND LINE -- and as of
 # 2026-10-11 that sentence is true. It is read from a file (default
@@ -200,7 +202,7 @@ cmd_recon() {
 
 # ---------------------------------------------------------------- dump
 cmd_dump() {
-  local dump restore out
+  local dump restore out sql header
   dump="$(pg_bin pg_dump "$REQUIRED_PG_MAJOR")"
   restore="$(pg_bin pg_restore "$REQUIRED_PG_MAJOR")"
   [ "$(pg_major "$dump")" -ge "$REQUIRED_PG_MAJOR" ] || die "run './db_preserve.sh doctor' first"
@@ -217,7 +219,34 @@ cmd_dump() {
   "$dump" --format=custom --no-owner --no-privileges --file="$out"
 
   cmd_verify "$out"
+
+  # A second copy in plain SQL, gzipped.
+  #
+  # The custom format is right for restoring, but *reading* it needs a pg_restore
+  # at least as new as the pg_dump that wrote it -- the same version coupling this
+  # runbook exists to avoid, one step later. This is a preservation job: the file
+  # may be opened years from now, on a phone, with no matching tool. Plain SQL is
+  # readable by any PostgreSQL client, or by eye. gzip keeps it small.
+  sql="$out.sql.gz"
+  say "plain-SQL copy -- writing $sql"
+  if ! "$dump" --format=plain --no-owner --no-privileges | gzip -9 > "$sql"; then
+    die "the plain-SQL copy failed to write (the custom dump above is still valid)."
+  fi
+  if ! gzip -t "$sql" 2>/dev/null; then
+    die "the plain-SQL copy is not valid gzip."
+  fi
+  # `|| true` because head closing the pipe makes gzip exit 141 under pipefail.
+  header="$(gzip -dc "$sql" 2>/dev/null | head -n 20 || true)"
+  case "$header" in
+    *"PostgreSQL database dump"*)
+      ok "plain-SQL copy is valid gzip and starts like a pg_dump" ;;
+    *)
+      die "the plain-SQL copy does not start like a pg_dump output." ;;
+  esac
+  printf '  %s (%s bytes gzipped)\n' "$sql" "$(stat -c%s "$sql")"
+
   printf '\n  Dump written to: %s\n' "$out"
+  printf '  Plain-SQL copy:  %s\n' "$sql"
   printf '  Keep a second copy off this machine. Do NOT commit it to git.\n'
 }
 
@@ -300,9 +329,19 @@ cmd_restore_verify() {
   rm -f /tmp/rv.err
   ok "scratch database created (dropped automatically on exit)"
 
-  if ! "$restore" -d "$SCRATCH_DB" --no-owner --no-privileges "$f"; then
-    die "pg_restore failed -- the dump is readable but NOT restorable."
-  fi
+  # The plain-SQL copy is the long-term preservation artifact, so it gets the same
+  # check as the custom dump -- an artifact the verifier cannot verify is the same
+  # defect as an unguarded claim.
+  case "$f" in
+    *.sql.gz)
+      if ! gzip -dc "$f" | "$PSQL_BIN" -d "$SCRATCH_DB" -q -v ON_ERROR_STOP=1 >/dev/null; then
+        die "the plain-SQL copy did not restore -- it is readable but NOT usable."
+      fi ;;
+    *)
+      if ! "$restore" -d "$SCRATCH_DB" --no-owner --no-privileges "$f"; then
+        die "pg_restore failed -- the dump is readable but NOT restorable."
+      fi ;;
+  esac
   ok "restore completed"
 
   dst="$(table_counts "$PSQL_BIN" "$SCRATCH_DB")"

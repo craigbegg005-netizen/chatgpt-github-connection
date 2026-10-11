@@ -11,7 +11,9 @@ end-to-end against a real PostgreSQL 18 server before being written down.
 
 ## 1. The deadline, from Render's own documentation
 
-Verified 2026-10-07 against `render.com/docs/free` and the 2024-05-20 changelog:
+Verified 2026-10-07 against `render.com/docs/free` and the 2024-05-20 changelog, and
+**re-verified 2026-10-11** against the same page by a session that had not seen the original
+run — every row below still holds:
 
 | Fact | Detail |
 |---|---|
@@ -21,6 +23,7 @@ Verified 2026-10-07 against `render.com/docs/free` and the 2024-05-20 changelog:
 | After grace | Render deletes the database and all of its data |
 | Backups on free plan | **None of any kind.** No PITR, no logical exports |
 | Storage cap | 1 GB |
+| Databases per workspace | **One.** Only one Free Render Postgres can be active per workspace, so a fresh free database cannot be created *alongside* this one — it would have to replace it. Relevant to any plan that involves dumping into a new Render database. |
 
 **Two dates, and they are different:**
 
@@ -94,9 +97,15 @@ process argument list.
 
 ## 4. What is already done (no owner access needed)
 
-- **`oddfellow/db_preserve.sh`** — `doctor` / `recon` / `dump` / `verify`. Written and
-  tested end-to-end. It refuses to run with a `pg_dump` older than 18, and it will not
-  accept a dump that is empty or unparseable.
+- **`oddfellow/db_preserve.sh`** — `doctor` / `recon` / `dump` / `verify` /
+  `restore-verify`. Written and tested end-to-end. It refuses to run with a `pg_dump` older
+  than 18, and it will not accept a dump that is empty or unparseable.
+- **`dump` writes two artifacts, deliberately.** The custom-format `.dump` is the right thing
+  for restoring. The `.sql.gz` plain-SQL copy exists because *reading* a custom dump needs a
+  `pg_restore` at least as new as the `pg_dump` that wrote it — the same version coupling §3
+  is about, one step later. This is a preservation job: the file may be opened years from now,
+  on a phone, with no matching tool. Plain SQL is readable by any PostgreSQL client, or by eye.
+  Both are verified with `restore-verify`.
 - **PostgreSQL 18 client** — `./db_preserve.sh doctor` verifies it, and the script refuses
   to dump with a client older than 18. ⚠️ **This sandbox is ephemeral, so the client does
   not survive a restart.** Verified 2026-10-11: a fresh sandbox has only the Debian 15
@@ -239,6 +248,8 @@ Every line must pass. A `[ ]` that cannot fail is not a check.
   ⚠️ It needs **`CREATEDB`** on the connecting role. If Render's role does not have it the
   command says so and exits 1 rather than skipping silently — **record that the check could
   not run**; an unrun check is not a passed check.
+- [ ] `restore-verify` run on **both** artifacts — the `.dump` and the `.sql.gz`. They are
+  separate files made by separate `pg_dump` runs, so one passing says nothing about the other.
 - [ ] Second copy stored off Render, and off this sandbox
 - [ ] Dump **not** committed to git; no credential in any file that will be committed
 - [ ] Render allowlist returned to its locked state (no `0.0.0.0/0`)
