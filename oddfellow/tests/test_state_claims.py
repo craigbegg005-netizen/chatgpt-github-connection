@@ -2,9 +2,19 @@
 
 The verification_discipline instrument (oddfellow/cognition/profile.py) found
 these claims unguarded on 2026-10-08: prose asserting a current fact that no
-test would notice going stale. The most drift-prone is the test count, which
-has gone stale at least three times ("579" when it was 636, "636" when it was
-666, "666" when it was 682).
+test would notice going stale. The most drift-prone is the test count, which has gone stale at least three
+times ("579" when it was 636, "636" when it was 666, "666" when it was 682).
+On 2026-10-11 the guard caught the fourth change at commit time: six new tests
+took the suite to 706 and this file failed until the constant and
+CURRENT_STATE.md were updated together, which is the behaviour it exists for.
+
+RUN IT FROM THE REPO ROOT. The canonical invocation collects both test roots
+(`oddfellow/tests` and `oddfellow/connector/tests`) and totals ~706 items. A run
+scoped to `oddfellow/tests` alone collects ~529, which is under the 600-item
+threshold below -- so the binding assertion *skips* and a green result means
+nothing. That is the documented trade-off, not a bug, but it is a trap: on
+2026-10-11 a partial run made this guard look inert and the "700 tests pass"
+claim look fabricated. It was neither.
 
 The property guarded, in both directions:
 
@@ -28,7 +38,7 @@ other fails here.
 import re
 from pathlib import Path
 
-EXPECTED_TEST_COUNT = 700
+EXPECTED_TEST_COUNT = 706
 
 
 def _claimed_count() -> int:
