@@ -187,16 +187,32 @@ up() {
   [ -n "$url" ] || { tail -20 "$TUNNEL_LOG" 2>/dev/null; die "no tunnel URL appeared"; }
 
   say "Waiting for the public URL to answer"
-  local answered=""
-  for _ in $(seq 1 15); do
+  local answered="" i
+  # 60 x 3s ~= 3 minutes. A freshly published quick-tunnel hostname has been
+  # observed answering nothing for 2, 3 and 4 minutes before becoming reachable,
+  # and a failed lookup returns in ~17ms, so the old 15 x 2s budget expired in
+  # about 30 seconds and handed back a URL that had never answered.
+  for i in $(seq 1 60); do
     curl -fsS --max-time 6 "$url/livez" >/dev/null 2>&1 && { answered=1; break; }
-    sleep 2
+    sleep 3
   done
-  [ -n "$answered" ] || url="$(find_url || true)"
+  if [ -z "$answered" ]; then
+    url="$(find_url || true)"
+    [ -n "$url" ] && answered=1
+  fi
   [ -n "$url" ] || { tail -20 "$TUNNEL_LOG" 2>/dev/null; die "no tunnel URL answers /livez"; }
 
   say "REHEARSAL URL"
   echo "$url"
+  # Do not present an unverified URL as the live one. `up` used to print it either
+  # way, which is how a tunnel that answered nothing for minutes got reported as
+  # the rehearsal URL -- the printed URL is a claim, so say when it is unproven.
+  if [ -n "$answered" ]; then
+    echo "(verified: /livez answered)"
+  else
+    echo "(NOT YET VERIFIED: this URL has not answered /livez yet -- keep polling"
+    echo " it before running the harness or reporting it as live)"
+  fi
   echo
   echo "Owner token: the value of ODDFELLOW_OWNER_TOKEN. Paste it into the page's"
   echo "'Owner token' field. It is never printed here."
