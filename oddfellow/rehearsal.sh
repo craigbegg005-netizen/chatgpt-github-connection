@@ -225,7 +225,14 @@ find_url() {
         # once led to an unnecessary `up` (and a duplicate tunnel).
         # Retry only the newest candidate; older ones are cheap to reject.
         first=
-        for i in 1 2 3 4 5 6; do
+        # Budget raised from 6x5s (30s) on 2026-10-11 after two observed windows
+        # where a healthy tunnel answered nothing for 2 and 3 minutes. At 30s both
+        # would have been reported as "none answering" -- a false DOWN, which is
+        # worse than a slow answer because it triggers an unnecessary `up` and a
+        # duplicate tunnel. 24x5s = 2 minutes covers the shorter case; a 3-minute
+        # window can still outlast it, so this reduces the rate rather than
+        # eliminating it.
+        for i in $(seq 1 24); do
           if curl -fsS --max-time 5 "$u/livez" >/dev/null 2>&1; then echo "$u"; return 0; fi
           sleep 5
         done
