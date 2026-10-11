@@ -83,6 +83,13 @@ The same run proved the fix: `pg_dump` 18.6 against the same server produced a 1
 archive, `pg_restore --list` listed 7 TOC entries, and a full restore into a fresh
 database returned the original rows.
 
+**Re-verified 2026-10-11** in this sandbox against a locally installed PostgreSQL 18.6, by a
+session that had not seen the original run: `pg_dump` 15.19 exited 1 with
+`aborting because of server version mismatch` and left a **0-byte** file behind, exactly as
+described above. The whole path was then exercised end-to-end against that server — `recon`,
+`dump`, `verify`, and the new `restore-verify` — and the credential never appeared in a
+process argument list.
+
 ---
 
 ## 4. What is already done (no owner access needed)
@@ -141,7 +148,7 @@ Owner taps: **four.** No PC, no terminal on the phone, no credential in chat.
    never in shell history, never in `ps` output.
 4. **In this chat:** tell me it is in place. I reinstall the PostgreSQL 18 client if the
    sandbox has restarted (one command, zero cost — see §4), run `doctor`, then recon, the
-   dump, and verification, and report. Then you remove the `/32` rule.
+   dump, `verify`, and `restore-verify`, and report. Then you remove the `/32` rule.
 
    The credential can arrive either way: as that file, or as the agent secret
    `RENDER_DB_URL`, which `oddfellow/backup_render_db.sh` reads and hands to the same
@@ -225,7 +232,13 @@ Every line must pass. A `[ ]` that cannot fail is not a check.
 - [ ] Dump file **size > 0** — a 0-byte file is the version-mismatch signature, not an empty database
 - [ ] `pg_restore --list <file>` parses, and reports **more than 0 TOC entries**
 - [ ] Schema/table inventory captured (from `recon`, before the dump)
-- [ ] A **restore into a scratch database** succeeds and the row counts match `recon`
+- [ ] A **restore into a scratch database** succeeds and the row counts match `recon` —
+  now automated: `./db_preserve.sh restore-verify <dump>` creates a throwaway database,
+  restores into it, compares per-table row counts against the source, and drops it again.
+  This is the only check that proves the dump is *usable* rather than merely readable.
+  ⚠️ It needs **`CREATEDB`** on the connecting role. If Render's role does not have it the
+  command says so and exits 1 rather than skipping silently — **record that the check could
+  not run**; an unrun check is not a passed check.
 - [ ] Second copy stored off Render, and off this sandbox
 - [ ] Dump **not** committed to git; no credential in any file that will be committed
 - [ ] Render allowlist returned to its locked state (no `0.0.0.0/0`)

@@ -155,7 +155,7 @@ def test_engine_still_connects_from_the_url(tmp_path):
     assert "PGSSLMODE=require" in log, "sslmode was dropped in the split"
 
     assert "pgpass-mode=600" in log, "the password file must be mode 600"
-    assert f"pgpass-content={FAKE_HOST}:5432:bsi_core:oddfellow:{FAKE_PASSWORD}" in log, (
+    assert f"pgpass-content={FAKE_HOST}:5432:*:oddfellow:{FAKE_PASSWORD}" in log, (
         "the password did not reach the password file, so nothing was connected"
     )
 
@@ -214,7 +214,7 @@ def test_helper_escapes_pgpass_fields(tmp_path):
         timeout=30,
     )
     assert proc.returncode == 0, proc.stderr
-    assert out.read_text() == "h.example.com:5432:oddfellow:bob:p@ss\\:word/x\n"
+    assert out.read_text() == "h.example.com:5432:*:bob:p@ss\\:word/x\n"
     assert oct(out.stat().st_mode & 0o777) == oct(0o600)
     assert "PGSSLMODE=require" in proc.stdout
     assert "p@ss" not in proc.stdout, "the password must not be printed for the caller"

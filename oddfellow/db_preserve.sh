@@ -7,6 +7,9 @@
 #   ./db_preserve.sh recon           what is actually in there? (tiny output)
 #   ./db_preserve.sh dump            full custom-format dump + verification
 #   ./db_preserve.sh verify <file>   re-verify an existing dump
+#   ./db_preserve.sh restore-verify <file>
+#                                    restore into a throwaway database and
+#                                    compare row counts against the source
 #
 # THE CONNECTION STRING IS NEVER PASSED ON THE COMMAND LINE -- and as of
 # 2026-10-11 that sentence is true. It is read from a file (default
@@ -37,6 +40,13 @@ HELPER="$(dirname "$(readlink -f "$0")")/db_url_to_pgpass.py"
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 REQUIRED_PG_MAJOR=18
 PGPASS_TMP=""
+SCRATCH_DB=""
+PSQL_BIN=""
+
+# One line per base table in the public schema, "name=rows". The only check that
+# proves a dump is *usable* rather than merely readable is comparing these against
+# a restored copy.
+COUNTS_SQL="SELECT table_name || '=' || COALESCE((xpath('/row/c/text()', query_to_xml(format('SELECT count(*) AS c FROM %I.%I', table_schema, table_name), false, true, '')))[1]::text, '?') FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE' ORDER BY table_name;"
 
 say()  { printf '\n\033[1m%s\033[0m\n' "$*"; }
 ok()   { printf '  \033[32m[PASS]\033[0m %s\n' "$*"; }
@@ -44,8 +54,16 @@ bad()  { printf '  \033[31m[FAIL]\033[0m %s\n' "$*"; }
 warn() { printf '  \033[33m[WARN]\033[0m %s\n' "$*"; }
 die()  { printf '\n\033[31mERROR:\033[0m %s\n' "$*" >&2; exit 1; }
 
-# The password file exists only for the life of this process.
-cleanup() { [ -n "$PGPASS_TMP" ] && rm -f "$PGPASS_TMP"; return 0; }
+# The password file and any scratch database exist only for the life of this
+# process. A scratch database left behind is worse than none: it looks like real
+# data to the next `recon`.
+cleanup() {
+  if [ -n "$SCRATCH_DB" ] && [ -n "$PSQL_BIN" ]; then
+    "$PSQL_BIN" -q -c "DROP DATABASE IF EXISTS \"$SCRATCH_DB\"" >/dev/null 2>&1 || true
+  fi
+  [ -n "$PGPASS_TMP" ] && rm -f "$PGPASS_TMP"
+  return 0
+}
 trap cleanup EXIT
 
 # Resolve the newest pg_dump/pg_restore/psql available, preferring a version
@@ -238,10 +256,69 @@ cmd_verify() {
   ok "verify: dump is well-formed and non-empty"
 }
 
+# ---------------------------------------------------------- restore-verify
+# The strongest check, and the one the runbook's §6 checklist asks for: restore
+# the dump into a throwaway database and compare row counts against the source.
+# `verify` proves the dump is readable; only this proves it is *usable*.
+table_counts() {
+  local psql_bin="$1" db="${2:-}"
+  if [ -n "$db" ]; then
+    "$psql_bin" -d "$db" -tAc "$COUNTS_SQL"
+  else
+    "$psql_bin" -tAc "$COUNTS_SQL"
+  fi
+}
+
+cmd_restore_verify() {
+  local f="${1:-}" dump restore src dst
+  [ -n "$f" ] || die "usage: ./db_preserve.sh restore-verify <dump>"
+  [ -f "$f" ] || die "no such file: $f"
+  dump="$(pg_bin pg_dump "$REQUIRED_PG_MAJOR")"
+  restore="$(pg_bin pg_restore "$REQUIRED_PG_MAJOR")"
+  PSQL_BIN="$(pg_bin psql "$REQUIRED_PG_MAJOR")"
+  [ "$(pg_major "$dump")" -ge "$REQUIRED_PG_MAJOR" ] || die "run './db_preserve.sh doctor' first"
+  connect_env
+
+  say "restore-verify -- $f"
+  src="$(table_counts "$PSQL_BIN")"
+  printf '  source row counts:\n'
+  printf '%s\n' "${src:-(no base tables in public)}" | sed 's/^/    /'
+
+  SCRATCH_DB="oddfellow_restore_probe_$$"
+  # The scratch database must be owned by the role doing the restore. Since
+  # PostgreSQL 15 the public schema no longer grants CREATE to PUBLIC, so a
+  # restore into a database owned by another role fails with
+  # "permission denied for schema public" -- verified 2026-10-11 against 18.6.
+  if ! "$PSQL_BIN" -v ON_ERROR_STOP=1 -q -c "CREATE DATABASE \"$SCRATCH_DB\"" 2>/tmp/rv.err; then
+    sed -E 's#(postgres(ql)?://)[^@]*@#\1<redacted>@#g' /tmp/rv.err >&2
+    rm -f /tmp/rv.err
+    SCRATCH_DB=""
+    die "could not create a scratch database -- the restoring role needs CREATEDB.
+   If it does not have it, this check cannot run here. Say so; do not skip it
+   silently, because an unrun check is not a passed check."
+  fi
+  rm -f /tmp/rv.err
+  ok "scratch database created (dropped automatically on exit)"
+
+  if ! "$restore" -d "$SCRATCH_DB" --no-owner --no-privileges "$f"; then
+    die "pg_restore failed -- the dump is readable but NOT restorable."
+  fi
+  ok "restore completed"
+
+  dst="$(table_counts "$PSQL_BIN" "$SCRATCH_DB")"
+  if [ "$src" != "$dst" ]; then
+    printf '\n  source:\n%s\n\n  restored:\n%s\n' "$src" "$dst" >&2
+    die "row counts differ between the source and the restored copy."
+  fi
+  ok "row counts match the source exactly"
+  ok "restore-verify: the dump is a usable backup, not just a readable file"
+}
+
 case "${1:-}" in
   doctor) cmd_doctor ;;
   recon)  cmd_recon ;;
   dump)   cmd_dump ;;
   verify) shift; cmd_verify "${1:-}" ;;
-  *) printf 'usage: %s {doctor|recon|dump|verify <file>}\n' "$0"; exit 2 ;;
+  restore-verify) shift; cmd_restore_verify "${1:-}" ;;
+  *) printf 'usage: %s {doctor|recon|dump|verify <file>|restore-verify <file>}\n' "$0"; exit 2 ;;
 esac

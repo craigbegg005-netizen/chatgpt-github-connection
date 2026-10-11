@@ -106,7 +106,12 @@ def main(argv: list[str]) -> int:
         )
         return 2
 
-    line = ":".join(_pgpass_field(x) for x in (host, port_s, database, user, password)) + "\n"
+    # The database field is a wildcard. Writing the specific database would make
+    # the entry match only that one, and `restore-verify` connects to a scratch
+    # database -- found 2026-10-11, when pg_restore prompted for a password
+    # because no entry matched. PGDATABASE still selects which database is used by
+    # default; this only widens which databases the same host and user may reach.
+    line = ":".join(_pgpass_field(x) for x in (host, port_s, "*", user, password)) + "\n"
 
     # Create at 0600 in the same call that writes it, so there is never a window
     # in which the password file exists with looser permissions.
