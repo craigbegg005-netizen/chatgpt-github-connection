@@ -131,12 +131,16 @@ cmd_doctor() {
     bad "pg_dump major $dver < $REQUIRED_PG_MAJOR -- it WILL abort and leave a 0-byte file"
     printf '\n  Fix (Debian/Ubuntu, zero cost):\n'
     printf '    curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \\\n'
-    printf '      | gpg --dearmor -o /usr/share/keyrings/pgdg.gpg\n'
-    printf '    chmod 644 /usr/share/keyrings/pgdg.gpg   # 600 makes apt reject it\n'
-    printf '    echo "deb [signed-by=/usr/share/keyrings/pgdg.gpg] \\\n'
+    printf '      -o /usr/share/keyrings/pgdg.asc\n'
+    printf '    chmod 644 /usr/share/keyrings/pgdg.asc   # apt ignores a key it cannot read\n'
+    printf '    echo "deb [signed-by=/usr/share/keyrings/pgdg.asc] \\\n'
     printf '      http://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" \\\n'
     printf '      > /etc/apt/sources.list.d/pgdg.list\n'
     printf '    apt-get update && apt-get install -y postgresql-client-%s\n' "$REQUIRED_PG_MAJOR"
+    printf '\n  The key is used as-is (armored). `gpg --dearmor` is the usual advice, but\n'
+    printf '  gpg is NOT installed in a fresh sandbox -- verified 2026-10-11, where that\n'
+    printf '  form failed at the first step with "gpg: command not found". apt accepts\n'
+    printf '  the armored key directly, so this needs no extra package.\n'
     return 1
   fi
 

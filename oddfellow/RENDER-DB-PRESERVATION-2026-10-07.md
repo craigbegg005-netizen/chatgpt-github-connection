@@ -90,8 +90,22 @@ database returned the original rows.
 - **`oddfellow/db_preserve.sh`** — `doctor` / `recon` / `dump` / `verify`. Written and
   tested end-to-end. It refuses to run with a `pg_dump` older than 18, and it will not
   accept a dump that is empty or unparseable.
-- **PostgreSQL 18 client installed and verified** in this sandbox
-  (`/usr/lib/postgresql/18/bin/pg_dump`, 18.6).
+- **PostgreSQL 18 client** — `./db_preserve.sh doctor` verifies it, and the script refuses
+  to dump with a client older than 18. ⚠️ **This sandbox is ephemeral, so the client does
+  not survive a restart.** Verified 2026-10-11: a fresh sandbox has only the Debian 15
+  client, so Path A fails at step one until it is reinstalled. The reinstall is one
+  zero-cost command — and **`gpg` is not installed either**, so `gpg --dearmor` (the usual
+  advice, and what this section used to print) fails at the first step. Use the armored key
+  as-is; apt accepts it directly:
+  ```bash
+  curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc -o /usr/share/keyrings/pgdg.asc
+  chmod 644 /usr/share/keyrings/pgdg.asc   # apt ignores a key it cannot read
+  echo "deb [signed-by=/usr/share/keyrings/pgdg.asc] http://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" \
+    > /etc/apt/sources.list.d/pgdg.list
+  apt-get update && apt-get install -y postgresql-client-18
+  ```
+  This exact sequence was run on 2026-10-11 and produced `pg_dump 18.6`; `doctor` then
+  passed. `db_preserve.sh doctor` prints the same commands when the client is too old.
 - **Dependency map — negative result, and the negative result is the finding.** There is
   **no** `DATABASE_URL`, `psycopg`, `asyncpg`, or `SQLAlchemy` anywhere in the canonical
   repository, and no `.sql`, schema, migration, or seed file. Nothing in this repo
@@ -125,8 +139,14 @@ Owner taps: **four.** No PC, no terminal on the phone, no credential in chat.
    ```
    The credential now exists only on the machine that will use it. It is never in chat,
    never in shell history, never in `ps` output.
-4. **In this chat:** tell me it is in place. I run recon, then the dump, then verification,
-   and report. Then you remove the `/32` rule.
+4. **In this chat:** tell me it is in place. I reinstall the PostgreSQL 18 client if the
+   sandbox has restarted (one command, zero cost — see §4), run `doctor`, then recon, the
+   dump, and verification, and report. Then you remove the `/32` rule.
+
+   The credential can arrive either way: as that file, or as the agent secret
+   `RENDER_DB_URL`, which `oddfellow/backup_render_db.sh` reads and hands to the same
+   engine. Both work; the file route needs no vault entry, the secret route needs no
+   terminal.
 
 **Why this is safe:** the credential reaches exactly one machine, which is the machine
 that needs it, by a path that does not include any chat transcript or repository.
@@ -154,6 +174,12 @@ between networks, so the allowlist entry is short-lived.
    ls -l ~/begg-ai-core-db.dump     # must be > 0
    pg_restore --list ~/begg-ai-core-db.dump | head
    ```
+   Note: `"$DBURL"` here sits in the process's argument list, which `ps` can read. On a
+   single-user phone that is acceptable, and it is deliberately *not* what the sandbox
+   scripts do — they split the URI so the password reaches only a mode-600 password file.
+   If you want the same here: `read -rs DBURL` still works, but `pg_dump` is then called
+   with no URL argument and `PGHOST`/`PGUSER`/`PGDATABASE`/`PGPASSWORD` exported instead.
+
 6. Move the file off the phone (`termux-setup-storage`, then copy to shared storage), or
    leave it and tell me the path.
 7. Remove the allowlist rule.
