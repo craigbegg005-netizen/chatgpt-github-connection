@@ -87,11 +87,18 @@ start it well before any deadline.
   - the **Principal Investigator must be legally employed at least 20 hours a week** by the
     applicant company — **no advanced degree required** — and commit **≥1 month (173 hours) per
     six months** of project duration.
-- ⚠️ **One nuance to resolve, not a correction.** The Get Started page says *"We offer multiple
-  submission deadlines, but proposals can be submitted anytime."* That sits alongside the dated
-  deadlines above and I have not reconciled the two. The dated list comes from the solicitation,
-  which is the more specific source — but do not treat "the deadline is March 4" as settled without
-  re-reading the solicitation.
+- ✅ **The deadline nuance is resolved — the dated list stands.** The Get Started page says *"We
+  offer multiple submission deadlines, but proposals can be submitted anytime"*, which reads as
+  rolling submission. It is not. NSF's Full Proposal page states the deadlines as dated events —
+  *"Proposal submission is due by 5:00 PM submitter's time on the specified due date"* — and the
+  solicitation's Due Dates section lists the same four. **The "anytime" phrasing is loose copy; the
+  dates are the rule.** So the timing plan above stands: aim at **March 4 2027**.
+- ✅ **Registration is free, required, and has long lead times — start it before anything else.**
+  From the same page: **SAM.gov** (up to **3 weeks**; NSF notes SAM is *currently* experiencing
+  delays issuing UEIs) → **Research.gov** (up to **48 hours**) → **SBIR Company Registry** (SBA,
+  which yields the SBC ID needed in the Research.gov application). *"You MUST have completed your
+  SAM registration BEFORE you can begin entering your proposal in Research.gov."* SAM requires the
+  **bank account** the funds would be deposited into, and must be renewed annually.
 
 **Best-fit framing for Oddfellow (a proposal, not a claim):** verification-first, provider-independent synthetic-AI orchestration for reliable low-resource autonomous workflows — model routing, cost optimisation, verification architecture, persistent agent memory, fail-closed execution, provenance, safe external actions.
 

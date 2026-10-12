@@ -164,7 +164,13 @@ technical and/or commercial efforts discussed in this Project Pitch."*
    **required step 1**, before the pitch itself — it is the "project pitch fit assessment". Free and
    online. Added 2026-10-12; the canonical file did not record it, so nothing had done it.
 2. `[OWNER]` Sections 3 and 4, from the prompts above.
-3. `[VERIFIED 2026-10-12]` The four section caps were re-checked against nsf.gov and are unchanged.
-   Rule 5 still applies to the **deadlines**: re-read the solicitation before relying on a date.
-4. Confirm the entity question (§2c) is resolved, since SAM.gov registration is required before
-   submission and is not instant.
+3. `[VERIFIED 2026-10-12]` The four section caps were re-checked against nsf.gov and are unchanged,
+   and the dated deadlines are confirmed as **dated, not rolling** — the plan stands: aim at
+   **March 4 2027**.
+4. **Start the free registrations early — they are the long pole, not the writing.** `[VERIFIED]`
+   SAM.gov takes up to **3 weeks** (NSF notes current delays issuing UEIs), Research.gov up to
+   48 hours, then the SBA's SBIR Company Registry for the SBC ID. SAM must be complete before any
+   proposal entry begins, and it needs the **bank account** the funds would go to. `[OWNER]` — that
+   account is Craig's.
+5. Confirm the entity question (§2c) is resolved, since the registrations are tied to the legal
+   entity and SAM is not instant.
