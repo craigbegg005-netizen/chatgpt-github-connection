@@ -104,17 +104,22 @@ mechanically checkable properties and identify where model judgement remains irr
 
 *DRAFT — NOT WRITTEN. 0 of 1,750 characters.*
 
-**Deliberately left blank.** Every sentence in this section would be a market claim, and the
-lane's hard rule 4 is that a search hit is a lead, not a finding. Unsourced market figures in a
-federal pitch are the most quotable kind of fabrication.
+**Deliberately left blank — but the requirement is narrower than I first assumed, and the
+correction matters.** `[VERIFIED]` NSF's own wording (`seedfund.nsf.gov/project-pitch`, checked
+2026-10-12): *"Describe the customer profile and pain point(s) that will be the near-term
+commercial focus related to this technical project."*
 
-What this section needs, and who can supply it:
+**It asks for a customer profile and a pain point, not market sizing.** My first version of this
+prompt asked Craig for sourced market figures — which NSF does not request here. Asking for the
+wrong thing is a good way to leave a section blank, so it is corrected.
 
-- `[OWNER]` The customer segment, in Craig's words. The technical framing above implies
-  teams deploying autonomous agents where an unverified success is expensive — but that is my
-  inference, not his market thesis, and it should not go in a federal document as though it were.
-- `[OWNER]` Any market size, growth, or spend figure — **with its source**, so it can be cited.
-- `[OWNER]` Whether the intended route is a product, a licence, or a service.
+What this section needs:
+
+- `[OWNER]` Who the near-term customer is, in Craig's words — a specific profile, not a segment
+  label. The technical framing above implies teams deploying autonomous agents where an unverified
+  success is expensive, but that is my inference, not his market thesis.
+- `[OWNER]` The pain point, stated the way that customer would state it.
+- `[OWNER]` Whether the near-term route is a product, a licence, or a service.
 
 ---
 
@@ -127,11 +132,19 @@ counts, credentials, degrees, or registrations on a federal application are a le
 Nothing about the company or its people is asserted here, because I do not have verified values
 for any of it.
 
+`[VERIFIED]` NSF's own wording (same page, checked 2026-10-12): *"Describe the background and
+current status of the applicant small business, including key team members who will lead the
+technical and/or commercial efforts discussed in this Project Pitch."*
+
 - `[OWNER]` Legal entity and state of registration — and note that the entity gate in §2c of the
   canonical file (sole proprietorship vs LLC) is still open and is *the owner's decision*.
 - `[OWNER]` Ownership structure and any employees or contractors.
 - `[OWNER]` Relevant credentials, publications, or prior awards — only what is real and provable.
 - `[OWNER]` Whether any co-founder or advisor should be named, and their consent to be named.
+- `[OWNER]` **Who the Principal Investigator will be.** `[VERIFIED]` NSF requires the PI (tech
+  lead) to be *legally employed at least 20 hours a week by the applicant company*, with no
+  advanced degree required, and to commit at least one month (173 hours) per six months of project
+  duration. If Craig is the only person this is satisfiable — but it is a term, not a formality.
 
 ---
 
@@ -147,8 +160,11 @@ for any of it.
 
 ## Before this can be submitted
 
-1. `[OWNER]` Sections 3 and 4, from the prompts above.
-2. Re-verify the program's live status and the four section caps against nsf.gov — the canonical
-   file's last check was 2026-10-02, and rule 5 says listings close.
-3. Confirm the entity question (§2c) is resolved, since SAM.gov registration is required before
+1. **Take the Project Suitability Assessment.** `[VERIFIED]` NSF's process overview lists this as a
+   **required step 1**, before the pitch itself — it is the "project pitch fit assessment". Free and
+   online. Added 2026-10-12; the canonical file did not record it, so nothing had done it.
+2. `[OWNER]` Sections 3 and 4, from the prompts above.
+3. `[VERIFIED 2026-10-12]` The four section caps were re-checked against nsf.gov and are unchanged.
+   Rule 5 still applies to the **deadlines**: re-read the solicitation before relying on a date.
+4. Confirm the entity question (§2c) is resolved, since SAM.gov registration is required before
    submission and is not instant.

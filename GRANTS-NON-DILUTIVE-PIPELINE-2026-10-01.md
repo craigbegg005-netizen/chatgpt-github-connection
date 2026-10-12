@@ -64,6 +64,35 @@ start it well before any deadline.
 - Pitch sections and character caps: Technology Innovation (3,500) · Technical Objectives and Challenges (3,500) · Market Opportunity (1,750) · Company and Team (1,750).
 - NSF's own wording: the work must be **R&D "rather than straightforward engineering or incremental product development tasks."**
 
+**Re-verified 2026-10-12 against `seedfund.nsf.gov/project-pitch` and `seedfund.nsf.gov/apply/get-started/`:**
+
+- ✅ **All four section caps confirmed** exactly as above (3,500 / 3,500 / 1,750 / 1,750), as is the
+  one-pitch-at-a-time rule.
+- ⚠️ **A required step this file did not record: the Project Suitability Assessment.** NSF's process
+  overview lists *"Project Suitability Assessment (Required)"* as **step 1**, before *"Submit a
+  Project Pitch"*, and describes it as *"the project pitch fit assessment"* — taken to determine
+  whether the work meets NSF's technological-innovation, commercial-potential and broader-impacts
+  requirements. It is free and online. **Do this before drafting further.**
+- ✅ **What the Market Opportunity section actually asks for**, quoted: *"Describe the customer
+  profile and pain point(s) that will be the near-term commercial focus related to this technical
+  project."* It asks for a **customer profile and a pain point, not market sizing** — worth stating
+  because a draft of the pitch prompt had asked for sourced market figures that NSF does not
+  request here.
+- ✅ **Eligibility terms, from NSF's own Get Started page.** These are the *program's* criteria;
+  whether Begg AI meets them remains the separate, unverified question this file already flags:
+  - a small business (**fewer than 500 employees**) **located in the United States**;
+  - **≥50% of equity owned by U.S. citizens or permanent residents**, and not majority-owned by
+    multiple venture-capital, private-equity or hedge funds;
+  - **all funded work, including consultants and contractors, must take place in the U.S.**;
+  - the **Principal Investigator must be legally employed at least 20 hours a week** by the
+    applicant company — **no advanced degree required** — and commit **≥1 month (173 hours) per
+    six months** of project duration.
+- ⚠️ **One nuance to resolve, not a correction.** The Get Started page says *"We offer multiple
+  submission deadlines, but proposals can be submitted anytime."* That sits alongside the dated
+  deadlines above and I have not reconciled the two. The dated list comes from the solicitation,
+  which is the more specific source — but do not treat "the deadline is March 4" as settled without
+  re-reading the solicitation.
+
 **Best-fit framing for Oddfellow (a proposal, not a claim):** verification-first, provider-independent synthetic-AI orchestration for reliable low-resource autonomous workflows — model routing, cost optimisation, verification architecture, persistent agent memory, fail-closed execution, provenance, safe external actions.
 
 **The honest risk:** the pitch is judged on *technical risk and unproven innovation*, not product quality. The strongest candidate here is the **verification and fail-closed execution architecture** — the parts that are genuinely novel and genuinely hard. The app itself is not the pitch.
