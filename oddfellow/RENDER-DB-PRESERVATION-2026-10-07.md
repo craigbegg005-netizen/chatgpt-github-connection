@@ -3,6 +3,15 @@
 **Written 2026-10-07, revised 21:45 UTC. Status: READY TO EXECUTE — blocked only on
 owner access. Nothing backed up yet.**
 
+> **⚙️ ARMED 2026-10-12 — this no longer needs a human to start it.** A Cloud schedule
+> (`DB preservation armed check`, id `0e3e41e3-1647-4074-9db9-65c297422240`, every 2 hours)
+> checks for `ODDFELLOW_DB_URL` and, the moment it exists, runs `doctor → recon → dump →
+> verify → restore-verify`, delivers the artifacts to `/root/downloads`, reports, and then
+> **deletes itself**. While the secret is absent it does nothing and says nothing.
+> **So the owner action is only to add the secret — nothing has to be triggered afterwards.**
+> The blocker was also corrected on 2026-10-12: it is one credential, **not** dashboard access
+> and **not** the IP allowlist. See §2.
+
 This is P0 from the master handoff. Everything that can be done without the database
 password has been done: the tooling is written, and every command below was run
 end-to-end against a real PostgreSQL 18 server before being written down.
