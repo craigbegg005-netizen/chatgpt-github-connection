@@ -268,6 +268,20 @@ Teams: one point of contact completes it; other names and emails go at the end o
 
 **Verified against Verizon's own domain** (`digitalready.verizonwireless.com`), not a search hit. The earlier note called this "a free educational platform and grant-discovery channel" — that undersold it. It runs its **own** national grant, and it is open.
 
+**Re-verified 2026-10-12 against the same domain.** Every row below still holds. The grants page
+says *"Now accepting applications"* for the *"$10,000 national grant"*, confirms *"Apply once in 2026
+and you'll remain eligible"*, the two-course unlock, the for-profit US/PR/USVI 18+ eligibility,
+monthly review June–December, and the 12 January 2027 final decision.
+
+⚠️ **One number does not reconcile, and I am not going to pick one.** This file says *"10 per month,
+June–December 2026 — ~70 grants this year"*. The grants page says Verizon and LISC will *"award more
+than 145 grants this year"*. 10 × 7 = 70, so the file's arithmetic is internally consistent — but it
+is contradicted by the page's own total. The likeliest explanation is that 145 counts grants outside
+the monthly national programme, but that is a guess. **Treat "~70" as the monthly-programme figure
+and "145+" as the page's total; do not quote either as the odds until it is resolved.** The national
+grant FAQ would settle it and is **not readable by a text fetch** — its answers sit behind a
+JavaScript accordion, so this needs a browser or a call.
+
 | Question | Answer |
 |---|---|
 | Is it open? | **Yes** — 2026 applications are open |
@@ -284,7 +298,7 @@ Teams: one point of contact completes it; other names and emails go at the end o
 
 **⚠️ The honest caveat, and the one thing that connects to the entity gate.** The page says selected businesses "complete a verification process to confirm good financial and legal standing before funds are awarded." So the bar to **apply** is low (no entity named in the eligibility rule), but the bar to **receive** involves financial and legal standing. **Whether a sole proprietorship satisfies that is not stated on the page**, and the FAQ answers sit behind a JavaScript accordion that does not render for a text fetch. **Do not assume either way.** This is answerable by the same ASBTDC call already queued at item 1 of Next actions — add it to that question list rather than making a separate trip.
 
-**Why this lane is worth more than its "discovery channel" label suggested:** like Emergent Ventures it needs no LLC, no SAM.gov registration, no institutional affiliation, and costs nothing — so it is unblocked by both the entity gate and Gate A. It is also **explicitly for-profit**, which is what Begg AI Industries is, and it is a **volume** programme (70 grants/year against a documented selection process) rather than a single subjective award.
+**Why this lane is worth more than its "discovery channel" label suggested:** like Emergent Ventures it needs no LLC, no SAM.gov registration, no institutional affiliation, and costs nothing — so it is unblocked by both the entity gate and Gate A. It is also **explicitly for-profit**, which is what Begg AI Industries is, and it is a **volume** programme (70+ grants/year against a documented selection process — see the reconciliation note above) rather than a single subjective award.
 
 ### 4b. Hello Alice — ✅ VERIFIED (2026-10-04, primary source): a marketplace, and nothing on it fits right now
 
