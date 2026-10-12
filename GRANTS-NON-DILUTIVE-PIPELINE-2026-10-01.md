@@ -296,7 +296,11 @@ to be the gating step, not the accelerator, and two accelerators are closed.
    Do not proceed until (1) has answered.
 3. ⏳ **Draft the NSF Project Pitch** (four sections, character caps above). This moved *up* the
    list: it is a writing task, it costs nothing, and it is the prerequisite for both the NSF lane
-   and ASBTDC's NSF Proposal Lab.
+   and ASBTDC's NSF Proposal Lab. **First draft written 2026-10-12:**
+   [`NSF-PROJECT-PITCH-DRAFT-2026-10-12.md`](NSF-PROJECT-PITCH-DRAFT-2026-10-12.md) — the two
+   technical sections are drafted (2,048 and 2,147 characters against the 3,500 cap, measured);
+   **Market Opportunity and Company and Team are deliberately blank**, with the questions only
+   Craig can answer listed, because hard rule 2 forbids fabricating them. Not submitted.
 4. ⏳ Read the full **NSF 26-510** solicitation and decide whether the verification architecture is
    a defensible R&D pitch. (Can run alongside 3.)
 5. ✅ **Two lanes are now VERIFIED OPEN and both are unblocked by the entity gate and Gate A:**
