@@ -138,6 +138,22 @@ up() {
     "$VENV/bin/pip" install -q -r "$HERE/requirements.txt" pytest
   fi
 
+  # Force IPv4-only name resolution. This sandbox has no IPv6, but
+  # trycloudflare.com publishes an AAAA record first, so the default resolver
+  # ordering makes Python attempt an address that cannot work -- and urllib does
+  # not fall back, it raises. That produced the "Errno 97 / Name or service not
+  # known / HTTP 000" cluster that was written off as flakiness three times
+  # before it was diagnosed on 2026-10-09.
+  #
+  # Re-applied on every `up` because the fix lives in sandbox state (.pth files
+  # and /etc/gai.conf), which does not survive a sandbox reset. Best-effort: a
+  # failure here is reported, not fatal, so a read-only environment still gets a
+  # rehearsal that may work rather than no rehearsal at all.
+  bash "$HERE/sandbox_ipv4_fix.sh" apply --for-python "$VENV/bin/python" \
+    || say "WARNING: could not apply the sandbox IPv4 fix to $VENV"
+  bash "$HERE/sandbox_ipv4_fix.sh" apply >/dev/null 2>&1 \
+    || say "WARNING: could not apply the sandbox IPv4 fix system-wide"
+
   if ! curl -fsS --max-time 3 "http://127.0.0.1:$PORT/livez" >/dev/null 2>&1; then
     say "Starting the backend on 127.0.0.1:$PORT"
     ( cd "$HERE" && ODDFELLOW_FRONTEND_DIR=frontend LETTA_MODEL=letta/auto \

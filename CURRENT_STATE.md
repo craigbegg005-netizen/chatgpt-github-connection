@@ -81,7 +81,39 @@ is an observation, and it needs a date and a re-check like any other.
 
 ---
 
-# ✅ LATEST CYCLE — 2026-10-12 23:00 UTC
+# ✅ LATEST STATE-CHANGING CYCLE
+
+**2026-10-12 23:45 UTC.** ⚠️ **The heading above deliberately carries no date.** Until this
+commit it read `LATEST CYCLE — <today's date>`, and every hourly sweep bumped that date on its
+own: the heading said 2026-10-12 23:00 while the body beneath it was written on **2026-10-07**
+(`d222849`) and still claimed *674 tests pass* and *the rehearsal is DOWN*. A heading that
+automation can advance while the content stays put is a claim of recency the body does not have.
+The date now lives in the body, where it cannot drift from the thing it describes.
+
+## This cycle changed state — it is not a sweep
+
+The sandbox reset at 23:32 UTC. A reset is an opportunity, not a setback: it re-exposes exactly
+the state that does not survive it.
+
+1. **The rehearsal is UP and `ready:true`** — the only fully-working end-to-end path, and the
+   only route to phone acceptance that does not wait on Gate A. `backend UP · tunnel UP ·
+   watchdog UP`, all acceptance checks pass. ⚠️ It dies with the sandbox and the URL changes on
+   every restart — re-read it with `./rehearsal.sh status`.
+2. **The IPv6 fix is now durable in the repo** (`oddfellow/sandbox_ipv4_fix.sh` +
+   `sandbox/force_ipv4.py`, called by `rehearsal.sh` on every `up`) instead of being re-derived
+   by hand after every reset. Guarded by 7 tests, including the falsifier that the *same
+   interpreter, unfixed,* does return `AF_INET6` — without that control a green result could
+   just mean the environment never had an AAAA record.
+3. **The NSF Project Suitability Assessment is resolved.** It is a seven-question Yes/No
+   self-assessment, not a filing, and on the product framing **two answers are "No"** — so the
+   NSF lane is likely **not open for Oddfellow-as-a-product**. Reasoning:
+   [`NSF-PROJECT-PITCH-DRAFT-2026-10-12.md`](NSF-PROJECT-PITCH-DRAFT-2026-10-12.md) §"Step 0".
+
+**Suite: 719 pass** (was 710; +9). **Branch head:** `5185ab7` (before this commit).
+
+---
+
+# ✅ PREVIOUS CYCLE — 2026-10-07 (cognition instrument)
 
 **This supersedes every contradicting line below it.**
 
@@ -147,7 +179,7 @@ of the live one caused a 20-hour blind spot on 2026-10-01.
 
 ## Where the branch actually is
 
-- `letta/combined-single-service-v0.20.4` — the head moves hourly, so read the newest `oddfellow/HANDOFF-*.md` for where it is. (A SHA was written here and went stale for three days: it still named a 2026-10-08 commit while the branch had moved ~100 commits.) **710 tests pass** — run `pytest` from the repo root; the canonical invocation collects both `oddfellow/tests` and `oddfellow/connector/tests`, and a run scoped to one root silently skips the count guard. Recent additions: the Cognitive Capability Profile (`oddfellow/cognition/`), a durable open-goal register (`GOALS.json`), and the tool-invocation audit corpus.
+- `letta/combined-single-service-v0.20.4` — the head moves hourly, so read the newest `oddfellow/HANDOFF-*.md` for where it is. (A SHA was written here and went stale for three days: it still named a 2026-10-08 commit while the branch had moved ~100 commits.) **719 tests pass** — run `pytest` from the repo root; the canonical invocation collects both `oddfellow/tests` and `oddfellow/connector/tests`, and a run scoped to one root silently skips the count guard. Recent additions: the Cognitive Capability Profile (`oddfellow/cognition/`), a durable open-goal register (`GOALS.json`), and the tool-invocation audit corpus.
 
 ## ⚠️ NEW P0 — Render DB `begg-ai-core-db` expires 2026-10-27T23:21:01Z
 
@@ -400,7 +432,14 @@ The running commit is `11b3901`, verified to be a real ancestor of the canonical
 
 ## Read these for detail
 
-- `oddfellow/HANDOFF-UNIVERSAL-2026-10-12-2300Z.md` — **newest handoff** (2026-10-12 23:00 UTC).
+- `oddfellow/HANDOFF-UNIVERSAL-2026-10-12-2345Z.md` — **newest handoff** (2026-10-12 23:45 UTC).
+  ⚠️ Superseding the 23:00 entry: **this cycle is not a sweep.** The sandbox reset at 23:32 UTC
+  and three real changes came out of it — the **rehearsal is UP and `ready:true`** (the only
+  fully-working end-to-end path, and the only route to phone acceptance that does not wait on
+  Gate A); the **IPv6 fix is now durable in the repo** (`sandbox_ipv4_fix.sh` + `rehearsal.sh`)
+  instead of being re-derived by hand after every reset; and the **NSF Project Suitability
+  Assessment is resolved** — a seven-question Yes/No gate that is likely **not** clearable on the
+  product framing, because two answers are "No". Suite **719 pass**.
   ⚠️ Superseding the 21:07 entry: **workforce Phase 2 is now committed** — synthetic heads
   cannot create a job without naming its origin, and the origin rule is enforced at
   construction rather than documented. Fixed a real persistence bug in the same pass: the

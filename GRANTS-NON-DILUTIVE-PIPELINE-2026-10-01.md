@@ -73,6 +73,15 @@ start it well before any deadline.
   Project Pitch"*, and describes it as *"the project pitch fit assessment"* — taken to determine
   whether the work meets NSF's technological-innovation, commercial-potential and broader-impacts
   requirements. It is free and online. **Do this before drafting further.**
+  **✅ RESOLVED 2026-10-12 — it is a seven-question Yes/No self-assessment, not a filing, and it
+  is very likely NOT clearable on the product framing.** The questions and the honest read are in
+  [`NSF-PROJECT-PITCH-DRAFT-2026-10-12.md`](NSF-PROJECT-PITCH-DRAFT-2026-10-12.md) §"Step 0".
+  The two that gate it are **#2 substantial high-risk R&D** (shipping an app over a third-party
+  memory API is integration engineering) and **#4 difficult to replicate even by experts** (it is
+  built on a public API). NSF's rule is one "No" ends it. The verification-architecture framing is
+  therefore the only one that can clear the gate — which is what this file's hard rule 3 already
+  says, now with a reason. **The `[OWNER]` action that would test the read is a Program Director
+  conversation** (free, and it does not consume one of the two pitches allowed per year).
 - ✅ **What the Market Opportunity section actually asks for**, quoted: *"Describe the customer
   profile and pain point(s) that will be the near-term commercial focus related to this technical
   project."* It asks for a **customer profile and a pain point, not market sizing** — worth stating
