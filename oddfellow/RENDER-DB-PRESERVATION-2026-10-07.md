@@ -61,6 +61,49 @@ world while looking locked down. **The `0.0.0.0/0` entry must be removed, not jo
 ⚠️ Render's CLI replaces the whole list (`--ip-allow-list`), while the Dashboard adds a
 row. On the Dashboard, **remove `0.0.0.0/0` first, then add the `/32`.**
 
+### ✅ RESOLVED 2026-10-12 — the ambiguity above is settled, and it was the good reading
+
+The section above said the two readings "have the same correct action, so this does not need
+resolving before acting." That was right about the *action* and wrong about the *consequence*:
+the two readings differ enormously in what they mean for security and for sequencing, and the
+question turns out to be answerable from a sandbox with no credentials at all.
+
+**Measured, not inferred.** From this sandbox:
+
+```
+dpg-dasq9ne0tbcc738ifeug-a.oregon-postgres.render.com  ->  35.227.164.209
+TCP 5432  ->  CONNECTED
+PG startup handshake -> ErrorResponse: FATAL 28000 "SSL/TLS required"
+```
+
+The handshake is the proof: the server answered *at the protocol level*. A blocked IP cannot
+get that far — it fails at connect. So **the effective allowlist rule is `0.0.0.0/0`: the
+database is open to the entire internet right now.** It was never configured, not deliberately
+closed.
+
+**Two consequences, and the second is the one that would have bitten.**
+
+1. **The recorded blocker was wrong.** This file and the goal register both said the dump
+   "requires the sandbox egress IP to be added to the Render database allowlist, or a
+   Render-side dump; both need dashboard access." Neither is true. The sandbox can reach the
+   database today. **The only missing thing is the credential.** The owner action is one secret,
+   not a dashboard session.
+
+2. **Order matters, and the old plan had it backwards.** The plan was "tighten the allowlist to
+   a `/32`, then dump." Tightening first would have **blocked the dump** — the `/32` would have
+   to be this sandbox's egress IP, which is neither stable nor known in advance, and the sandbox
+   cycles. Correct order: **dump first, while the path is open; lock it down after.** Once the
+   data is preserved there is nothing left that needs to reach this database, and it expires on
+   2026-10-27 regardless.
+
+**Security note, stated plainly:** an internet-open Postgres protected by a password is a real
+exposure, and it has been in that state for as long as this database has existed. It is not
+urgent *relative to the 15-day data-loss deadline* — locking it down first would cost the data —
+but it should not be left open afterwards.
+
+Egress IP observed 2026-10-12: `170.9.4.232`. Recorded for the record only; do **not** pin a
+`/32` to it, because the sandbox's egress is not stable across cycles.
+
 ---
 
 ## 3. The trap that makes a failed backup look successful
