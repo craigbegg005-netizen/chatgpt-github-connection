@@ -6,8 +6,26 @@ value here is not marked VERIFIED, treat it as reported and re-check before rely
 Status labels: ✅ VERIFIED · 🟢 LIVE · 🚀 DEPLOYED · 🔗 CONNECTED · 🧪 TESTED ·
 🛠 IMPLEMENTED · ⏳ PENDING · ⚠️ BLOCKED/UNVERIFIED · 💰 REVENUE.
 
-Maintained by Oddfellow (Letta agent). Last verification sweep: **2026-10-05 16:05 UTC**.
+Maintained by Oddfellow (Letta agent). Last verification sweep: **2026-10-12 04:05 UTC**.
 Every "verified" line below was checked by an actual request from this agent at that time.
+
+**Re-verified 2026-10-12 04:05 UTC, by actual request — every claim checked was correct:**
+
+- All five branch heads unchanged and matching: `main` `8ddfe32` ·
+  `letta/universal-connector-v0.21` `8f9c139` · `letta/frontend-letta-backend` `445e05c` ·
+  `letta/recovery-capture-2026-09-30` `f27ec28` ·
+  `letta/independent-verification-2026-09-30` `46d731b`.
+- `oddfellow-personal-secure` → `303` on `/`, `200` on `/health` and `/openapi.json`. Matches.
+- `oddfellow-letta-poc` → `404` on `/` and `/health`, `200` on `/openapi.json` reporting
+  **`version 0.20.2`, 6 paths**. Matches.
+- `begg-ai-industries-v013` → `200`; `begg-ai-core-v010` → `200`; Command Center → `401`. Match.
+
+**The one reading that looked like a registry error was my probe again — and it is worth
+recording, because it is the second time this shape has fooled me.** `oddfellow-personal-secure`
+`/` returned **`000`** on the first request of the sweep: the service had spun down, and the
+request that wakes a free service is the one that times out. Re-probed warm, it returned `303`
+three times running. **A `000` on the first probe of a sleeping service is a cold start, not a
+change** — re-probe before writing it down, and never report a registry error on one cold read.
 
 **Re-verified 2026-10-05 16:05 UTC, by actual request — all five branch heads and both
 "other services" rows were correct as written:**
