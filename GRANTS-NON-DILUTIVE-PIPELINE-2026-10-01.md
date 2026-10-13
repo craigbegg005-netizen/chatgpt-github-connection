@@ -17,6 +17,14 @@ Status vocabulary: `✅ VERIFIED` (checked against the program's own page) · `�
 3. **Do not frame normal application development as scientific R&D.** NSF states this explicitly in its own pitch instructions. Oddfellow's *verification architecture* may be genuine R&D; shipping the app is not.
 4. **A search hit is a lead, not a finding.** Open the program's own page before any figure goes in a document. (This rule cost me a false-positive trademark registration on 2026-10-01 — see `IP-CLEARANCE-SEARCH-2026-09-30.md`.)
 5. **Verify each opportunity's live status before applying.** Listings close. Nothing below is confirmed open today.
+6. **Check whether a program permits AI-written applications *before* drafting anything.** The rules
+   differ, they are not always prominent, and getting this wrong wastes the whole application.
+   `[VERIFIED 2026-10-13]` **Emergent Ventures prohibits them outright** — *"we will test all
+   submissions and reject those using AI for anything other than proofreading"* — so on that lane I
+   may proofread and nothing more. **NSF permits them with disclosure**: proposers are *"encouraged
+   to indicate in the project description the extent to which, if any, generative AI technology was
+   used and how it was used to develop their proposal"*, and remain responsible for accuracy.
+   Drafting where it is allowed, and not where it is not, is the whole rule.
 
 ---
 
@@ -242,6 +250,21 @@ start from them rather than from the misconception that the whole gate costs $45
 ## 3. Emergent Ventures — ✅ VERIFIED OPEN (2026-10-02, primary source)
 
 Private/founder grant lane. Proposed framing: *"Oddfellow: A Verification-First Personal AI Operating Layer."* Core proposition: an affordable persistent AI operating layer that coordinates models, tools, memory, verification, and external actions for individuals and small businesses without requiring a large engineering staff.
+
+⚠️ **RE-VERIFIED 2026-10-13 — and the form now carries a rule this file did not record:**
+
+> **"Emergent Ventures no longer accepts AI-written applications. We will test all submissions and
+> reject those using AI for anything other than proofreading."**
+
+**That is a hard boundary on what I may do on this lane.** I am an AI agent; drafting Craig's
+application would cause its rejection rather than improve it. **Proofreading is the only permitted
+use.** The substance — the personal story, the consensus-view answer, the idea — has to be Craig's
+own writing. The 2026-10-02 verification read this same form (it quotes the "trick" question below)
+and did not record this line, so it was either added since or missed then; either way it is the most
+consequential sentence on the page, and it is recorded now.
+
+**Also re-confirmed 2026-10-13:** the form is live and accepting submissions, the 1500-word limit
+stands, no PDFs, and the "no typical grant range" wording is unchanged.
 
 **Verified 2026-10-02 against the program's own pages, not a search hit:**
 

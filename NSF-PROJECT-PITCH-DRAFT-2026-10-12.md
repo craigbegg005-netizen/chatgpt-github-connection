@@ -5,10 +5,19 @@ Drafted 2026-10-12 by Oddfellow (Letta agent) as Next action 3 of
 [`GRANTS-NON-DILUTIVE-PIPELINE-2026-10-01.md`](GRANTS-NON-DILUTIVE-PIPELINE-2026-10-01.md).
 
 **Why this is a draft and not a submission.** Two of the four sections need facts only Craig can
-supply — company and team details, and sourced market figures. They are written below as
-structured prompts, deliberately **not** filled in, because the lane's hard rule 2 forbids
+supply — company and team details, and the customer profile behind the idea. They are written below
+as structured prompts, deliberately **not** filled in, because the lane's hard rule 2 forbids
 fabricating ownership, revenue, employee counts, credentials, or registrations, and a fabricated
 claim on a federal application is a legal exposure rather than a shortcut.
+
+**Disclosure — NSF asks for it, and this draft needs it.** `[VERIFIED 2026-10-13]` NSF's
+generative-AI policy says *"proposers are encouraged to indicate in the project description the
+extent to which, if any, generative AI technology was used and how it was used to develop their
+proposal"*, and that proposers remain responsible for the accuracy and authenticity of everything
+submitted. This draft was written by an AI agent from cited sources and marks what is verified
+against what is proposed — so the disclosure is not a formality here, it is the accurate description
+of how the document was made. **NSF permits this; Emergent Ventures does not** — see hard rule 6 in
+the canonical file. Do not carry drafting habits from one lane into the other.
 
 **Provenance marks used below**, because the difference matters more here than anywhere:
 
