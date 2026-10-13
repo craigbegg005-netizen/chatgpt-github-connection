@@ -1,0 +1,7 @@
+{"service":"begg-ai-industries-v013","path":"/health","http":200,"captured":"2026-10-13T00:27Z","body":{"ok":true,"service":"begg-ai-core","version":"0.13.0"}}
+{"service":"begg-ai-industries-v013","path":"/ready","http":200,"captured":"2026-10-13T00:27Z","body":{"ready":true,"api_token_configured":true,"external_provider_required":false,"external_provider_ready":false,"external_call_budget_enabled":false,"external_call_daily_limit":0,"external_providers":[]}}
+{"service":"begg-ai-core-v010","path":"/health","http":200,"captured":"2026-10-13T00:27Z","body":{"ok":true,"service":"begg-ai-core","version":"0.12.1"}}
+{"service":"begg-ai-core-v010","path":"/ready","http":200,"captured":"2026-10-13T00:27Z","body":{"ready":true,"api_token_configured":true,"external_provider_required":false,"external_provider_ready":false,"external_call_budget_enabled":false,"external_call_daily_limit":0,"external_providers":[]}}
+{"service":"oddfellow-personal-secure","path":"/health","http":200,"captured":"2026-10-13T00:27Z","body":{"ok":true,"service":"oddfellow-personal-secure","version":"0.16.0"}}
+{"service":"oddfellow-personal-staging-v017b","path":"/health","http":200,"captured":"2026-10-13T00:27Z","body":{"status":"ok","version":"0.17.0","build_id":"genesis-0003"}}
+{"service":"oddfellow-personal-staging-v017b","path":"/ready","http":200,"captured":"2026-10-13T00:27Z","body":{"ready":true,"database":true,"owner_enrolled":false,"model_connected":false}}
