@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://craigbegg005-netizen.github.io/chatgpt-github-connection/sitemap.xml
