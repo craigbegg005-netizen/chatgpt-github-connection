@@ -160,7 +160,7 @@ phone acceptance against today" is currently false until it is restored.
 
 ## Read this first: the one thing that has not moved
 
-**Gate A is unchanged; the two owner-action items are Gate A and DB preservation (below).** Probed 2026-10-12 23:00 UTC:
+**Gate A is unchanged; the two owner-action items are Gate A and DB preservation (below).** Probed 2026-10-13 00:00 UTC:
 
 ```
 GET https://oddfellow-letta-backend-v0206.onrender.com/livez
