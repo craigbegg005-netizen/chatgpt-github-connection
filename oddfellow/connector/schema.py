@@ -61,6 +61,21 @@ class Risk(str, Enum):
 APPROVAL_REQUIRED = frozenset({Risk.HIGH, Risk.CRITICAL})
 
 
+class Priority(str, Enum):
+    """Queue priority, declared at creation like risk -- but it orders work,
+    it does not gate it. Kept separate from Risk on purpose: a HIGH-risk job
+    can be low priority (an annual audit) and a LOW-risk job can be urgent
+    (a storefront typo losing sales today). Conflating the two would let a
+    risky-but-unimportant job jump the revenue queue, or a safe urgent one
+    stall behind a gate it does not need.
+    """
+
+    LOW = "low"
+    NORMAL = "normal"
+    HIGH = "high"
+    URGENT = "urgent"
+
+
 #: A provider id is an identifier, not a path and not a display name.
 PROVIDER_ID = re.compile(r"^[a-z0-9][a-z0-9_-]{0,63}$")
 
@@ -185,8 +200,26 @@ class Job:
     #: intent: `verified_by` is who signed, this is who was *assigned* to check,
     #: which is what lets an unverified job show that a check is outstanding.
     verification_worker: str | None = None
+    # --- Phase 3: failover directive. ------------------------------------
+    #: Queue priority. Separate from risk: risk gates, priority orders.
+    priority: "Priority" = None  # resolved in __post_init__ below
+    #: Append-only checkpoint trail: the partial-progress record a failover
+    #: hands to the next provider. Each entry is
+    #: ``{"at", "actor", "step", "note", "evidence"}``. Written only through
+    #: ``Store.record_checkpoint`` so every entry lands in the audit log --
+    #: a checkpoint with no audit entry is a claim nobody can reconstruct.
+    checkpoints: tuple = ()
     created_at: str | None = None
     updated_at: str | None = None
+
+    def __post_init__(self) -> None:
+        # A dataclass default cannot reference the enum declared above it in
+        # the same body cleanly across the Optional-heavy style here, so the
+        # default is resolved here instead. ``None`` means "not stated".
+        if self.priority is None:
+            self.priority = Priority.NORMAL
+        elif not isinstance(self.priority, Priority):
+            self.priority = Priority(self.priority)
 
     def to_row(self) -> dict:
         """Flat, JSON-safe representation for storage."""
@@ -195,11 +228,13 @@ class Job:
         data["risk"] = self.risk.value
         data["status"] = self.status.value
         data["transport"] = self.transport.value if self.transport else None
+        data["priority"] = self.priority.value
         # Stored as a JSON string: sqlite binds only scalars, and a bare list
         # raises "type 'list' is not supported" at execute time.
         data["depends_on"] = canonical_json(list(self.depends_on))
         data["payload"] = canonical_json(self.payload)
         data["result"] = canonical_json(self.result) if self.result is not None else None
+        data["checkpoints"] = canonical_json(list(self.checkpoints))
         data["verified"] = 1 if self.verified else 0
         return data
 
@@ -229,6 +264,11 @@ class Job:
             origin_objective=row.get("origin_objective"),
             origin_job_id=row.get("origin_job_id"),
             verification_worker=row.get("verification_worker"),
+            # .get with defaults: a row from a pre-Phase-3 database (before the
+            # migration ran) has neither key, and must read as the defaults,
+            # not as a KeyError.
+            priority=Priority(row.get("priority") or "normal"),
+            checkpoints=tuple(json.loads(row.get("checkpoints") or "[]")),
             created_at=row["created_at"],
             updated_at=row["updated_at"],
         )

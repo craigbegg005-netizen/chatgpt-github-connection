@@ -133,6 +133,12 @@ _ADDED_COLUMNS = (
     ("jobs", "origin_objective", "TEXT"),
     ("jobs", "origin_job_id", "TEXT"),
     ("jobs", "verification_worker", "TEXT"),
+    # Phase 3: failover directive. `priority` orders the queue; `checkpoints`
+    # is the append-only partial-progress trail a failover hands to the next
+    # provider. Both have defaults because every pre-Phase-3 job must keep
+    # working unchanged.
+    ("jobs", "priority", "TEXT NOT NULL DEFAULT 'normal'"),
+    ("jobs", "checkpoints", "TEXT NOT NULL DEFAULT '[]'"),
 )
 
 #: Detail keys the audit log refuses to store verbatim. A payload that reaches the
@@ -407,11 +413,13 @@ class Store:
             "verified, verified_by, verification_evidence, "
             "assigned_department, assigned_worker, requested_by, "
             "origin_objective, origin_job_id, verification_worker, "
+            "priority, checkpoints, "
             "created_at, updated_at) VALUES (:job_id,:kind,:title,:payload,:risk,:status,"
             ":provider,:transport,:depends_on,:attempts,:max_attempts,:result,:result_hash,"
             ":error,:verified,:verified_by,:verification_evidence,"
             ":assigned_department,:assigned_worker,:requested_by,"
             ":origin_objective,:origin_job_id,:verification_worker,"
+            ":priority,:checkpoints,"
             ":created_at,:updated_at)",
             row,
         )
@@ -449,6 +457,7 @@ class Store:
             "assigned_worker=:assigned_worker, requested_by=:requested_by, "
             "origin_objective=:origin_objective, origin_job_id=:origin_job_id, "
             "verification_worker=:verification_worker, "
+            "priority=:priority, checkpoints=:checkpoints, "
             "updated_at=:updated_at WHERE job_id=:job_id",
             row,
         )
@@ -788,6 +797,55 @@ class Store:
         job.provider = None
         job.transport = None
         return self._update(job, actor, "job.claim.released", reason=reason)
+
+    def record_checkpoint(
+        self, job_id: str, step: str, actor: str, note: str = "", evidence: str = ""
+    ) -> Job:
+        """Append one entry to a job's checkpoint trail.
+
+        This is the "save its progress" step of the failover directive: before a
+        job is released, retried, or handed to another provider, the worker
+        records what it has *already done*, so the next provider resumes from
+        the trail instead of repeating verified work or recreating assets.
+
+        Two rules keep the trail trustworthy:
+
+          * **Append-only.** Entries are never edited or deleted -- a trail that
+            can be rewritten can claim progress that did not happen. Correction
+            is a new entry, not an edit.
+          * **Every entry is audited.** The trail and the audit log cannot
+            disagree, because both are written in the same `_update`.
+
+        `step` is the short label of the completed step (required -- an
+        unlabelled checkpoint is a claim with no content). `note` carries
+        detail; `evidence`, when given, should name something checkable (a
+        path, URL, or identifier) -- it is not enforced here the way
+        `verify_result` enforces it, because a checkpoint is a progress note,
+        not a verdict.
+        """
+        job = self._require(job_id)
+        step = (step or "").strip()
+        if not step:
+            raise ValueError("a checkpoint requires a step label")
+        entry = {
+            "at": _now(),
+            "actor": canonical_provider(actor),
+            "step": step,
+            "note": (note or "")[:_MAX_SCALAR],
+            "evidence": (evidence or "")[:_MAX_SCALAR],
+        }
+        job.checkpoints = tuple(job.checkpoints) + (entry,)
+        return self._update(job, actor, "job.checkpoint", step=step)
+
+    def checkpoint_trail(self, job_id: str) -> tuple:
+        """The resume record for a receiving provider: ordered checkpoint entries.
+
+        Read-only. The trail is how "resume from the last checkpoint" works
+        without the two providers ever sharing memory: the first writes it, the
+        second reads it, and neither had to trust the other's word for what was
+        already done -- each entry is also an audited event.
+        """
+        return self._require(job_id).checkpoints
 
     def _require(self, job_id: str) -> Job:
         job = self.get_job(job_id)
