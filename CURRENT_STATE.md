@@ -432,7 +432,7 @@ The running commit is `11b3901`, verified to be a real ancestor of the canonical
 
 ## Read these for detail
 
-- `oddfellow/HANDOFF-UNIVERSAL-2026-10-12-2345Z.md` — **newest handoff** (2026-10-12 23:45 UTC).
+- `oddfellow/HANDOFF-UNIVERSAL-2026-10-13-0000Z.md` — **newest handoff** (2026-10-13 00:00 UTC).
   ⚠️ Superseding the 23:00 entry: **this cycle is not a sweep.** The sandbox reset at 23:32 UTC
   and three real changes came out of it — the **rehearsal is UP and `ready:true`** (the only
   fully-working end-to-end path, and the only route to phone acceptance that does not wait on
