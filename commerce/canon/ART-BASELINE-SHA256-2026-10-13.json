@@ -1,0 +1,17 @@
+{
+  "note": "Generated 2026-10-13 from the live gh-pages art/v1/ files. The owner-named EXACT_ORIGINAL_ART_MANIFEST_SHA256.json was NOT received, so this is a baseline established from what exists, not the supplied manifest.",
+  "artworks": [
+    {
+      "file": "tee-extrusion-blueprint.png",
+      "sha256": "25063a854bea02c8e2ddc82128954401d35833e08f77f57b8dfaed6bf86848d9"
+    },
+    {
+      "file": "poster-interference-4.png",
+      "sha256": "c7c17e8f31a96969bb021596a2f4990ea47aabc3a604faa3ff736d25208e7799"
+    },
+    {
+      "file": "mug-batch-004.png",
+      "sha256": "51cc7e4d5984ab8ec0be9c42d3b5e374943fbc63e55aa9d5244657afc1229421"
+    }
+  ]
+}
