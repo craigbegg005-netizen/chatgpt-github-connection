@@ -1,0 +1,336 @@
+BSI COMMERCE CANON v1.0 / 2026-10-13
+OWNER-APPROVED CONTINUITY HANDOFF — received by Oddfellow via Letta chat 2026-10-13 05:39 UTC
+
+TO: ODDFELLOW / LETTA; CHATGPT WORK; ALL AUTHORIZED BSI COMMERCE AGENTS
+FROM: BSI OWNER — CONSOLIDATED WITH CHATGPT
+SUBJECT: CANONICAL BSI COMMERCE STATE, REFINED ORIGINAL ART, ZERO-COST SALES
+DATE: 2026-10-13  VERSION: 1.0 — OWNER-APPROVED CONTINUITY HANDOFF
+
+NOTE ON THIS FILE: this is the canon TEXT as received in chat. It is NOT a substitute for the
+referenced artwork archive, manifest or SKU CSV, none of which arrived. See the acknowledgment
+document for the receipt report.
+
+=== 1. MISSION AND CURRENT OPERATING MODEL ===
+BSI is the INTERNAL management/workflow/analytics/security/synthetic-workforce structure.
+Consumer-facing shop operates as "Wesellstuff" on Fourthwall. Spreadshop is a second reported
+shop/account in the same lane with its own platform identity. Do not expose "BSI", "Begg AI
+Industries" or "BSI Commerce Collection" publicly unless the owner later changes that rule.
+"Bright Routine Supply" was only a proposal; do not replace Wesellstuff automatically.
+Purpose: original, distinctive, collectible art across deliberate aesthetic mashups; convert
+the best exact images into legitimately sellable POD merchandise and compatible digital
+products; organic discovery + internal market intelligence rather than paid ads; real verified
+sales at zero upfront expense.
+Affiliate venture NOT part of this enterprise. EM Brooks and Global Peace Project stay
+separate. Gumroad products remain separate unless incorporated later. No verified incorporated
+BSI LLC; no permission to invent an EIN, license or legal registration.
+
+=== 2. AUTHORITY, CANON PRECEDENCE AND HONEST STATUS ===
+Precedence: 1. Later explicit owner decision. 2. Verified direct platform state, dated.
+3. File hashes and actual supplied source artwork in the manifest. 4. This dated handoff.
+5. Older messages, exploratory concepts, agent status reports.
+Zero-spend autonomy granted for lawful reversible work. NOT consent to charges, paid ads, paid
+domains, inventory, samples, upgrades, metered agents, vendor prepayment, legal fees or loans.
+Status ladder: CONCEPT/DRAFT; ART APPROVED (direction only); PREPARED/IMPLEMENTED; TESTED;
+CONNECTED; PUBLISHED/LIVE; PROFIT VERIFIED.
+Never describe planned department heads as active 24-hour autonomous workers until actually
+provisioned, executing, durable and verified. Never imply prior source-control docs or local
+downloads automatically appeared inside Letta, Fourthwall or Spreadshop.
+
+=== 3. COMMERCE PLATFORMS — VERIFIED VS REPORTED ===
+A. FOURTHWALL / WESELLSTUFF
+   Canonical URL: https://wesellstuff-ymn-shop.fourthwall.com/
+   Owner-verified 2026-10-13: redirected to /password, displayed "Coming soon" + email signup.
+   Owner reported signing in and Letta creating THREE products previously; NOT independently
+   inventoried via authenticated dashboard. Do not duplicate, overwrite or erase. Inspect first.
+   Customer checkout on new profitable listings: NOT VERIFIED LIVE.
+   Payout configuration / Stripe Connect KYC: NOT VERIFIED.
+   Platform-free catalog fulfillment is the intended path. No owner-funded procurement.
+B. SPREADSHOP / SPREADSHIRT ECOSYSTEM
+   Shop/account ID 401329032 (OWNER-REPORTED). Owner reported account created + Google sign-in
+   connected, but the saved browser profile did not list a confirmed signed-in site.
+   Public URL, identity, live products, payout status, Marketplace eligibility: NOT VERIFIED.
+   Preserve this exact account; NEVER create another because an agent lacks a session.
+   Distinguish branded Spreadshop from separate Spreadshirt Marketplace.
+C. OTHER POTENTIAL NO-INVENTORY CHANNELS
+   Printify Pop-Up, Payhip Free, Ko-fi researched as possibilities, not registered/linked.
+   No mandate to add accounts before the two existing stores work.
+D. AGENT INFRASTRUCTURE
+   Oddfellow on Letta is the INTENDED orchestration layer. Existing BSI org contains an
+   11-head / 31-worker commerce blueprint and a job-manifest/local test prototype. Does NOT
+   prove roles were created or scheduled in persistent production Letta.
+   Prior GitHub read verified; new branch creation denied 403. Do not claim commits or
+   deployment of this handoff without evidence.
+
+=== 4. CREATIVE CANON — COLLECTION BOUNDARIES ===
+SIX distinct collections. Intentional internal mashups stay together; genres/motifs must NOT
+blend across collections. Each gets own palette, board identity, artwork, variants, search
+metadata, catalog collection. BOARD = planning reference; SINGLE-PANEL SOURCE PNGs = intended
+commercial artwork. A product mockup is NOT print artwork.
+
+COLLECTION A — ART DECO SAMURAI
+Approved styles: elegant Art Deco architecture, symmetric 1920s gilded frames, Japanese
+ink-wash/watercolor texture, historical samurai-inspired silhouette, SUBTLE steampunk
+mechanisms (brass cog, mechanical joints, gauges, small steam canisters), crimson sunset,
+gold/black armor, pale parchment/ivory, teal shadow, red leaves/blossoms, mountains, mist,
+waterfalls, pagoda-like buildings. Bulky steampunk machinery must not replace the warrior's
+silhouette. Preserve user-approved 侍 calligraphy as prominent black brush-mark motif, but
+obtain competent Japanese-reading review before a commercial listing. Museum photograph was a
+reference for concept, not a license to copy a museum print or distinctive modern calligraphy.
+FINAL EXACT HERO IMAGE: "steampunk_samurai_beneath_the_crimson_sun.png" — lone armored samurai
+mostly side/back profile toward right; ornate dark black and gold segmented cuirass and helmet;
+crimson patterned cape moving left; restrained brass gear and mechanical fittings; sword at his
+side; great vermilion painted sun and oversized bold black brushstroke 侍 behind/near him;
+delicate watercolor ink splashes and cherry blossoms; tiered distant Japanese-inspired buildings
+in pale ink-washed mountains and waterfalls; mirror-like foreground stone reflecting crimson,
+framed by clean Deco gold sunburst/arched geometry. Premium, solemn, elegant, not generic anime.
+NO BSI MARK. This is the approved original file and must not be recreated arbitrarily.
+COMPANION EXACT IMAGE: "watercolor_steampunk_samurai_at_sunset.png" — same composition family,
+stronger washed-paper textures, loose ink-blot edges, warm sunset, stately armored figure.
+"steampunk_samurai_overlooking_temple_city.png" is EARLIER reference; preserve, do NOT replace
+the final 侍 hero with it. Board "art_deco_steampunk_samurai_moodboard.png".
+Possible titles for future ORIGINAL works only: Clockwork Shogun, Golden Ronin, Crimson
+Gearblade, Shogun of Brass, Steam & Steel, Lotus Blade. Working candidates, not cleared.
+
+COLLECTION B — RETRO FUTURE NOIR
+Approved styles: 1920s/1930s Art Deco architectural geometry; 1940s noir atmosphere; 1950s
+B-movie science-fiction pulp; selective cyberpunk neon; retro-futuristic airships with elongated
+DIRIGIBLE/zeppelin-like hulls, delicate nacelles and luminous mooring arrangements on skyscraper
+tops (do not claim airships routinely docked atop the Empire State Building); black/amber/copper/
+gold, crimson, electric teal, deep midnight blue; rain-wet streets and reflective smoky casinos.
+CANONICAL LEAD CHARACTER — "STARPORT SHARK": NOT A DETECTIVE. Slender, realistically
+proportioned human-looking roguish card shark and smuggler (slim shoulders, not oversized hero
+anatomy); dark fedora and well-tailored trench coat over vest, shirt and tie; cigarette at the
+lips with delicate smoke trail; one glowing amber/orange cybernetic eye; fine metal/circuit
+fittings around cheek/temple and a subtly mechanical hand or wrist. Minimal enhancements, not a
+wholly metallic face or large robot limbs. Sardonic confidence, guarded posture, luminous bespoke
+playing cards and casino chips. ORIGINAL; must avoid becoming a lookalike of a Fallout/Nick
+Valentine character or any protected design. "cyberpunk_noir_gambler_in_spaceport_lounge.png" is
+the exact standalone approved key character image.
+SECOND CANONICAL LEAD — "ALLEY AMBUSH": "neon_noir_alley_ambush.png" is the exact standalone
+scene. From deep inside a narrow shadowy rain-soaked alley, the SAME slim cybernetic rogue peers
+around a wall on the left with a futuristic revolver held ready, cigarette in mouth, glowing
+amber eye and subtle face/hand enhancements intact. At the farther end a long low retro-
+futuristic automobile with brilliant headlights has pulled up; four or so menacing coat-and-hat
+enforcers advance with original science-fiction interpretations of old drum-magazine Tommy-gun-
+style submachine guns. Some visibly alien and/or android, never copied franchise designs.
+Streetlamps, red illuminated architecture, a spectacular moon and distant airships rise through
+wet reflections and fog. Pulp-noir showdown, high contrast, clean gold Deco poster border.
+User explicitly approved this exact scene.
+Latest "retro_future_noir_concept_board.png" is the visual board. Other boards
+"retro_future_noir_casino_board.png" and "retro_futurist_noir_airship_board.png" are
+chronological references; latest owner-approved detail is authoritative over older layouts.
+CURRENT SIX CANONICAL WORKING TITLES:
+  1. Atomic Midnight — 1950s-ish retro spacecraft, wet neon Deco city.
+  2. Starport Shark — the approved slim cybernetic card-shark smuggler.
+  3. Signal From Beyond — aerial signals/monumental transmitter/spacescape.
+  4. Starline Nocturne — night-flight and terminal concepts.
+  5. Velvet Reactor — glamorous neon society/industrial retro-tech atmosphere.
+  6. Future City of Yesterday — nostalgic envisioned tomorrow-city.
+PLUS "Alley Ambush" as an additional owner-approved standalone artwork.
+PERMANENTLY RETIRE "Chrome Detective" as character identity and "Raygun Alley" and "City of
+Tomorrow" as product title candidates. Historical archives only; never public new materials.
+The film "Ray Gunn" prompted avoiding confusingly close branding.
+
+COLLECTION C — BAROQUE NORSE
+Majestic mythic North rendered with lavish golden European Baroque scrollwork, gilded
+architectural pilasters/frames, cold granite mountains, black ravens, wolves, rich wine-red
+cloaks, Viking-era-inspired ships, snowy valleys, hall facades. Hero
+"ravens_of_the_gilded_hall.png" — rugged armored warrior on a rocky precipice, black ravens,
+dramatic mountainous light, ornate gilded frame, maritime background.
+"wolf_crown_nordic_moonlit_myth.png" — large angular silver-black wolf's head with piercing
+pale eyes below a large white moon, flanking ravens, snow-dusted mountain wilderness.
+IMPORTANT: These generated images visibly contain small "BSI Commerce Collection" public-facing
+words. ON HOLD until those words are removed by careful minimal edits preserving the exact
+original composition; then re-hash and check output. Do not copy modern franchise Viking
+design, real-world religious identity claims, or restricted trademark emblems.
+Board: "baroque_norse_fantasy_moodboard.png". Future ideas: golden longship, Frost Hall,
+Moonlit Fjord, Storm & Ornament, Golden Valkyrie. Some are BOARD thumbnails, not finished art.
+
+COLLECTION D — CELTIC DECO
+Celtic-inspired intertwining knotwork and curvilinear spirals fused with clean Deco stepped
+geometric symmetry, metallic gold outlines, deep emerald/forest greens, warm ivory sun discs,
+highland lakes, ancient standing stones, stylized stags/herons. HERO:
+"emerald_celtic_stags_and_celestial_birds.png" — tall emerald Art Deco framed symmetrical
+painting of two gold-toned standing stags/deer and two uplifted heron-like birds bracketing a
+circular radiant gold sun, mysterious runic-looking standing stones across a forest lake, lush
+green mountains and waterfalls, disciplined stepped and knotted gold borders. Companion:
+"emerald_celtic_guardians_in_gold.png". Board: "celtic_deco_art_collection_board.png".
+Future ideas: Knot & Gold, Moonlit Stag, Sunburst Heron, Sacred Grove, Stone Circle Dawn,
+Triskele Lake. Research historical accuracy before claiming authentic ancient symbols.
+Do not merge Celtic iconography into Mythic Geometry.
+
+COLLECTION E — CELTIC BAROQUE
+Romantic, pastoral, richly ornamented: ivory stone cloister arches, carved Celtic-like knotwork,
+gold Baroque frame, wild roses, white blossoms, heavy ivy, highland ruins, waterfall/lake in a
+hazy glowing evening valley. "sacred_spiral_celtic_fantasy_landscape.png" — a red-haired woman
+in emerald/cream robes resting beneath a flower-draped arch with a reclining cream-colored hound
+beside her; a large gold three-part spiral motif crowns the ruins and a spectacular winding
+landscape recedes into warm light. Rich but gentle and contemplative; decorative home décor
+rather than weapons or streetwear. Board: "celtic_baroque_fantasy_moodboard.png".
+Future ideas: Ivy Abbey, River of Saints (working poetic title: legal/accuracy check),
+Blossom Arch, Highland Reverie, Golden Cloister.
+
+COLLECTION F — MYTHIC GEOMETRY (SEPARATE; NOT A CULTURAL COLLAGE)
+Owner specifically ordered this genre kept separate; do NOT mix Norse/Celtic/Japanese pieces
+into it. Stand-alone original abstract/celestial art language: circles, moon phases, solar
+coordinates, cosmic symmetry, geometric axes, abstract natural forms, stylized starfields and
+world-tree-like imagery without claiming traditional religious authenticity or borrowing
+identifiable protected symbolism. Black, gold, parchment, ash gray, muted jade/rust.
+"mythic_geometry_concept_board.png" is exploratory. Status: HOLD / LATER WAVE.
+
+=== 5. EXACT APPROVED SOURCE ASSETS AND VERIFICATION ===
+Use the attached original PNG bytes and verify SHA256 from "REFINED_ART_MANIFEST.json", bundled
+with "BSI_Refined_Original_Art_Launch_Package_2026-10-13.zip". Manifest records name, size,
+resolution and SHA256. If assets are legitimately edited later, keep the original, assign a NEW
+filename, document reason and new hash, produce before/after comparisons. Do not destroy or
+archive-overwrite the original, or regenerate a similar image as a substitute.
+Priority originals:
+  01 steampunk_samurai_beneath_the_crimson_sun.png
+  02 neon_noir_alley_ambush.png
+  03 watercolor_steampunk_samurai_at_sunset.png
+  04 cyberpunk_noir_gambler_in_spaceport_lounge.png
+  05 emerald_celtic_stags_and_celestial_birds.png
+  06 sacred_spiral_celtic_fantasy_landscape.png
+  07 ravens_of_the_gilded_hall.png               [BSI TEXT HOLD]
+  08 wolf_crown_nordic_moonlit_myth.png          [BSI TEXT HOLD]
+  09 emerald_celtic_guardians_in_gold.png
+  10 steampunk_samurai_overlooking_temple_city.png [ARCHIVE REFERENCE]
+Approved project boards:
+  art_deco_steampunk_samurai_moodboard.png
+  retro_future_noir_concept_board.png
+  baroque_norse_fantasy_moodboard.png
+  celtic_deco_art_collection_board.png
+  celtic_baroque_fantasy_moodboard.png
+  mythic_geometry_concept_board.png
+Source PNGs approx 1122 x 1402 px (card shark 1149 x 1369). NOT sufficient by default for a
+large wall print at 300dpi: at 300dpi, 1122 x 1402 supports roughly 3.74 x 4.67 inches without
+enlargement. Print-spec compliance is GATED until provider specs and acceptable prepared masters
+are checked. An upscaled file is not proof of restored original detail. Some mockups have
+embedded AI-generated lettering and title inaccuracies and MUST NOT be blindly used as final
+print files. Full-width boards have many small panels; they are concept references, not
+individual artwork masters.
+The owner has downloaded earlier archives. The ChatGPT files are NOT assumed mounted in the
+Letta execution environment. To hand over art, attach/share the existing ZIP archive and the
+canonical letter inside the Letta chat/workspace. Do not claim synchronization by memory or
+handoff text alone.
+
+=== 6. FIRST SIX SKU PILOT — COSTS UNVERIFIED; NOT FOR AUTOMATIC PUBLICATION ===
+Use companion FIRST_SIX_SKU_LAUNCH_PLAN.csv. Draft rows:
+  1. SAM-POST-01 — matte art print, "Samurai Beneath the Crimson Sun",
+     source steampunk_samurai_beneath_the_crimson_sun.png, target Fourthwall.
+  2. NOIR-POST-01 — matte art print, "Alley Ambush",
+     source neon_noir_alley_ambush.png, target Fourthwall.
+  3. CELT-POST-01 — matte art print, "Emerald Geometry",
+     source emerald_celtic_stags_and_celestial_birds.png, target Fourthwall.
+  4. NOIR-TEE-01 — premium tee, "Starport Shark — The Card Table",
+     source cyberpunk_noir_gambler_in_spaceport_lounge.png, target Spreadshop.
+  5. SAM-TEE-01 — premium tee, "Watercolor Samurai at Sunset",
+     source watercolor_steampunk_samurai_at_sunset.png, target Spreadshop.
+  6. SAM-MUG-01 — ceramic mug, approved Crimson Sun Samurai art,
+     final target Fourthwall or Spreadshop only after actual margin check.
+Do not claim artwork approved for a print medium because it looks good on a mockup. For tees,
+determine whether a rectangular print is acceptable or create a transparent/clean-edged
+derivative of the exact source composition. For mugs, adapt to the real wrap/dimensions.
+NO source substitution; crops must preserve focal point, 侍 and framing when present.
+Keep each collection categorized separately in the shop.
+If Letta's reported 3 existing Fourthwall products duplicate any planned SKU, REUSE or refine
+only after checking actual config, preserving existing valid buyer-facing URLs and audit/history.
+
+=== 7. ZERO-CHARGE / PROFIT-FIRST GATE — NON-NEGOTIABLE ===
+Before publishing or enabling any individual product:
+  [ ] Supplier/platform handles inventory, billing, manufacturing, shipping; owner does NOT
+      prepay supplier order costs or provide a billing card for negative balances.
+  [ ] Verified plan has $0 recurring setup/monthly fee and no hidden vendor/subscription or
+      metered agent charges.
+  [ ] Exact product and variants have actual current supplier base charge, provider/processing
+      fees, shipping who-pays-what, taxes seller owes, returns, refunds, discount exposure and
+      chargeback risk documented.
+  [ ] Projected net contribution >= $5 per unit AND net margin >= 25% of customer's product
+      price, calculated after seller-borne costs.
+  [ ] Potential seller liability and negative-balance scenarios reviewed; unknown or
+      unacceptable loss exposure = BLOCKED.
+  [ ] Art passes original IP/trademark/character resemblance screening, responsible cultural
+      depiction, language/text QA and pixel/printable-area QA; remove internal BSI words.
+  [ ] Required store policies, creator payout onboarding and applicable Arkansas
+      sole-proprietor/trade-name/tax/licensing steps assessed using real individual information
+      only in official secure provider flows.
+  [ ] Storefront and mobile listing preview inspected; no false delivery windows, fabricated
+      testimonials, manufactured sales or misleading copyright/heritage claims.
+  [ ] Actual public URL and provider checkout verified WITHOUT buyer-funded test purchase or
+      unsanctioned transactions.
+If even one required input is unknown, HOLD. No product is automatically "profitable" from
+category-wide averages or hypothetical pricing. Payout success differs from customer payment
+processing success. No more product/category ideation or new sales platforms until core gates
+move forward with evidence, unless market evidence requires an exception.
+
+=== 8. BSI SYNTHETIC DEPARTMENTS — PROPOSED ORGANIZATION ===
+Chief coordinator: ODDFELLOW (existing agent on Letta).
+Eleven synthetic heads:
+  01 Atlas      — Executive coordination / business priorities
+  02 Signal     — Marketing research, buyer/search trends and analytics
+  03 Relay      — Supplier catalog, production and fulfillment checks
+  04 Canvas     — Creative, exact source preservation and prepress
+  05 Portal     — Storefront configuration, listing and merchandising
+  06 Pulse      — Organic marketing, SEO, distribution and conversion
+  07 Blueprint  — Digital-product studio, separate from physical POD
+  08 Ledger     — Financial unit economics, payouts, chargebacks and audit
+  09 Care       — Platform-led customer experience, returns and escalations
+  10 Sentinel   — IP, trademarks, privacy, law, cultural accuracy and safety
+  11 Circuit    — Integration engineering, durable jobs, logging and controls
+A previous local workforce bundle specified 31 specialist worker roles and 17 launch jobs.
+They are design/manifest assets, not proof of deployed agents. Use existing orchestration
+queues, memory, approval matrix and resource registry WITHOUT duplicating identical tools,
+stores, projects or agents. One writer per live store/product at a time. Event/diff logs and
+file hashes prevent parallel agents from overwriting owner-approved work.
+
+=== 9. REQUIRED NEXT EXECUTION STEPS; DO NOT RE-ASK FOR CREATIVE APPROVAL ===
+Step 0 / SYNC: Import this handoff and the original file manifest. Read all prior jobs and
+timestamps, then report deltas only. Reconcile the previously mentioned three Letta-created
+Fourthwall products before adding anything.
+Step 1 / ACCESS: Securely verify account access via the provider's actual session or OAuth.
+Never paste Google, Stripe or Fourthwall credentials into chat/repo. A browser profile with
+saved cookies is not proof of access.
+Step 2 / PRINT/COMPLIANCE: Using exact images, check final file dimensions, print-area specs
+and potential BSI marks; verify Japanese character, generic brand/title clearance, and no
+lookalike protected franchise designs. Create new derived masters only when required,
+preserving originals and change logs.
+Step 3 / ECONOMICS: For each exact SKU verify provider quote, break-even and projected margin;
+compute under normal and discount/refund scenarios. Flag any option that can require a card
+charge or creates negative seller balance.
+Step 4 / LISTINGS: Prepare accurate individual product descriptions, captions, SEO/search
+metadata and mobile mockups derived from exact artwork. Publish only after all gates pass and
+if platform support/authorization permits.
+Step 5 / PROVE: Record timestamped storefront URLs, public visibility, actual price, cost,
+processing/payout state, checkout readiness and platform support routing; separate completed
+orders from theoretical revenue.
+Step 6 / DISTRIBUTE: Only unpaid, terms-compliant promotion, natural organic search and
+supported marketplace listings. Existing popular products reveal buyer demand, but their
+traffic does NOT automatically transfer to our store.
+Step 7 / CONTINUE: Reconcile audits, detect real product performance and choose next approved
+artwork from the existing archives. STOP when a charge, legal filing, unresolved chargeback
+issue or other out-of-scope consequence arises.
+
+=== 10. MANDATORY NEXT HANDOFF REPORT FORMAT ===
+A. TIMESTAMP AND EVIDENCE SOURCE
+B. CANONICAL SOURCE ASSETS VERIFIED (filename + hash + derivative status)
+C. FOURTHWALL: authenticated? actual 3 existing products? payout? coming soon?
+D. SPREADSHOP: ID 401329032 verified? public URL? products? marketplace?
+E. PER SKU: source image, live/draft/blocked, exact real base charge and retail price,
+   shipping/fee/return assumptions, expected net dollars and %, public URL
+F. AGENTS: what is created vs only in manifest; which jobs run reliably?
+G. ECONOMIC/SECURITY/IP RISKS; which prevent publication?
+H. NEW VERIFIED REAL ORDERS AND NET PROFIT (if any); no estimates as earnings
+I. EXACT NEXT ZERO-SPEND ACTIONS AND ONLY ESSENTIAL OWNER-ONLY BLOCKERS
+J. FILE/STATE REVISION NUMBER AND LINKS; do not replace source masters.
+
+=== 11. TRANSFER AND ACKNOWLEDGEMENT RULE ===
+Agent must respond with ACKNOWLEDGEMENT OF CANON VERSION "BSI COMMERCE CANON v1.0 /
+2026-10-13"; list files actually received with hash verification; report any missing archives;
+then begin zero-spend tasks under the existing standing authorization. If it lacks artwork
+files, it must NOT substitute another image and call it canon. It should request the existing
+asset ZIP or report a file import blocker. No forced paid workflow.
+Use this exact handoff, not generic summary snippets, when restarting Letta, ChatGPT Work, an
+authorized agent or a new session. Later owner revisions must be appended as dated v1.1,
+v1.2 ... rather than silently mutating history.
+
+END — CANONICAL BSI COMMERCE v1.0
