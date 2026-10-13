@@ -41,16 +41,31 @@ ODDFELLOW = os.path.join(REPO, "oddfellow")
 SCRIPT = os.path.join(ODDFELLOW, "sandbox_ipv4_fix.sh")
 MODULE_SRC = os.path.join(ODDFELLOW, "sandbox", "force_ipv4.py")
 
+# Numeric literals, not hostnames. A literal is parsed rather than resolved, so
+# these probes need no DNS and cannot fail for a network reason. The previous
+# probe resolved trycloudflare.com, which made the tests below depend on live
+# DNS -- the same defect that made the script's `verify` mode intermittent.
+#
+# Returns (control, ipv6_literal):
+#   control      -- families for 127.0.0.1; must always contain AF_INET (2)
+#   ipv6_literal -- families for ::1; [10] unpatched, [] patched (the patch
+#                   removes the only answer and raises gaierror)
+#
 # int(r[0]) matters: AddressFamily is an IntEnum, and its repr is not
 # eval-able, so printing the raw set produced a SyntaxError in the test rather
 # than a result.
 FAMILIES_PROBE = (
-    "import socket;"
-    "print(sorted({int(r[0]) for r in socket.getaddrinfo('trycloudflare.com', 443)}))"
+    "import socket\n"
+    "ctrl = sorted({int(r[0]) for r in socket.getaddrinfo('127.0.0.1', 443)})\n"
+    "try:\n"
+    "    v6 = sorted({int(r[0]) for r in socket.getaddrinfo('::1', 443)})\n"
+    "except socket.gaierror:\n"
+    "    v6 = []\n"
+    "print(repr((ctrl, v6)))\n"
 )
 
 
-def _families(python: str) -> list[int]:
+def _families(python: str) -> tuple[list[int], list[int]]:
     out = subprocess.run(
         [python, "-c", FAMILIES_PROBE],
         capture_output=True,
@@ -93,9 +108,10 @@ def test_fix_makes_resolution_ipv4_only(fresh_venv, tmp_path):
         env={**os.environ, "GAI_CONF": str(gai)},
     )
 
-    families = _families(fresh_venv)
-    assert 10 not in families, f"AF_INET6 still resolved: {families}"
-    assert 2 in families, f"no IPv4 result at all: {families}"
+    control, v6 = _families(fresh_venv)
+    assert control == [2], f"control probe is broken: {control}"
+    assert 10 not in v6, f"AF_INET6 still resolved for the IPv6 literal: {v6}"
+    assert v6 == [], f"expected no answer for '::1' once patched, got {v6}"
 
 
 def test_the_guard_is_necessary(fresh_venv):
@@ -103,14 +119,18 @@ def test_the_guard_is_necessary(fresh_venv):
 
     If this ever stops holding, `test_fix_makes_resolution_ipv4_only` proves
     nothing -- it would be green in an environment where the fault cannot occur.
+
+    This no longer skips. It used to skip whenever DNS returned no AAAA record
+    for the probe hostname, which meant the control could quietly stop
+    controlling and still look green. A numeric literal always has an IPv6
+    answer to find, so the control is unconditional now.
     """
-    families = _families(fresh_venv)
-    if 10 not in families:
-        pytest.skip(
-            "this environment returns no AAAA record for trycloudflare.com, so "
-            "the fix cannot be shown to be necessary here (families=%r)" % (families,)
-        )
-    assert 10 in families
+    control, v6 = _families(fresh_venv)
+    assert control == [2], f"control probe is broken: {control}"
+    assert 10 in v6, (
+        "the unfixed interpreter did not return AF_INET6 for '::1', so "
+        "test_fix_makes_resolution_ipv4_only proves nothing"
+    )
 
 
 def test_installed_module_is_the_repo_module(fresh_venv, tmp_path):

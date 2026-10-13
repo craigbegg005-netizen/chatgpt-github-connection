@@ -83,14 +83,35 @@ verify_with() {
 import socket
 import sys
 
-families = {r[0] for r in socket.getaddrinfo("trycloudflare.com", 443)}
-if socket.AF_INET6 in families:
-    print("FAIL: AF_INET6 still returned -- the .pth did not load")
+# Probe with NUMERIC LITERALS, never a hostname.
+#
+# This check used to resolve trycloudflare.com, which made it depend on live DNS.
+# When resolution was slow or failed the check failed too -- and it failed inside
+# the full suite while passing in isolation, so it read as a broken patch rather
+# than a flaky probe. A literal is parsed, not resolved: no network, no DNS, and
+# nothing left to be intermittent about.
+#
+# Control first. 127.0.0.1 must still resolve to AF_INET. Without this, a probe
+# that returned nothing for every input would "pass" the check below.
+try:
+    control = {r[0] for r in socket.getaddrinfo("127.0.0.1", 443)}
+except OSError as exc:
+    print("FAIL: control probe itself failed: %r" % (exc,))
     sys.exit(1)
-if socket.AF_INET not in families:
-    print("FAIL: no AF_INET result at all")
+if socket.AF_INET not in control:
+    print("FAIL: control probe returned no AF_INET -- the probe is broken, not the patch")
     sys.exit(1)
-print("OK: IPv4-only resolution")
+
+# ::1 has no IPv4 answer, so a loaded patch removes it entirely and raises.
+# An unpatched interpreter returns AF_INET6 here.
+try:
+    probe = {r[0] for r in socket.getaddrinfo("::1", 443)}
+except socket.gaierror:
+    probe = set()
+if socket.AF_INET6 in probe:
+    print("FAIL: AF_INET6 still returned for '::1' -- the .pth did not load")
+    sys.exit(1)
+print("OK: IPv4-only resolution (AF_INET6 removed, AF_INET intact)")
 PY
 }
 
