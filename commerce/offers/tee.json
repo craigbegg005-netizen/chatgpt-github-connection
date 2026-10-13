@@ -1,0 +1,30 @@
+{
+  "_note": "Reconstructed 2026-10-13 from live Fourthwall catalog data after the original payload was found missing from every commit and from disk. Field values marked VERIFIED were re-read from the live catalog this session.",
+  "product": "Gildan Unisex Softstyle T-Shirt",
+  "artwork": { "file": "tee-extrusion-blueprint.png", "url": "https://raw.githubusercontent.com/craigbegg005-netizen/chatgpt-github-connection/gh-pages/art/v1/tee-extrusion-blueprint.png", "bytes": 285700, "http": 200 },
+  "catalog": {
+    "productId": "pro_O7Dd4-6JTUuq48NSUd3TMg",
+    "slug": "gildan-unisex-softstyle-t-shirt-1",
+    "brand": "Gildan", "brandModel": "64000",
+    "categoryPath": ["Apparel", "T-Shirts"],
+    "productionMethod": "DTG",
+    "priceFrom": 9.50, "priceTo": 39.81,
+    "reviews": { "count": 94, "rating": 4.5 },
+    "printAreas": [
+      { "type": "front_large", "name": "Front Large", "salePrice": 5.95, "supportsBackendRendering": true },
+      { "type": "back_large",  "name": "Back Large",  "salePrice": 5.95, "supportsBackendRendering": true },
+      { "type": "sleeve_left","name": "Left Sleeve", "salePrice": 2.49, "supportsBackendRendering": true },
+      { "type": "sleeve_right","name":"Right Sleeve","salePrice": 2.49, "supportsBackendRendering": true },
+      { "type": "label_inside","name":"Inside Label","salePrice": 0.99, "supportsBackendRendering": false }
+    ]
+  },
+  "cost": {
+    "blank": 9.50,
+    "printRegion_front_large": 5.95,
+    "base_total": 15.45,
+    "_correction": "The 2026-10-13 blocker doc recorded base $9.50 and margin $18.50. That omitted the front_large print charge. get-customization-pricing documents cost as 'blank, print regions' components, so the print region is additive. Base is 9.50 + 5.95 = 15.45."
+  },
+  "retail_price": 28.00,
+  "margin": { "per_unit": 12.55, "percent": 44.8 },
+  "gates": { "margin_gt_5": true, "margin_gt_25pct": true }
+}

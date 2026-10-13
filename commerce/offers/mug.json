@@ -1,0 +1,21 @@
+{
+  "_note": "Reconstructed 2026-10-13 from live Fourthwall catalog data after the original payload was found missing from every commit and from disk.",
+  "product": "White Glossy Mug",
+  "artwork": { "file": "mug-batch-004.png", "url": "https://raw.githubusercontent.com/craigbegg005-netizen/chatgpt-github-connection/gh-pages/art/v1/mug-batch-004.png", "bytes": 116621, "http": 200 },
+  "catalog": {
+    "productId": "pro_4v5OfYhyRx62KW5b7Oj6Uw",
+    "slug": "white-glossy-mug-sublimation",
+    "brand": "Mugz", "brandModel": "WGM78",
+    "categoryPath": ["Drinkware", "Coffee Mugs"],
+    "productionMethod": "SUBLIMATION",
+    "priceFrom": 5.95, "priceTo": 10.50,
+    "reviews": { "count": 123, "rating": 4.54 },
+    "badges": ["BESTSELLER"],
+    "supportsBackground": false,
+    "printAreas": [ { "type": "default", "name": "Default", "salePrice": 0.00, "supportsBackendRendering": true, "placements": ["front", "back"] } ]
+  },
+  "cost": { "blank": 5.95, "printRegion_default": 0.00, "base_total": 5.95 },
+  "retail_price": 20.00,
+  "margin": { "per_unit": 14.05, "percent": 70.3 },
+  "gates": { "margin_gt_5": true, "margin_gt_25pct": true }
+}
