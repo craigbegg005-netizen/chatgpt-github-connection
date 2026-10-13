@@ -109,7 +109,13 @@ the state that does not survive it.
    NSF lane is likely **not open for Oddfellow-as-a-product**. Reasoning:
    [`NSF-PROJECT-PITCH-DRAFT-2026-10-12.md`](NSF-PROJECT-PITCH-DRAFT-2026-10-12.md) §"Step 0".
 
-**Suite: 719 pass** (was 710; +9). **Branch head:** `5185ab7` (before this commit).
+4. **`recovered/` moved onto canonical** (2026-10-13 00:15 UTC). The only surviving record of
+   three services' API surfaces — whose source exists in version control nowhere — was sitting on
+   a side branch, one routine cleanup away from deletion, invisible to any reader of canonical.
+   All three captures verified **hash-identical to the live services** by canonical-JSON SHA256
+   before committing, and now guarded by 8 tests including a negative control.
+
+**Suite: 727 pass** (was 710; +17). **Branch head:** `5185ab7` (before this commit).
 
 ---
 
@@ -179,7 +185,7 @@ of the live one caused a 20-hour blind spot on 2026-10-01.
 
 ## Where the branch actually is
 
-- `letta/combined-single-service-v0.20.4` — the head moves hourly, so read the newest `oddfellow/HANDOFF-*.md` for where it is. (A SHA was written here and went stale for three days: it still named a 2026-10-08 commit while the branch had moved ~100 commits.) **719 tests pass** — run `pytest` from the repo root; the canonical invocation collects both `oddfellow/tests` and `oddfellow/connector/tests`, and a run scoped to one root silently skips the count guard. Recent additions: the Cognitive Capability Profile (`oddfellow/cognition/`), a durable open-goal register (`GOALS.json`), and the tool-invocation audit corpus.
+- `letta/combined-single-service-v0.20.4` — the head moves hourly, so read the newest `oddfellow/HANDOFF-*.md` for where it is. (A SHA was written here and went stale for three days: it still named a 2026-10-08 commit while the branch had moved ~100 commits.) **727 tests pass** — run `pytest` from the repo root; the canonical invocation collects both `oddfellow/tests` and `oddfellow/connector/tests`, and a run scoped to one root silently skips the count guard. Recent additions: the Cognitive Capability Profile (`oddfellow/cognition/`), a durable open-goal register (`GOALS.json`), and the tool-invocation audit corpus.
 
 ## ⚠️ NEW P0 — Render DB `begg-ai-core-db` expires 2026-10-27T23:21:01Z
 
@@ -439,7 +445,7 @@ The running commit is `11b3901`, verified to be a real ancestor of the canonical
   Gate A); the **IPv6 fix is now durable in the repo** (`sandbox_ipv4_fix.sh` + `rehearsal.sh`)
   instead of being re-derived by hand after every reset; and the **NSF Project Suitability
   Assessment is resolved** — a seven-question Yes/No gate that is likely **not** clearable on the
-  product framing, because two answers are "No". Suite **719 pass**.
+  product framing, because two answers are "No". Suite **727 pass**.
   ⚠️ Superseding the 21:07 entry: **workforce Phase 2 is now committed** — synthetic heads
   cannot create a job without naming its origin, and the origin rule is enforced at
   construction rather than documented. Fixed a real persistence bug in the same pass: the
