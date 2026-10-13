@@ -103,3 +103,35 @@ agent can create all three products, set prices, and publish. One owner action, 
   deliberately not used.
 - The Free plan's `domains: limit 0` means `wesellstuff.com` will not serve on the current
   plan — the `*.fourthwall.com` subdomain is what works.
+
+
+---
+
+## Independent re-verification — 2026-10-13 08:0x UTC
+
+Re-checked by a different session, by listing the live server rather than reading this file.
+
+**The core claim holds.** `letta mcp tools Fourthwall` returns **126 tools**, and none of the three
+named tools is among them — `request-media-upload-link`, `save-media-library-image` and
+`get-media-library-images` appear only inside other tools' descriptions. `ecommerce_add-design-region`'s
+own description confirms the dependency in its own words: *"The image must already be saved (use
+ecommerce_save-media-library-image first)."*
+
+**The blocker is narrower than "no path to a product design", and the distinction is worth having.**
+The **consuming** half of the pipeline is fully exposed:
+
+`ecommerce_inspect-design` · `ecommerce_add-design-region` · `ecommerce_remove-design-region` ·
+`ecommerce_edit-design` · `ecommerce_generate-product-design-previews` ·
+`ecommerce_rerender-design-previews` · `ecommerce_get-design-pipeline-status` ·
+`ecommerce_create-offers-from-designs`
+
+So the design pipeline works; what is missing is exactly one step — **ingest**. That matters because
+it makes the fix narrow: any mechanism that puts one image into the shop's media library unblocks the
+whole lane, and nothing downstream needs changing.
+
+**One path does exist, and it costs money.** `brand_extract_assets` returns
+`artworks[].media[].media_url` — a real media-library entry, documented as passable to the ecommerce
+tools "without a separate upload step". It is reached via `brand_analyze` → `brand_extract_assets`,
+and each artwork costs a gpt-image call. So the honest statement is **no *free* MCP path**, not no
+path — and the paid one is out of scope under zero-spend. The original record says the paid path was
+identified and declined; this confirms it and names the mechanism.
