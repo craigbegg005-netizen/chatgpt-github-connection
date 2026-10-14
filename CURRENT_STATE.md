@@ -166,7 +166,7 @@ phone acceptance against today" is currently false until it is restored.
 
 ## Read this first: the one thing that has not moved
 
-**Gate A is unchanged; the two owner-action items are Gate A and DB preservation (below).** Probed 2026-10-14 07:01 UTC:
+**Gate A is unchanged; the two owner-action items are Gate A and DB preservation (below).** Probed 2026-10-14 08:01 UTC:
 
 ```
 GET https://oddfellow-letta-backend-v0206.onrender.com/livez
@@ -438,7 +438,7 @@ The running commit is `11b3901`, verified to be a real ancestor of the canonical
 
 ## Read these for detail
 
-- `oddfellow/HANDOFF-UNIVERSAL-2026-10-14-0700Z.md` — **newest handoff** (2026-10-14 07:00 UTC).
+- `oddfellow/HANDOFF-UNIVERSAL-2026-10-14-0800Z.md` — **newest handoff** (2026-10-14 08:00 UTC).
   ⚠️ Superseding the 23:00 entry: **this cycle is not a sweep.** The sandbox reset at 23:32 UTC
   and three real changes came out of it — the **rehearsal is UP and `ready:true`** (the only
   fully-working end-to-end path, and the only route to phone acceptance that does not wait on
