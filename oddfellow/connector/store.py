@@ -32,6 +32,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterator
 
+from .router import failover_order
+
 from .schema import (
     APPROVAL_REQUIRED,
     Job,
@@ -781,6 +783,72 @@ class Store:
             job.status = Status.FAILED_TERMINAL
         job.error = error
         return self._update(job, actor, "job.fail", error=error)
+
+    def failover_to_next(
+        self,
+        job_id: str,
+        actor: str,
+        registry: dict[str, Any],
+        *,
+        allow_paid: bool = False,
+    ) -> tuple[Job, str | None]:
+        """Reassign a FAILED_RETRYABLE job toward the next capable provider.
+
+        This is the trigger the failover directive asked for: ``failover_order``
+        has always been able to *rank* candidates, but nothing called it when a
+        job actually failed. This method is that call. On a retryable failure it
+        returns the job to READY, clears the failed provider, and records the
+        recommended receiver in the audit log; the receiver then claims normally,
+        so a provider id is only ever set by a real claim -- never by a
+        recommendation.
+
+        The doctrine holds in three places, deliberately:
+
+          * **Only FAILED_RETRYABLE jobs fail over.** A WAITING_AUTHORIZATION job
+            is not a failure; re-routing it would be authorization circumvention,
+            and this method refuses it.
+          * **Approval survives.** Failover clears the provider, not the approval
+            record: a HIGH/CRITICAL job still cannot be claimed by the receiver
+            without an approval (``claim_job`` enforces it at claim time).
+          * **Exhaustion preserves, never abandons.** With no capable candidate
+            left, the job stays FAILED_RETRYABLE and the exhaustion is audited --
+            parked for the owner, not dropped. The checkpoint trail and payload
+            travel with the job either way, so the eventual receiver resumes
+            rather than restarting.
+
+        Returns ``(job, chosen_provider)``; ``chosen_provider`` is ``None`` when
+        the ladder was exhausted.
+        """
+        job = self._require(job_id)
+        if job.status is not Status.FAILED_RETRYABLE:
+            raise ValueError(
+                f"failover applies to FAILED_RETRYABLE jobs, not {job.status.value} "
+                "-- re-routing a non-failure is not failover"
+            )
+        failed = (job.provider,) if job.provider else ()
+        candidates = failover_order(job, registry, failed=failed, allow_paid=allow_paid)
+        if not candidates:
+            self.audit(
+                actor,
+                "job.failover.exhausted",
+                job_id=job.job_id,
+                failed_provider=job.provider or "none",
+            )
+            return job, None
+        chosen, transport = candidates[0]
+        previous = job.provider
+        job.status = Status.READY
+        job.provider = None
+        job.transport = None
+        updated = self._update(
+            job,
+            actor,
+            "job.failover",
+            from_provider=previous or "none",
+            to_provider=chosen,
+            transport=transport.value,
+        )
+        return updated, chosen
 
     def release_claim(self, job_id: str, actor: str, reason: str) -> Job:
         """Return a RUNNING job to READY, so another provider can take it.
