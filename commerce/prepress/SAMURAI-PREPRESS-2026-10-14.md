@@ -3,6 +3,26 @@
 **Date:** 2026-10-14 02:55 UTC · **Source:** `steampunk_samurai_beneath_the_crimson_sun.png`, **1122 × 1402 px**
 **Sizes tested:** Fourthwall Enhanced Matte Paper Poster (P001), all **14** available sizes, read live from the catalog.
 
+## ⚠️ The size list may be incomplete — 14 claimed, 10 tabulated
+
+Line 4 says *"all **14** available sizes, read live from the catalog"*, but the table below lists
+**10**: 5×7, 8×10, 11×14, 10×10, 12×16, 12×18, 16×20, 18×24, 20×30, 24×36. Four sizes are either
+missing from the table or the count is wrong, and **I could not resolve it**: the catalog exposes 255
+products with no text-search parameter, and `enhanced-matte-paper-poster` is not a valid slug.
+
+**Does it threaten the headline?** Almost certainly not, and here is the reasoning rather than an
+assurance. At 300 DPI this source covers **3.74 × 4.67 inches**, so a size would have to be *no
+larger than that in both dimensions* to reach 300 DPI without upscaling. The smallest tabulated size
+is 5×7, which is already larger. A missing size would have to be smaller than 3.74 × 4.67 in — an
+implausibly small poster — to change the conclusion. **So the headline stands; the table's
+completeness does not.**
+
+**What this affects.** `prepress_check.py`'s default size list was taken from this table, so it
+inherits the same ten. If the four missing sizes exist and matter, both need updating together —
+which is exactly why the tool's list is a named constant with a test asserting it matches the table.
+
+**To close it:** read the P001 size list from the catalog and reconcile the count, or correct line 4.
+
 ## 🔴 The headline
 
 **At 300 DPI this artwork supports 3.74 × 4.67 inches — smaller than Fourthwall's SMALLEST poster (5×7).**
