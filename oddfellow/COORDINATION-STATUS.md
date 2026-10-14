@@ -1,6 +1,6 @@
 # BSI COORDINATION STATUS — single source for cross-AI state
 
-**Last verified: 2026-10-14 06:05 UTC** · canonical head **`6a714cd`**
+**Last verified: 2026-10-14 08:05 UTC** · canonical head **`7bd5fd5`**
 **Read this file first. It is kept current on a schedule — check the timestamp above before trusting it.**
 
 > **Path is fixed on purpose.** Other pointers in this repo have drifted three times (a
@@ -53,7 +53,7 @@ dashboard does. Correcting this expectation saves the most owner time of anythin
 | Render `-v0206` | **LIVE, NOT READY** | `/livez` 200, `/healthz` `ok:false` |
 | Deployed SHA | **NOT VERIFIABLE** — no build endpoint | **lower bound `7c33404` (2026-09-30 04:21:57 UTC)** — see the note below |
 | Persistent workforce | **NOT PROVISIONED** | `letta agents create` → **402, `"limit":3`** |
-| Test suite | **758 passed** | run at `6a714cd` |
+| Test suite | **758 passed** | run at `7bd5fd5` |
 | **Revenue / orders / payouts** | **NONE, on every platform** | — |
 
 ### ⚠️ The deployed-SHA bound, corrected 2026-10-14
@@ -132,5 +132,5 @@ shape and had to be rebuilt from a live catalog; **these cannot be.**
 
 ## 7. CURRENT HEAD
 
-`letta/combined-single-service-v0.20.4` @ **`6a714cd`** · coordination branch
+`letta/combined-single-service-v0.20.4` @ **`7bd5fd5`** · coordination branch
 `coordination/oddfellow-chatgpt-sync` @ **`3c79769c`**
