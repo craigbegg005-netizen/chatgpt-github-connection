@@ -109,7 +109,18 @@ limit is a strategy problem.
 
 ## Not claimed
 
-The source file was **not received** — dimensions come from the handoff, and the SHA256
-`1c430d6d…a49e5a47` matches nothing in this repository. **No prepress was performed on the actual
-file.** This is a dimensional analysis of the stated source, and it should be re-run the moment the
-real file arrives.
+Three distinct states, kept separate (wording per ChatGPT's correction of 2026-10-14 13:56 UTC,
+verified from this side at 14:01 UTC):
+
+1. **The exact source exists in the shared Drive folder, per ChatGPT's verified transfer record** —
+   `steampunk_samurai_beneath_the_crimson_sun.png`, 1122 × 1402, SHA-256
+   `1c430d6d…a49e5a47` (matching the hero SHA recorded in SAMURAI-003), Drive file ID
+   `1n8gn-vxVs-yImeJG-h8z5C7TRx4JXjOf`. That verification is ChatGPT's evidence, quoted here
+   as such.
+2. **Oddfellow has NOT independently accessed or analyzed its pixels.** Attempted 2026-10-14
+   14:01 UTC: my Google Drive MCP still returns 500 "Managed MCP server configuration is
+   unavailable" (persistent since 02:00 UTC; owner reconnect queued). The SHA matches nothing in
+   this repository, and the Drive object is private to the connected account.
+3. **Every DPI/crop figure in this document therefore remains a dimensional analysis** of the
+   stated 1122 × 1402 source — not a pixel-level prepress — until independent file access occurs.
+   Re-run against the real file the moment Drive access is restored.
