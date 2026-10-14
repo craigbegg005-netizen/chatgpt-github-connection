@@ -141,6 +141,12 @@ _ADDED_COLUMNS = (
     # working unchanged.
     ("jobs", "priority", "TEXT NOT NULL DEFAULT 'normal'"),
     ("jobs", "checkpoints", "TEXT NOT NULL DEFAULT '[]'"),
+    # Phase 3: claim lease. `claimed_at` starts the clock at claim time;
+    # `lease_seconds` is how long silence may last before the claim is
+    # releasable. Both have defaults because every pre-lease job must keep
+    # working unchanged -- and a NULL claimed_at must never read as expired.
+    ("jobs", "claimed_at", "TEXT"),
+    ("jobs", "lease_seconds", "INTEGER NOT NULL DEFAULT 3600"),
 )
 
 #: Detail keys the audit log refuses to store verbatim. A payload that reaches the
@@ -415,13 +421,13 @@ class Store:
             "verified, verified_by, verification_evidence, "
             "assigned_department, assigned_worker, requested_by, "
             "origin_objective, origin_job_id, verification_worker, "
-            "priority, checkpoints, "
+            "priority, checkpoints, claimed_at, lease_seconds, "
             "created_at, updated_at) VALUES (:job_id,:kind,:title,:payload,:risk,:status,"
             ":provider,:transport,:depends_on,:attempts,:max_attempts,:result,:result_hash,"
             ":error,:verified,:verified_by,:verification_evidence,"
             ":assigned_department,:assigned_worker,:requested_by,"
             ":origin_objective,:origin_job_id,:verification_worker,"
-            ":priority,:checkpoints,"
+            ":priority,:checkpoints,:claimed_at,:lease_seconds,"
             ":created_at,:updated_at)",
             row,
         )
@@ -460,6 +466,7 @@ class Store:
             "origin_objective=:origin_objective, origin_job_id=:origin_job_id, "
             "verification_worker=:verification_worker, "
             "priority=:priority, checkpoints=:checkpoints, "
+            "claimed_at=:claimed_at, lease_seconds=:lease_seconds, "
             "updated_at=:updated_at WHERE job_id=:job_id",
             row,
         )
@@ -666,13 +673,15 @@ class Store:
         if job.risk in APPROVAL_REQUIRED:
             self._require_approval(job, approval_id, actor)
 
+        claimed_at = _now()
         cur = self._conn.execute(
             "UPDATE jobs SET status=?, provider=?, transport=?, attempts=attempts+1, "
-            "updated_at=? WHERE job_id=? AND status=?",
+            "claimed_at=?, updated_at=? WHERE job_id=? AND status=?",
             (
                 Status.RUNNING.value,
                 provider,
                 transport.value if transport else None,
+                claimed_at,
                 _now(),
                 job_id,
                 Status.READY.value,
@@ -734,6 +743,7 @@ class Store:
         job.result_hash = digest
         job.status = Status.COMPLETE
         job.error = None
+        job.claimed_at = None
         return self._update(job, actor, "job.result", result_hash=digest), True
 
     def verify_result(
@@ -782,6 +792,7 @@ class Store:
         else:
             job.status = Status.FAILED_TERMINAL
         job.error = error
+        job.claimed_at = None
         return self._update(job, actor, "job.fail", error=error)
 
     def failover_to_next(
@@ -840,6 +851,7 @@ class Store:
         job.status = Status.READY
         job.provider = None
         job.transport = None
+        job.claimed_at = None
         updated = self._update(
             job,
             actor,
@@ -864,7 +876,74 @@ class Store:
         job.status = Status.READY
         job.provider = None
         job.transport = None
+        job.claimed_at = None
         return self._update(job, actor, "job.claim.released", reason=reason)
+
+    def renew_lease(self, job_id: str, actor: str) -> Job:
+        """Heartbeat a live claim: restart its lease clock.
+
+        The only thing a lease can measure is silence, so a worker that is
+        alive must say so. Renewal requires RUNNING -- renewing a claim that
+        has already ended would resurrect a clock whose job moved on.
+        """
+        job = self._require(job_id)
+        if job.status is not Status.RUNNING:
+            raise ValueError(
+                f"job is {job.status.value}, not RUNNING -- there is no claim to renew"
+            )
+        job.claimed_at = _now()
+        return self._update(job, actor, "job.lease.renewed", provider=job.provider)
+
+    def expire_stale_claims(
+        self, actor: str = "oddfellow", *, now: datetime | None = None
+    ) -> list[Job]:
+        """Release every RUNNING claim whose lease has run out.
+
+        This is the detection half of the failover directive's assumption
+        ("if an AI agent fails... the task must not be abandoned"): a dead
+        worker releases nothing, so abandonment has to be *found*. A claim
+        older than its lease without a renewal is treated as dead -- the job
+        returns to READY with provider cleared, the expiry is audited, and
+        the checkpoint trail travels with it, so the next claimant resumes.
+
+        Two deliberate refusals:
+
+          * **NULL ``claimed_at`` never expires.** A row migrated from before
+            leases existed carries no clock; killing it would be punishing a
+            job for a field it never had. Skipped, not audited.
+          * **Only RUNNING jobs are touched.** A parked job (READY,
+            WAITING_AUTHORIZATION) holds no claim; there is nothing to take
+            back.
+
+        Called explicitly (by the operator loop / sweeps), never on a timer
+        inside the store: expiry is a recorded act with an actor, not a side
+        effect of reading the database.
+        """
+        moment = now or datetime.now(timezone.utc)
+        expired: list[Job] = []
+        for job in self.jobs(Status.RUNNING):
+            if not job.claimed_at:
+                continue
+            started = datetime.strptime(job.claimed_at, "%Y-%m-%dT%H:%M:%SZ").replace(
+                tzinfo=timezone.utc
+            )
+            if (moment - started).total_seconds() < job.lease_seconds:
+                continue
+            job.status = Status.READY
+            previous = job.provider
+            job.provider = None
+            job.transport = None
+            job.claimed_at = None
+            expired.append(
+                self._update(
+                    job,
+                    actor,
+                    "job.lease.expired",
+                    expired_provider=previous or "none",
+                    lease_seconds=job.lease_seconds,
+                )
+            )
+        return expired
 
     def record_checkpoint(
         self, job_id: str, step: str, actor: str, note: str = "", evidence: str = ""

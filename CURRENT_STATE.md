@@ -166,7 +166,7 @@ phone acceptance against today" is currently false until it is restored.
 
 ## Read this first: the one thing that has not moved
 
-**Gate A is unchanged; the two owner-action items are Gate A and DB preservation (below).** Probed 2026-10-14 05:00 UTC:
+**Gate A is unchanged; the two owner-action items are Gate A and DB preservation (below).** Probed 2026-10-14 06:01 UTC:
 
 ```
 GET https://oddfellow-letta-backend-v0206.onrender.com/livez
@@ -185,7 +185,7 @@ of the live one caused a 20-hour blind spot on 2026-10-01.
 
 ## Where the branch actually is
 
-- `letta/combined-single-service-v0.20.4` — the head moves hourly, so read the newest `oddfellow/HANDOFF-*.md` for where it is. (A SHA was written here and went stale for three days: it still named a 2026-10-08 commit while the branch had moved ~100 commits.) **747 tests pass** — run `pytest` from the repo root; the canonical invocation collects both `oddfellow/tests` and `oddfellow/connector/tests`, and a run scoped to one root silently skips the count guard. Recent additions: the Cognitive Capability Profile (`oddfellow/cognition/`), a durable open-goal register (`GOALS.json`), and the tool-invocation audit corpus.
+- `letta/combined-single-service-v0.20.4` — the head moves hourly, so read the newest `oddfellow/HANDOFF-*.md` for where it is. (A SHA was written here and went stale for three days: it still named a 2026-10-08 commit while the branch had moved ~100 commits.) **758 tests pass** — run `pytest` from the repo root; the canonical invocation collects both `oddfellow/tests` and `oddfellow/connector/tests`, and a run scoped to one root silently skips the count guard. Recent additions: the Cognitive Capability Profile (`oddfellow/cognition/`), a durable open-goal register (`GOALS.json`), and the tool-invocation audit corpus.
 
 ## ⚠️ NEW P0 — Render DB `begg-ai-core-db` expires 2026-10-27T23:21:01Z
 
@@ -438,7 +438,7 @@ The running commit is `11b3901`, verified to be a real ancestor of the canonical
 
 ## Read these for detail
 
-- `oddfellow/HANDOFF-UNIVERSAL-2026-10-14-0500Z.md` — **newest handoff** (2026-10-14 05:00 UTC).
+- `oddfellow/HANDOFF-UNIVERSAL-2026-10-14-0600Z.md` — **newest handoff** (2026-10-14 06:00 UTC).
   ⚠️ Superseding the 23:00 entry: **this cycle is not a sweep.** The sandbox reset at 23:32 UTC
   and three real changes came out of it — the **rehearsal is UP and `ready:true`** (the only
   fully-working end-to-end path, and the only route to phone acceptance that does not wait on

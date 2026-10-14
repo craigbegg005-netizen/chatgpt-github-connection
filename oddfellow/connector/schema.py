@@ -209,6 +209,18 @@ class Job:
     #: ``Store.record_checkpoint`` so every entry lands in the audit log --
     #: a checkpoint with no audit entry is a claim nobody can reconstruct.
     checkpoints: tuple = ()
+    #: When the current claim began (ISO-8601 UTC), set by ``claim_job`` and
+    #: cleared by every path that ends a claim. ``None`` means "no live claim
+    #: clock" -- never treat it as an expired claim, because a pre-lease row
+    #: migrated in mid-flight carries NULL and must not be killed by a clock
+    #: it never started.
+    claimed_at: str | None = None
+    #: Seconds a claim may go un-renewed before ``expire_stale_claims`` may
+    #: release it. A dead worker is indistinguishable from a slow one except
+    #: by silence, so the lease is the detection mechanism the failover
+    #: directive assumed existed: abandonment becomes *visible* instead of
+    #: leaving a job RUNNING forever.
+    lease_seconds: int = 3600
     created_at: str | None = None
     updated_at: str | None = None
 
@@ -269,6 +281,8 @@ class Job:
             # not as a KeyError.
             priority=Priority(row.get("priority") or "normal"),
             checkpoints=tuple(json.loads(row.get("checkpoints") or "[]")),
+            claimed_at=row.get("claimed_at"),
+            lease_seconds=row.get("lease_seconds") or 3600,
             created_at=row["created_at"],
             updated_at=row["updated_at"],
         )
