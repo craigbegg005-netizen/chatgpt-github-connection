@@ -65,3 +65,40 @@ real signal and still worth a line — the fix is a wider budget, not a softer r
 The service was **never down** in this window. No outage occurred. **This is a budget bug in the
 probe, not a fault in the backend.** The backend's own state is unchanged: `live:true`,
 `ready:false`, the two known secrets missing.
+
+
+---
+
+## Correction, same day — 120s is *already* insufficient, and the fix is not a number
+
+Recorded by a different session that hit the same erosion within the hour, with one measurement
+this file does not have.
+
+**Measured 2026-10-14 ~20:00 UTC against `oddfellow-letta-backend-v0206`:**
+
+| Attempt | Budget | Result |
+|---|---|---|
+| 1 | 90s | **`000`** at 90.0s |
+| 2 | 120s | **`000`** at 120.0s |
+| 3 | 120s | **`200`** in 23.7s |
+| 4 | 120s | **`200`** in 0.17s |
+
+**So the convention this file just set — `--max-time 120` — is already known insufficient by
+measurement, on the same day it was written.** That is not a criticism of the change; it is the
+change's own logic applied one step further. The budget is not a number that was once set wrong. It
+**drifts**, and each adjustment is overtaken.
+
+**The rule that holds is different in kind: probe twice.** The first request after a long sleep is
+the one that *wakes* the service, and it can outlast any budget. The second succeeds because the
+first did the waking. So:
+
+- If a probe returns `000`, **conclude nothing** — issue a second request and read *that*.
+- **Two consecutive `000`s is evidence; one is not.**
+- Keep a bounded budget for the *second* request, so a genuinely dead service still reports dead in
+  bounded time. That is what the budget is for; it was never able to prove liveness on its own.
+
+**This keeps the file's own principle and drops its arithmetic.** *"A timeout is evidence about the
+last N seconds, not about the state of the service"* is exactly right — and if that is true, then no
+choice of N fixes it. A second probe does.
+
+**Still not silenced.** A `000` on the second probe is a real signal and still deserves a line.
