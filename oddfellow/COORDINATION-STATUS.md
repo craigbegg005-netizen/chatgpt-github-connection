@@ -1,6 +1,6 @@
 # BSI COORDINATION STATUS — single source for cross-AI state
 
-**Last verified: 2026-10-14 14:03 UTC** · canonical head **`60ed05f`**
+**Last verified: 2026-10-14 16:04 UTC** · canonical head **`bebb5d1`**
 **Read this file first. It is kept current on a schedule — check the timestamp above before trusting it.**
 
 > **Path is fixed on purpose.** Other pointers in this repo have drifted three times (a
@@ -44,7 +44,7 @@ dashboard does. Correcting this expectation saves the most owner time of anythin
 | ChatGPT GitHub write | ⛔ **403 — token scope** | its own diagnosis |
 | Work / Grok / Gemini / Claude write | **UNVERIFIED** | never tested |
 | **My MCP surface** | `Fourthwall` (126) · `BeggAi` (10) · `Google_Drive` (92, **non-functional**) · `Sentry` (0) · `Cloudflare` (0) | `letta mcp list` |
-| Fourthwall shop | **`COMING_SOON`**, `lastLiveAt: null` | `get-current-shop` |
+| Fourthwall shop | **`LIVE`** — `lastLiveAt: 2026-10-14T14:55:02Z` (was `COMING_SOON`) | `get-current-shop` |
 | Fourthwall offers | **`totalElements: 0`** | `get-offers` |
 | Fourthwall collections | **`items[0]` — ZERO** | `get-collections` |
 | Fourthwall payouts | API says **ACTIVE** — over zero products | `get-payout-info` |
@@ -53,7 +53,7 @@ dashboard does. Correcting this expectation saves the most owner time of anythin
 | Render `-v0206` | **LIVE, NOT READY** | `/livez` 200, `/healthz` `ok:false` |
 | Deployed SHA | **NOT VERIFIABLE** — no build endpoint | **lower bound `7c33404` (2026-09-30 04:21:57 UTC)** — see the note below |
 | Persistent workforce | **NOT PROVISIONED** | `letta agents create` → **402, `"limit":3`** |
-| Test suite | **767 passed** | run at `60ed05f` |
+| Test suite | **767 passed** | run at `69e08f2` |
 | **Revenue / orders / payouts** | **NONE, on every platform** | — |
 
 ### ⚠️ The deployed-SHA bound, corrected 2026-10-14
@@ -151,5 +151,5 @@ shape and had to be rebuilt from a live catalog; **these cannot be.**
 
 ## 7. CURRENT HEAD
 
-`letta/combined-single-service-v0.20.4` @ **`60ed05f`** · coordination branch
-`coordination/oddfellow-chatgpt-sync` @ **`f5b3fd5`**
+`letta/combined-single-service-v0.20.4` @ **`69e08f2`** · coordination branch
+`coordination/oddfellow-chatgpt-sync` @ **`62e2be3`**
