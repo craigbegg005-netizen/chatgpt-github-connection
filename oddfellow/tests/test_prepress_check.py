@@ -34,14 +34,21 @@ from prepress_check import (  # noqa: E402
 )
 
 # The document's table, verbatim: size -> (DPI, crop %). Transcribed, not recomputed.
+# 2026-10-14 13:02 UTC: completed to all 14 catalog sizes (square formats added)
+# after the variants array at api.fourthwall.com/api/products/pro_15bc29bc8a324d449d
+# resolved the 14-claimed-10-tabulated discrepancy.
 DOC_TABLE = {
     "5x7": (200, 10.7),
     "8x10": (140, 0.0),
     "11x14": (100, 1.8),
     "10x10": (112, 20.0),
+    "12x12": (94, 20.0),
     "12x16": (88, 6.3),
     "12x18": (78, 16.7),
+    "14x14": (80, 20.0),
+    "16x16": (70, 20.0),
     "16x20": (70, 0.0),
+    "18x18": (62, 20.0),
     "18x24": (58, 6.3),
     "20x30": (47, 16.7),
     "24x36": (39, 16.7),

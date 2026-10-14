@@ -3,26 +3,22 @@
 **Date:** 2026-10-14 02:55 UTC · **Source:** `steampunk_samurai_beneath_the_crimson_sun.png`, **1122 × 1402 px**
 **Sizes tested:** Fourthwall Enhanced Matte Paper Poster (P001), all **14** available sizes, read live from the catalog.
 
-## ⚠️ The size list may be incomplete — 14 claimed, 10 tabulated
+## ✅ Size list RESOLVED — the four missing sizes are the square formats (2026-10-14 13:02 UTC)
 
-Line 4 says *"all **14** available sizes, read live from the catalog"*, but the table below lists
-**10**: 5×7, 8×10, 11×14, 10×10, 12×16, 12×18, 16×20, 18×24, 20×30, 24×36. Four sizes are either
-missing from the table or the count is wrong, and **I could not resolve it**: the catalog exposes 255
-products with no text-search parameter, and `enhanced-matte-paper-poster` is not a valid slug.
+**Resolved with evidence.** The earlier revision of this section claimed *"all **14** available
+sizes"* but tabulated only 10, and a prior pass could not resolve it (the catalog exposes 255
+products with no text-search parameter; `enhanced-matte-paper-poster` is not a valid slug). The
+catalog page's embedded product ID (`pro_15bc29bc8a324d449d`) leads to the public product record —
+`https://api.fourthwall.com/api/products/pro_15bc29bc8a324d449d` — whose `variants` array lists
+exactly **14** sizes. The four the table lacked are the square formats: **12×12, 14×14, 16×16,
+18×18**. The count "14" was right; the table was incomplete. The table now carries all 14, and
+`prepress_check.py`'s `FOURTHWALL_POSTER_SIZES` constant plus its table-match test moved together
+with it (that test existing is what made this a safe one-commit change).
 
-**Does it threaten the headline?** Almost certainly not, and here is the reasoning rather than an
-assurance. At 300 DPI this source covers **3.74 × 4.67 inches**, so a size would have to be *no
-larger than that in both dimensions* to reach 300 DPI without upscaling. The smallest tabulated size
-is 5×7, which is already larger. A missing size would have to be smaller than 3.74 × 4.67 in — an
-implausibly small poster — to change the conclusion. **So the headline stands; the table's
-completeness does not.**
-
-**What this affects.** `prepress_check.py`'s default size list was taken from this table, so it
-inherits the same ten. If the four missing sizes exist and matter, both need updating together —
-which is exactly why the tool's list is a named constant with a test asserting it matches the table.
-
-**To close it:** read the P001 size list from the catalog and reconcile the count, or correct line 4.
-
+**The headline stands, confirmed against the full list.** The smallest of the four missing sizes is
+12×12 — far larger than the 3.74 × 4.67 in this source covers at 300 DPI — and all four compute to
+❌ unusable (94/80/70/62 DPI). The prior insensitivity *reasoning* is now verified *fact*: no
+offered size reaches 300 DPI, and the best outcome is still 5×7 at 200 DPI.
 ## 🔴 The headline
 
 **At 300 DPI this artwork supports 3.74 × 4.67 inches — smaller than Fourthwall's SMALLEST poster (5×7).**
@@ -40,11 +36,15 @@ the authentication work currently in progress.
 |---|---|---|---|---|---|
 | **5×7** | 0.714 | crop width | **200** | 10.7% | ✅ **viable** |
 | **8×10** | 0.800 | **EXACT** | **140** | 0% | ⚠️ soft |
-| 11×14 | 0.786 | crop width | 100 | 1.8% | ❌ poor |
 | 10×10 | 1.000 | crop height | 112 | 20.0% | ❌ poor |
+| 11×14 | 0.786 | crop width | 100 | 1.8% | ❌ poor |
+| 12×12 | 1.000 | crop height | 94 | 20.0% | ❌ unusable |
 | 12×16 | 0.750 | crop width | 88 | 6.3% | ❌ unusable |
 | 12×18 | 0.667 | crop width | 78 | 16.7% | ❌ unusable |
+| 14×14 | 1.000 | crop height | 80 | 20.0% | ❌ unusable |
+| 16×16 | 1.000 | crop height | 70 | 20.0% | ❌ unusable |
 | **16×20** | 0.800 | **EXACT** | **70** | 0% | ❌ unusable |
+| 18×18 | 1.000 | crop height | 62 | 20.0% | ❌ unusable |
 | 18×24 | 0.750 | crop width | 58 | 6.3% | ❌ unusable |
 | 20×30 | 0.667 | crop width | 47 | 16.7% | ❌ unusable |
 | 24×36 | 0.667 | crop width | 39 | 16.7% | ❌ unusable |

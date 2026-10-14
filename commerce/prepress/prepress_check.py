@@ -35,16 +35,22 @@ from __future__ import annotations
 import argparse
 import sys
 
-# Fourthwall Enhanced Matte Paper Poster (P001), read live from the catalog
-# 2026-10-14. Kept here so the default run matches the document's table.
+# Fourthwall Enhanced Matte Paper Poster (P001). Resolved 2026-10-14 13:02 UTC:
+# the full list is 14 sizes, read from the catalog API record
+# (api.fourthwall.com/api/products/pro_15bc29bc8a324d449d — variants array).
+# The four the document's original table lacked are the square formats.
 FOURTHWALL_POSTER_SIZES = (
     (5, 7),
     (8, 10),
     (11, 14),
     (10, 10),
+    (12, 12),
     (12, 16),
     (12, 18),
+    (14, 14),
+    (16, 16),
     (16, 20),
+    (18, 18),
     (18, 24),
     (20, 30),
     (24, 36),
