@@ -1,0 +1,88 @@
+{
+ "exported_utc": "2026-10-14T16:01Z",
+ "source_db": "sandbox-local /root/.oddfellow/connector-state/phase7.db",
+ "jobs": [
+  {
+   "job_id": "job-877ed3e798e4e97ed2376f8849fa0899",
+   "kind": "research",
+   "title": "Phase-7 handoff test: verify Fourthwall matte-poster listed from-price",
+   "payload": "{\"context\":\"Prior handoff cited 'from $5.50'; this task re-verifies the live figure. Read-only research; no commerce changes.\",\"evidence_required\":[\"url\",\"listed from-price as shown\",\"retrieval timestamp UTC\"],\"question\":\"On the official Fourthwall catalog page for the Enhanced Matte Paper Poster (https://products.fourthwall.com/enhanced-matte-paper-poster-printed), what is the currently listed from-price, and at what URL and retrieval timestamp was it seen?\"}",
+   "risk": "low",
+   "status": "COMPLETE",
+   "provider": "chatgpt-work",
+   "transport": "handoff",
+   "depends_on": "[]",
+   "attempts": 1,
+   "max_attempts": 2,
+   "result": "{\"evidence_file\":\"oddfellow/handoffs/CHATGPT-PHASE7-FOURTHWALL-PRICE-2026-10-14.md @ 55dac9d\",\"listed_from_price\":\"From $5.50\",\"minimum_orders\":\"none\",\"retrieved_utc\":\"2026-10-14T11:58:22Z\",\"source_url\":\"https://products.fourthwall.com/enhanced-matte-paper-poster-printed\",\"supplier_model\":\"Allcolor P001\"}",
+   "result_hash": "2003463e2e394ada658095ffcee8a801fdf53dd6344a093b513fd1701ce887bc",
+   "error": null,
+   "verified": 1,
+   "verified_by": "oddfellow",
+   "verification_evidence": "https://products.fourthwall.com/enhanced-matte-paper-poster-printed independently fetched 2026-10-14T12:02Z: 205,060 bytes, \"From $5.50\" + Allcolor P001 present \u2014 matches claim; executor file oddfellow/handoffs/CHATGPT-PHASE7-FOURTHWALL-PRICE-2026-10-14.md @ 55dac9d",
+   "created_at": "2026-10-14T11:02:00Z",
+   "updated_at": "2026-10-14T12:02:24Z",
+   "assigned_department": null,
+   "assigned_worker": null,
+   "requested_by": null,
+   "origin_objective": null,
+   "origin_job_id": null,
+   "verification_worker": null,
+   "priority": "low",
+   "checkpoints": "[{\"actor\":\"chatgpt-work\",\"at\":\"2026-10-14T12:01:53Z\",\"evidence\":\"oddfellow/handoffs/CHATGPT-PHASE7-FOURTHWALL-PRICE-2026-10-14.md @ 55dac9d\",\"note\":\"\",\"step\":\"task received and executed\"}]",
+   "claimed_at": null,
+   "lease_seconds": 3600
+  }
+ ],
+ "state": [],
+ "audit": [
+  {
+   "id": 1,
+   "at": "2026-10-14T11:02:00Z",
+   "actor": "oddfellow",
+   "event": "job.create",
+   "job_id": "job-877ed3e798e4e97ed2376f8849fa0899",
+   "detail": "{\"risk\":\"low\",\"title\":\"Phase-7 handoff test: verify Fourthwall matte-poster listed from-price\"}"
+  },
+  {
+   "id": 2,
+   "at": "2026-10-14T12:01:53Z",
+   "actor": "chatgpt-work",
+   "event": "job.claim",
+   "job_id": "job-877ed3e798e4e97ed2376f8849fa0899",
+   "detail": "{\"provider\":\"chatgpt-work\"}"
+  },
+  {
+   "id": 3,
+   "at": "2026-10-14T12:01:53Z",
+   "actor": "chatgpt-work",
+   "event": "job.checkpoint",
+   "job_id": "job-877ed3e798e4e97ed2376f8849fa0899",
+   "detail": "{\"status\":\"RUNNING\",\"step\":\"task received and executed\"}"
+  },
+  {
+   "id": 4,
+   "at": "2026-10-14T12:01:53Z",
+   "actor": "chatgpt-work",
+   "event": "job.result",
+   "job_id": "job-877ed3e798e4e97ed2376f8849fa0899",
+   "detail": "{\"result_hash\":\"2003463e2e394ada658095ffcee8a801fdf53dd6344a093b513fd1701ce887bc\",\"status\":\"COMPLETE\"}"
+  },
+  {
+   "id": 5,
+   "at": "2026-10-14T12:02:24Z",
+   "actor": "oddfellow",
+   "event": "job.verified",
+   "job_id": "job-877ed3e798e4e97ed2376f8849fa0899",
+   "detail": "{\"evidence\":\"https://products.fourthwall.com/enhanced-matte-paper-poster-printed independently fetched 2026-10-14T12:02Z: 205,060 bytes, \\\"From $5.50\\\" + Allcolor P001 present \\u2014 matches claim; executor file oddfello...<truncated, 266 chars>\",\"status\":\"COMPLETE\"}"
+  }
+ ],
+ "sqlite_sequence": [
+  {
+   "name": "audit",
+   "seq": 5
+  }
+ ],
+ "approvals": [],
+ "flags": []
+}
