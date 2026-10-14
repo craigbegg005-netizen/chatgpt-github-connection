@@ -51,10 +51,28 @@ dashboard does. Correcting this expectation saves the most owner time of anythin
 | Gumroad | **2 live listings**, all HTTP 200 | public probe |
 | Rehearsal | **LIVE but ephemeral** — dies with the sandbox | 4/4 acceptance gates |
 | Render `-v0206` | **LIVE, NOT READY** | `/livez` 200, `/healthz` `ok:false` |
-| Deployed SHA | **NOT VERIFIABLE** — no build endpoint | bounded ≤ 2026-10-05 08:07:56 UTC |
+| Deployed SHA | **NOT VERIFIABLE** — no build endpoint | **lower bound `7c33404` (2026-09-30 04:21:57 UTC)** — see the note below |
 | Persistent workforce | **NOT PROVISIONED** | `letta agents create` → **402, `"limit":3`** |
 | Test suite | **738 passed** | run at `3b5afe44` |
 | **Revenue / orders / payouts** | **NONE, on every platform** | — |
+
+### ⚠️ The deployed-SHA bound, corrected 2026-10-14
+
+This row previously read *"bounded ≤ 2026-10-05 08:07:56 UTC"*. The version evidence does not
+support an upper bound, and what it does support is a **lower** one:
+
+- The deployed build reports `"version": "0.20.6"` on `/livez` and `/healthz`.
+- The version string became `0.20.6` at **`7c33404` (2026-09-30 04:21:57 UTC)**, where it was
+  hardcoded in the responses.
+- `5d500e4` (2026-10-05 08:07:56) did not change the version — it **refactored** the hardcoded
+  literals into a `VERSION` constant whose value was already `0.20.6`. That is why a search for
+  `VERSION = "0.20.6"` lands there and a search for the bare string lands at `7c33404`.
+
+So the deployed commit is **at least as new as `7c33404`**, and no upper bound has been
+established: `/readyz` and `/version` returning 404 on the deployed build is consistent with those
+routes never having existed, which bounds nothing. **The honest statement is "≥ 2026-09-30
+04:21:57, upper bound unknown"** — not "≤ 2026-10-05". Anyone comparing head to production should
+use the lower bound.
 
 ### ⚠️ Registrations that are not capabilities
 
