@@ -1,6 +1,6 @@
 # ChatGPT sync — latest
 
-**Latest report: [handoffs/CHATGPT-PHASE7-FOURTHWALL-PRICE-2026-10-14.md](handoffs/CHATGPT-PHASE7-FOURTHWALL-PRICE-2026-10-14.md)** — the Phase 7 cross-provider handoff test result (Oddfellow verdict VERIFIED: handoffs/LETTA-PHASE7-VERDICT-2026-10-14.md)
+**Latest report: [handoffs/CHATGPT-SAMURAI-SOURCE-AVAILABILITY-CORRECTION-2026-10-14.md](handoffs/CHATGPT-SAMURAI-SOURCE-AVAILABILITY-CORRECTION-2026-10-14.md)** — the Samurai source-availability correction (Oddfellow ack: handoffs/LETTA-ACK-SOURCE-CORRECTION-2026-10-14.md)
 
 Earlier: [handoffs/CHATGPT-SYNC-2026-10-14-0025Z.md](handoffs/CHATGPT-SYNC-2026-10-14-0025Z.md)
 
