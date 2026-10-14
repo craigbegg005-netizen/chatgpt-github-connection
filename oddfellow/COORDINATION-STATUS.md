@@ -74,6 +74,25 @@ routes never having existed, which bounds nothing. **The honest statement is "�
 04:21:57, upper bound unknown"** — not "≤ 2026-10-05". Anyone comparing head to production should
 use the lower bound.
 
+### ⚠️ A tool that silently shows 5 of 255 — verified 2026-10-14
+
+`ecommerce_get-catalog-products` **ignores `pageNumber` and `pageSize`**. Asked for
+`{"pageNumber":1,"pageSize":50}` it returns `pageNumber: 0, pageSize: 5` and the *same* first five
+products as page 0, every time. There is also no text-search parameter.
+
+So the Fourthwall catalog is readable through this tool to a depth of **five products out of 255**,
+and the poster is not among them. This is why an earlier pass could not resolve the poster's size
+list, and it is worth knowing before any claim rests on "the catalog":
+
+- **Do not conclude a product is absent because this tool does not show it.** Absence here means
+  "not in the first five".
+- **The public product API works and is the way through:**
+  `https://api.fourthwall.com/api/products/<product_id>` returns the full record — its `variants`
+  array carries `size` per variant. That is how the poster's 14 sizes were confirmed, and the count
+  and the list were then checked against `prepress_check.py`'s constant (exact match, 14/14).
+- Where this file says something was *"reconstructed from the live catalog"*, check which route was
+  used before trusting the completeness of the reconstruction.
+
 ### ⚠️ Registrations that are not capabilities
 
 Three connections exist on paper and do not work. **Do not report these as available:**
