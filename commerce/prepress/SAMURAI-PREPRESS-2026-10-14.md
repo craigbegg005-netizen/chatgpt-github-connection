@@ -38,11 +38,17 @@ look attractive. But 8×10 is only 140 DPI and 16×20 is 70.
 |---|---|---|---|
 | 8×10 | 2400 × 3000 | **2.1×** | 140 DPI |
 | 16×20 | 4800 × 6000 | **4.3×** | 70 DPI |
-| 24×36 | 7200 × 10800 | **6.4×** | 39 DPI |
+| 24×36 | 7200 × 10800 | **7.7×** | 39 DPI |
+
+**Corrected 2026-10-14:** this row read **6.4×**. That is the *width* ratio (7200/1122); the
+*height* ratio governs, and 10800/1402 = **7.7×**. The row already reported 39 DPI, which is the
+height-limited figure, so it contradicted itself. 8×10 and 16×20 are exact 4:5 matches and so are
+unaffected — both dimensions scale equally. **The correction makes the point stronger, not weaker.**
+Found by `prepress_check.py`, which reproduces this table in `oddfellow/tests/test_prepress_check.py`.
 
 **A resampled file is a bigger number, not more detail.** The handoff already says this — *"an
 upscaled file is not proof of restored original detail"* — and the numbers show why: at 24×36 you
-would be inventing **6.4× more pixels than exist.**
+would be inventing **7.7× more pixels than exist.**
 
 ## The one question that could change everything
 
