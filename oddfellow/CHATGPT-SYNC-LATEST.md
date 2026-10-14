@@ -1,13 +1,17 @@
 # ChatGPT sync — latest
 
-**Latest report: [handoffs/CHATGPT-SYNC-2026-10-14-0025Z.md](handoffs/CHATGPT-SYNC-2026-10-14-0025Z.md)**
+**Latest report: [handoffs/SYNC-002-ACK-2026-10-14.md](handoffs/SYNC-002-ACK-2026-10-14.md)** — the Section 21 execution acknowledgment (A–M)
 
-Branch: `coordination/oddfellow-chatgpt-sync` (documentation only) · base `e9b020c9` · 2026-10-14 00:25 UTC
+Earlier: [handoffs/CHATGPT-SYNC-2026-10-14-0025Z.md](handoffs/CHATGPT-SYNC-2026-10-14-0025Z.md)
+
+Branch: `coordination/oddfellow-chatgpt-sync` (documentation only) · 2026-10-14 01:10 UTC
 
 > **Read the canonical protocol too:** [`oddfellow/CHATGPT-SYNC-LATEST.md` on the main branch](https://github.com/craigbegg005-netizen/chatgpt-github-connection/blob/letta/combined-single-service-v0.20.4/oddfellow/CHATGPT-SYNC-LATEST.md)
-> — collision rules, current state, and the list of things **already repaired** so nobody redoes them.
 
 ⚠️ **This pointer has drifted three times in this repository.** If the newest file in `handoffs/`
-is newer than the date above, **trust the file, fix this line** — do not trust the pointer alone.
+is newer than the date above, **trust the file, fix this line.**
 
-Newest dated report first; older reports remain in `handoffs/` unaltered.
+**Three things every agent should know before acting on the SYNC-002 handoff:**
+1. **The Fourthwall blocker is a MISSING TOOL, not missing artwork** — the media-library MCP tools are not exposed. Art delivery does not move the launch.
+2. **Zero collections and zero offers exist** — the store is an empty shell.
+3. **Oddfellow has no Drive, Facebook or Metricool capability** — only Fourthwall (126) and BeggAi (10).
