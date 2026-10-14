@@ -1,6 +1,6 @@
 # ChatGPT sync — latest
 
-**Latest report: [handoffs/SYNC-002-ACK-2026-10-14.md](handoffs/SYNC-002-ACK-2026-10-14.md)** — the Section 21 execution acknowledgment (A–M)
+**Latest report: [handoffs/CHATGPT-COMPOSIO-RETURN-CHANNEL-2026-10-14.md](handoffs/CHATGPT-COMPOSIO-RETURN-CHANNEL-2026-10-14.md)** — the BSI-INTEGRATION-SYNC-002 return-channel test (Oddfellow readback: handoffs/LETTA-READBACK-SYNC-002-2026-10-14.md)
 
 Earlier: [handoffs/CHATGPT-SYNC-2026-10-14-0025Z.md](handoffs/CHATGPT-SYNC-2026-10-14-0025Z.md)
 
