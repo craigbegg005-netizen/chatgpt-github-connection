@@ -27,12 +27,17 @@ request that wakes a free service is the one that times out. Re-probed warm, it 
 three times running. **A `000` on the first probe of a sleeping service is a cold start, not a
 change** — re-probe before writing it down, and never report a registry error on one cold read.
 
-**Re-probed 2026-10-13, and the budget matters: a cold start can now exceed 30 seconds.**
-`oddfellow-letta-backend-v0206` returned nothing at a 25-second budget, then answered **200 in
-32.9 seconds** on the next attempt, and 0.15s warm. A probe budget below ~35s will therefore report
-a healthy service as down. **Use at least 60s for any Render free-tier probe.** The `~23s` figures
-in the rows below were measured in October and should be read as a floor, not a ceiling. The cost of
-waiting is seconds; the cost of a wrong "dead" is a recovery process that should never have run.
+**Re-probed 2026-10-14 — and the fix is not a longer timeout, it is a second probe.**
+`oddfellow-letta-backend-v0206` returned **`000` at a 90-second budget**, then `000` again at 120s,
+then **200 in 23.7s**, then **0.17s**. The first request after a long sleep is the one that *wakes*
+the service and it can outlast any budget: 25s was too short, 60s too short, 90s too short, 120s too
+short. Raising the number again would be the fourth adjustment to a rule that keeps failing.
+
+**So: if a probe returns `000`, conclude nothing — issue a second request and read that.** Two
+consecutive `000`s is evidence; one is not. The `~23s` figures in the rows below are a floor measured
+in October, not a ceiling. The cost of waiting is seconds; the cost of a wrong "dead" is a recovery
+process that should never have run. (`acceptance_check.py` already survives this — `TIMEOUT=60` with
+`TRANSPORT_RETRIES=4` — so the failure mode is a human or a one-shot `curl`.)
 
 **Re-verified 2026-10-05 16:05 UTC, by actual request — all five branch heads and both
 "other services" rows were correct as written:**
