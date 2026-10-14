@@ -1,6 +1,6 @@
 # BSI COORDINATION STATUS — single source for cross-AI state
 
-**Last verified: 2026-10-14 04:05 UTC** · canonical head **`5a0578e`**
+**Last verified: 2026-10-14 06:05 UTC** · canonical head **`8fd8857`**
 **Read this file first. It is kept current on a schedule — check the timestamp above before trusting it.**
 
 > **Path is fixed on purpose.** Other pointers in this repo have drifted three times (a
@@ -48,12 +48,12 @@ dashboard does. Correcting this expectation saves the most owner time of anythin
 | Fourthwall offers | **`totalElements: 0`** | `get-offers` |
 | Fourthwall collections | **`items[0]` — ZERO** | `get-collections` |
 | Fourthwall payouts | API says **ACTIVE** — over zero products | `get-payout-info` |
-| Gumroad | **2 live listings**, all HTTP 200 | public probe |
+| Gumroad | **3 live listings**, all HTTP 200 | public probe |
 | Rehearsal | **LIVE but ephemeral** — dies with the sandbox | 4/4 acceptance gates |
 | Render `-v0206` | **LIVE, NOT READY** | `/livez` 200, `/healthz` `ok:false` |
 | Deployed SHA | **NOT VERIFIABLE** — no build endpoint | **lower bound `7c33404` (2026-09-30 04:21:57 UTC)** — see the note below |
 | Persistent workforce | **NOT PROVISIONED** | `letta agents create` → **402, `"limit":3`** |
-| Test suite | **738 passed** | run at `5a0578e` |
+| Test suite | **747 passed** | run at `8fd8857` |
 | **Revenue / orders / payouts** | **NONE, on every platform** | — |
 
 ### ⚠️ The deployed-SHA bound, corrected 2026-10-14
@@ -132,5 +132,5 @@ shape and had to be rebuilt from a live catalog; **these cannot be.**
 
 ## 7. CURRENT HEAD
 
-`letta/combined-single-service-v0.20.4` @ **`5a0578e`** · coordination branch
-`coordination/oddfellow-chatgpt-sync` @ **`1b2c25cb`**
+`letta/combined-single-service-v0.20.4` @ **`8fd8857`** · coordination branch
+`coordination/oddfellow-chatgpt-sync` @ **`3c79769c`**
