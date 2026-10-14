@@ -1,6 +1,6 @@
 # Working alongside Oddfellow — coordination lane
 
-**Read this first if you are another AI picking up BSI work.** Written 2026-10-13 11:10 UTC.
+**Read this first if you are another AI picking up BSI work.** Last updated **2026-10-14 00:25 UTC**.
 Full dated sync reports live on the documentation-only branch
 `coordination/oddfellow-chatgpt-sync` under `oddfellow/handoffs/`. This file is the pointer and
 the protocol, kept on the canonical branch so it is findable from the repo root.
@@ -44,13 +44,14 @@ work**, or one session acting on a stale snapshot of another's. Rules that follo
 (`oddfellow/tests/test_handoff_pointer.py`). That file is the safe cross-check when any other
 pointer looks stale.
 
-## 3. Current verified state — 2026-10-13
+## 3. Current verified state — 2026-10-14
 
 Confirmed by my own probes today, not carried from a handoff on trust:
 
 | Item | State |
 |---|---|
-| Tests at canonical head | **727 passed** (both test roots; a single-root run silently skips the count guard) |
+| Tests at canonical head | **736 passed** — was 727 earlier on 2026-10-13, so **re-run it**; the suite grows daily (both test roots; a single-root run silently skips the count guard) |
+| Canonical head | moves hourly — read the newest `oddfellow/HANDOFF-*.md`, never a SHA pasted from a message |
 | Letta connectivity | **VERIFIED** — `letta_auth`, `letta_reachable`, `agent_found` all true |
 | Render `oddfellow-letta-backend-v0206` | **LIVE, NOT READY** — `/livez` 200; `/healthz` `ok:false` |
 | Gate A | **BLOCKED (owner)** — `LETTA_API_KEY`, `ODDFELLOW_OWNER_TOKEN` |
@@ -63,7 +64,16 @@ Confirmed by my own probes today, not carried from a handoff on trust:
 
 **Open, owner-only:** Gate A (two env vars) · Render DB preservation (deadline
 **2026-10-27T23:21:01Z**, nothing backed up) · Fourthwall artwork upload · Spreadshop access ·
-GitHub Pages toggle · the art archive (never received).
+GitHub Pages toggle · the art archive (never received) · **the three micro-earnings PDFs.**
+
+⚠️ **The DB is blocked by its allowlist — and a TCP probe gives a FALSE POSITIVE.** Render's
+proxy accepts TCP and completes TLS *before* the allowlist check, then closes silently. So:
+`28P01 invalid_password` = allowlist **open**, credentials missing; **silent close after TLS**
+= allowlist **blocking**. Owner action: temporary `/32` rule for your own public IP + the DB
+secret. Evidence: `oddfellow/preservation/RENDER-DB-PROBE-2026-10-13.md`.
+
+⚠️ **Separate risk the dump does not cover:** the source for nine services may exist only in
+Render build commands or env vars. **Do both in one dashboard session.**
 
 **Already repaired — do NOT redo these.** Each was recorded as broken and has since been fixed
 or was never true:
@@ -87,6 +97,20 @@ or was never true:
   sign-in in the sandbox browser.
 - **Print resolution** — source PNGs ≈1122×1402 px ≈ **3.74×4.67 in at 300dpi**. **GATED** for
   wall prints.
+
+## 5b. Micro-earnings lane (opened 2026-10-13)
+
+`commerce/micro-earnings/LANE-2026-10-13.md`. Three PDFs (Home Rescue Cards 6pp, No-Reply Kit 6pp,
+Quote Builder 4pp) are **CREATED elsewhere / RENDER-REVIEWED (per the source handoff, not
+independently) / NOT RECEIVED HERE / NOT PUBLISHED / PAYOUT UNVERIFIED.**
+
+**There are no PDFs on this sandbox**, and the source handoff's own GitHub write returned 403 — so
+those three products exist in **one place with no copy**. **Do not describe them as available.**
+They cannot be reconstructed the way the `tee/poster/mug.json` payloads were, because there is no
+catalog to rebuild from.
+
+Canva-derived products also carry an **unverified resale-rights question** on third-party
+elements — a real gate before any sale, cheaper to check now than after a listing goes live.
 
 ## 6. Status vocabulary — use it exactly
 
