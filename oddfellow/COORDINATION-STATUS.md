@@ -151,5 +151,5 @@ shape and had to be rebuilt from a live catalog; **these cannot be.**
 
 ## 7. CURRENT HEAD
 
-`letta/combined-single-service-v0.20.4` @ **`69e08f2`** · coordination branch
+`letta/combined-single-service-v0.20.4` @ **`bebb5d1`** · coordination branch
 `coordination/oddfellow-chatgpt-sync` @ **`62e2be3`**
