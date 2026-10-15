@@ -43,12 +43,32 @@ install_into() {
     warn "no such site-packages directory: $dir"
     return 1
   fi
-  if ! cp -f "$MODULE_SRC" "$dir/force_ipv4.py" 2>/dev/null; then
-    warn "could not write $dir/force_ipv4.py (read-only?)"
+  # Write to a temp file and rename into place. A plain `>` redirect truncates
+  # first, and these files are read by EVERY interpreter that starts in this
+  # environment -- including ones started by the rehearsal watchdog while this
+  # is running. An interpreter that starts inside the truncate-then-write window
+  # can read an empty or half-written .pth, and then silently runs WITHOUT the
+  # patch. That is a race with no error message, which is the worst kind.
+  #
+  # rename(2) is atomic within a filesystem, so a reader sees either the old file
+  # or the new one, never a partial one.
+  local tmp_pth tmp_mod
+  tmp_pth="$dir/.$PTH_NAME.tmp.$$"
+  tmp_mod="$dir/.force_ipv4.py.tmp.$$"
+
+  if ! cp -f "$MODULE_SRC" "$tmp_mod" 2>/dev/null; then
+    warn "could not write into $dir (read-only?)"
     return 1
   fi
-  if ! printf 'import force_ipv4\n' >"$dir/$PTH_NAME" 2>/dev/null; then
+  if ! printf 'import force_ipv4\n' >"$tmp_pth" 2>/dev/null; then
+    rm -f "$tmp_mod" "$tmp_pth"
     warn "could not write $dir/$PTH_NAME"
+    return 1
+  fi
+  if ! mv -f "$tmp_mod" "$dir/force_ipv4.py" 2>/dev/null \
+     || ! mv -f "$tmp_pth" "$dir/$PTH_NAME" 2>/dev/null; then
+    rm -f "$tmp_mod" "$tmp_pth"
+    warn "could not install into $dir"
     return 1
   fi
   say "installed force_ipv4 -> $dir"
