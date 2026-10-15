@@ -34,7 +34,17 @@ the service and it can outlast any budget: 25s was too short, 60s too short, 90s
 short. Raising the number again would be the fourth adjustment to a rule that keeps failing.
 
 **So: if a probe returns `000`, conclude nothing — issue a second request and read that.** Two
-consecutive `000`s is evidence; one is not. The `~23s` figures in the rows below are a floor measured
+consecutive `000`s is evidence; one is not.
+
+⚠️ **And a `000` has two causes, not one — corrected 2026-10-14 from a parallel measurement.** The same
+service later returned `000` at **120s and 300s**, then recovered on its own **~17 minutes later**; an
+hour after that it returned **`502` × 5 in ~0.2s** with Render's own "service is currently unavailable"
+page, while two sibling services answered `200` throughout. Both shapes mean **no healthy instance
+behind the router** — the difference is only whether the edge got far enough to return its own error
+page. **The test that separates them is cheap: widen the budget once. If the wider probe answers, it was
+slow; if it does not, stop widening — nothing is there, and it returns on its own timetable.** Full
+record: `oddfellow/evidence/RENDER-502-2026-10-14.md`. **Do not call it fixed** — nothing was fixed; it
+cleared twice on its own. The `~23s` figures in the rows below are a floor measured
 in October, not a ceiling. The cost of waiting is seconds; the cost of a wrong "dead" is a recovery
 process that should never have run. (`acceptance_check.py` already survives this — `TIMEOUT=60` with
 `TRANSPORT_RETRIES=4` — so the failure mode is a human or a one-shot `curl`.)
