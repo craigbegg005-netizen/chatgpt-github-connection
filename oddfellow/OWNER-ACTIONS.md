@@ -8,7 +8,7 @@ Render dashboard → service **oddfellow-letta-backend-v0206** → Environment �
 - `ODDFELLOW_OWNER_TOKEN` (any long random string; must match what the app stores)
 Save → service redeploys (~2 min). **Unblocks: the whole acceptance sequence.** Time: ~5 min.
 
-## 2. Render DB preservation — deadline 2026-10-27 (13 days)  🔴 data loss risk
+## 2. Render DB preservation — deadline **2026-10-27T23:21:01Z**  🔴 data loss risk
 Either: Render dashboard → `begg-ai-core-db` → Networking → allowlist **your phone's /32** → tell me "allowlisted" and set secret `ODDFELLOW_DB_URL` (I do the dump+restore, zero spend).
 Or: run the dump from your own machine (`pg_dump` 18 against the External Connection String).
 **Unblocks: the only verified backup of the operational DB.** Time: ~10 min.
@@ -34,6 +34,26 @@ If a higher-res original of the Samurai artwork exists (bigger than 1122×1402),
 
 ## 9. Pages toggle  ⚪ low urgency
 GitHub repo → Settings → Pages → enable on canonical branch (turns the storefront page live). One toggle.
+
+---
+
+## Verification of this queue — 2026-10-15 04:0x UTC
+
+Every claim here that can be checked from outside was re-checked, because a stale item costs Craig a
+tap. All of them hold:
+
+| Item | Claim | Checked | Result |
+|---|---|---|---|
+| 1 | Gate A: two Render secrets unset | `/livez` | ✅ `ready:false`, `checks_failed` names both |
+| 3 | Three Gumroad listings at $7.00 / $4.99 / $5.00 | each public listing | ✅ **$7.00 / $4.99 / $5.00** exactly |
+| 3 | Three live listings | each public listing | ✅ 200, named: Paycheck Budget Starter Bundle, The 7-Day Reset Planner, Job Search Starter Bundle |
+| 5 | Both Google integrations return 500 | `Google_Drive`, `Gmail` | ✅ both `500 Managed MCP server configuration is unavailable` |
+| 6 | BeggAi (Stripe) refresh token invalid | `list_available_accounts_or_orgs` | ✅ `Invalid refresh token` |
+| 9 | GitHub Pages disabled | Pages API + URL | ✅ API 404, URL 404 |
+
+**One correction made:** item 2 read *"deadline 2026-10-27 (13 days)"*. A hand-maintained day count is
+stale the next day — it was already 12 by the time this was checked. **The countdown is gone; the
+absolute timestamp stays**, because a date cannot drift and a countdown always does.
 
 ---
 *Agents verify each item's completion from the API side the moment you say done. Nothing else on the board needs you.*
