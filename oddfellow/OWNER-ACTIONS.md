@@ -9,8 +9,24 @@ Render dashboard → service **oddfellow-letta-backend-v0206** → Environment �
 Save → service redeploys (~2 min). **Unblocks: the whole acceptance sequence.** Time: ~5 min.
 
 ## 2. Render DB preservation — deadline **2026-10-27T23:21:01Z**  🔴 data loss risk
-Either: Render dashboard → `begg-ai-core-db` → Networking → allowlist **your phone's /32** → tell me "allowlisted" and set secret `ODDFELLOW_DB_URL` (I do the dump+restore, zero spend).
-Or: run the dump from your own machine (`pg_dump` 18 against the External Connection String).
+
+**Pick ONE of the two routes. They need different IPs allowlisted, and mixing them fails.**
+
+**Route A — I take the dump (fewer taps).** The dump runs **from this sandbox**, so the sandbox's
+egress IP is what must be allowlisted — *not your phone's*. Ask me for the current value first
+(it changes when the sandbox restarts, so never reuse an older one). Then:
+Render dashboard → `begg-ai-core-db` → **Networking** → remove `0.0.0.0/0` if present → add one rule:
+**the sandbox egress IP I just gave you, as `/32`**. Then set secret `ODDFELLOW_DB_URL` and tell me
+"allowlisted" — I do the dump + restore-verify, zero spend.
+
+**Route B — you take the dump from your own machine.** Then the **phone's /32** is correct, because
+your phone is the client: allowlist it, run `pg_dump` 18 against the External Connection String.
+
+⚠️ **A phone `/32` with Route A is the one combination that cannot work** — the sandbox is the client
+there, so the database would still refuse it. This card said "your phone's /32" for both routes until
+2026-10-15; the runbook (`oddfellow/RENDER-DB-PRESERVATION-2026-10-07.md`, Path A step 1) always said
+"the sandbox's IP", and the runbook is right.
+
 **Unblocks: the only verified backup of the operational DB.** Time: ~10 min.
 
 ## 3. Gumroad delivery check (BSI-COMMERCE-002)  🟡 revenue-readiness
