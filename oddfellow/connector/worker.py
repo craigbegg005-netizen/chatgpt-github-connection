@@ -41,10 +41,9 @@ from .store import Store
 FINGERPRINT_KEY = "worker.last_handoff_fingerprint"
 
 
-def _fingerprint(jobs) -> str:
-    """A stable digest of the ready set, so an unchanged queue is detectable."""
-    material = "|".join(sorted(j.job_id for j in jobs))
-    return hashlib.sha256(material.encode("utf-8")).hexdigest()[:16]
+def _fingerprint(document: str) -> str:
+    """Digest the actual handoff, including recipient, input and saved progress."""
+    return hashlib.sha256(document.encode("utf-8")).hexdigest()
 
 
 def _handoff_path(out: Path, provider: str) -> Path:
@@ -76,6 +75,9 @@ def tick(
     Deliberately returns rather than prints, so the caller decides whether this is a
     scheduled run whose output goes to a log, or an operator asking what is pending.
     """
+    provider = canonical_provider(provider)
+    if isinstance(limit, bool) or not isinstance(limit, int) or limit < 1:
+        raise ValueError("limit must be a positive integer")
     ready = list(store.ready_jobs())[:limit]
     dead = store.dead_letter_report()
     paused = store.is_paused()
@@ -101,15 +103,22 @@ def tick(
         report["skipped"] = "no ready jobs"
         return report
 
-    digest = _fingerprint(ready)
-    if store.flag_get(FINGERPRINT_KEY) == digest:
+    out = Path(out_dir)
+    path = _handoff_path(out, provider)
+    document = render_handoff(store, provider, limit=limit)
+    digest = _fingerprint(document)
+    # A durable flag can outlive an ephemeral output directory. Only skip when
+    # the actual file also matches; otherwise restore missing or damaged output.
+    try:
+        file_matches = path.read_bytes() == document.encode("utf-8")
+    except FileNotFoundError:
+        file_matches = False
+    if store.flag_get(FINGERPRINT_KEY) == digest and file_matches:
         report["skipped"] = "identical to the last handoff; not rewritten"
         return report
 
-    out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
-    path = _handoff_path(out, provider)
-    path.write_text(render_handoff(store, provider, limit=limit), encoding="utf-8")
+    path.write_text(document, encoding="utf-8")
 
     store.flag_set(FINGERPRINT_KEY, digest)
     store.audit(
@@ -128,8 +137,7 @@ def tick(
 def reset_fingerprint(store: Store) -> None:
     """Forget the last fingerprint, so the next tick renders even if unchanged.
 
-    Needed when the *content* of a job changes but the set of ids does not -- an
-    edited payload, for instance. Without this the tick would consider an edited
-    job "already handed over" and never re-render it.
+    This is an explicit operator override. Content changes and missing or damaged
+    output files already trigger a refresh without resetting this flag.
     """
     store.flag_set(FINGERPRINT_KEY, "")
