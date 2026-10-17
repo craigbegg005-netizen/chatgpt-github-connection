@@ -182,10 +182,15 @@ def test_verify_mode_fails_without_the_patch(tmp_path):
     )
 
 
-def test_verify_mode_passes_with_the_system_patch():
-    """And it passes on this machine's interpreter, which carries the patch."""
+def test_verify_mode_passes_with_the_system_patch(fresh_venv, tmp_path):
+    """Verify a deliberately patched disposable interpreter, not host state."""
+    subprocess.run(
+        ["bash", SCRIPT, "apply", "--for-python", fresh_venv],
+        check=True, capture_output=True, text=True, timeout=120,
+        env={**os.environ, "GAI_CONF": str(tmp_path / "gai.conf")},
+    )
     result = subprocess.run(
-        ["bash", SCRIPT, "verify", sys.executable],
+        ["bash", SCRIPT, "verify", fresh_venv],
         capture_output=True,
         text=True,
         timeout=60,
@@ -193,14 +198,14 @@ def test_verify_mode_passes_with_the_system_patch():
     assert result.returncode == 0, result.stdout + result.stderr
 
 
-def test_apply_is_idempotent_for_gai_conf(tmp_path):
+def test_apply_is_idempotent_for_gai_conf(tmp_path, fresh_venv):
     """Running `apply` twice must not append the precedence rule twice."""
     gai = tmp_path / "gai.conf"
     gai.write_text("# empty\n")
     env = {**os.environ, "GAI_CONF": str(gai)}
     for _ in range(2):
         subprocess.run(
-            ["bash", SCRIPT, "apply", "--for-python", sys.executable],
+            ["bash", SCRIPT, "apply", "--for-python", fresh_venv],
             check=True,
             capture_output=True,
             timeout=120,
