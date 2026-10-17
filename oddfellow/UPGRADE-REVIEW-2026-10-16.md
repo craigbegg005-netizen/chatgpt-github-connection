@@ -85,3 +85,26 @@ blocked; that account limit has not been rechecked in this session.
 Review branch: `work/oddfellow-continuity-upgrade-20261016`.
 Do not overwrite canonical or the coordination branch. No production merge or
 deployment is authorized by this review record.
+
+## Follow-up validation — 2026-10-17 20:15 UTC
+
+Recovered the published review branch at `f08ef00` without duplicating the
+continuity changes. Fixed the two host-dependent IPv4 tests to install and
+verify the patch in disposable virtual environments; they no longer assume or
+modify the system interpreter's configuration.
+
+Added `run_offline_tests.py`: launches pytest with an environment allowlist
+(no inherited provider credentials or proxy variables), disables automatic
+third-party pytest plugins, and installs a Python audit hook that rejects
+non-loopback socket connections. A negative-control probe verifies the hook
+before test collection. Python child processes inherit the hook. This is an
+accidental-egress guard for trusted tests, not an OS sandbox; non-Python
+programs and Python started with site disabled are outside its scope.
+
+Fresh result: **780 passed, 1 dependency deprecation warning, 14.39 seconds**.
+Command: `.venv/bin/python oddfellow/run_offline_tests.py`.
+Python 3.12; dependencies installed from requirements-dev.txt in a disposable
+virtual environment. No production configuration or deployment changed.
+A live health request timed out; this does not establish current readiness.
+Database rescue remains BLOCKED: configuration preservation is not a logical
+export, and no off-platform dump or isolated restore was verified this turn.
