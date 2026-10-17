@@ -38,7 +38,7 @@ other fails here.
 import re
 from pathlib import Path
 
-EXPECTED_TEST_COUNT = 770
+EXPECTED_TEST_COUNT = 780
 
 
 def _claimed_count() -> int:
@@ -55,9 +55,9 @@ def _claimed_count() -> int:
     text = (Path(__file__).resolve().parents[2] / "CURRENT_STATE.md").read_text(
         encoding="utf-8"
     )
-    m = re.search(r"\*\*(\d[\d,]*)\s+tests?\s+pass\*\*", text)
+    m = re.search(r"\*\*(\d[\d,]*)\s+tests?\s+(?:pass|collected)\*\*", text)
     assert m, (
-        "CURRENT_STATE.md carries no '**N tests pass**' claim to guard. The "
+        "CURRENT_STATE.md carries no bold test count (pass or collected) to guard. The "
         "claim must be written in bold so this guard can tell it apart from "
         "prose that merely mentions a test count."
     )
