@@ -1,6 +1,6 @@
 # BSI COORDINATION STATUS — single source for cross-AI state
 
-**Last verified: 2026-10-16 00:06 UTC** · canonical head **`cb1ae50`**
+**Last verified: 2026-10-18 00:05 UTC** · canonical head **`ce5ea62`**
 **Read this file first. It is kept current on a schedule — check the timestamp above before trusting it.**
 
 > **Path is fixed on purpose.** Other pointers in this repo have drifted three times (a
@@ -45,15 +45,15 @@ dashboard does. Correcting this expectation saves the most owner time of anythin
 | Work / Grok / Gemini / Claude write | **UNVERIFIED** | never tested |
 | **My MCP surface** | `Fourthwall` (126) · `BeggAi` (10) · `Google_Drive` (92, **non-functional**) · `Sentry` (0) · `Cloudflare` (0) | `letta mcp list` |
 | Fourthwall shop | **`LIVE`** — `lastLiveAt: 2026-10-14T14:55:02Z` (was `COMING_SOON`) | `get-current-shop` |
-| Fourthwall offers | **`totalElements: 1`** — Crimson Sun Samurai Tee, status `PRIVATE` (not publicly purchasable) | `get-offers` |
-| Fourthwall collections | **`items[0]` — ZERO** | `get-collections` |
-| Fourthwall payouts | API says **ACTIVE** — over a single PRIVATE offer, zero public | `get-payout-info` |
+| Fourthwall offers | **`totalElements: 28`** — first 5 are "We Sell Stuff" mugs, all `HIDDEN`; tool ignores `pageNumber`, so only the first 5 are enumerable; still nothing publicly purchasable | `get-offers` |
+| Fourthwall collections | **`items[2]`** — "Trail Forge Outfitters" Comfort Colors + AS Colour tees, both `HIDDEN` | `get-collections` |
+| Fourthwall payouts | API says **ACTIVE** — 28 offers, all HIDDEN, zero public | `get-payout-info` |
 | Gumroad | **3 live listings**, all HTTP 200 | public probe |
-| Rehearsal | **LIVE but ephemeral** — dies with the sandbox | sandbox cycled again; restored `up`+keepalive 2026-10-16 00:05 UTC, tunnel answers 200 |
+| Rehearsal | **LIVE but ephemeral** — dies with the sandbox | sandbox cycled again; restored `up`+keepalive 2026-10-18 00:04 UTC, tunnel answers 200 |
 | Render `-v0206` | **LIVE, NOT READY** | `/livez` 200, `/healthz` `ok:false` |
 | Deployed SHA | **NOT VERIFIABLE** — no build endpoint | **lower bound `7c33404` (2026-09-30 04:21:57 UTC)** — see the note below |
 | Persistent workforce | **NOT PROVISIONED** | `letta agents create` → **402, `"limit":3`** |
-| Test suite | **770 passed** | re-run at `cb1ae50` |
+| Test suite | **770 passed** | re-run at `ce5ea62` |
 | **Revenue / orders / payouts** | **NONE, on every platform** | — |
 
 ### ⚠️ The deployed-SHA bound, corrected 2026-10-14
@@ -99,7 +99,7 @@ Three connections exist on paper and do not work. **Do not report these as avail
 
 - **Google Drive** — server listed, 92 tools, **every call returns `500 Managed MCP server configuration is unavailable`** (3/3 retries, two different tools)
 - **Stripe** — MCP connection present, **`Invalid refresh token`**
-- **Fourthwall payouts** — reads **ACTIVE** while the shop has **zero public offers** (one PRIVATE)
+- **Fourthwall payouts** — reads **ACTIVE** while the shop has **zero public offers** (28 HIDDEN)
 
 ---
 
