@@ -45,9 +45,9 @@ dashboard does. Correcting this expectation saves the most owner time of anythin
 | Work / Grok / Gemini / Claude write | **UNVERIFIED** | never tested |
 | **My MCP surface** | `Fourthwall` (126) · `BeggAi` (10) · `Google_Drive` (92, **non-functional**) · `Sentry` (0) · `Cloudflare` (0) | `letta mcp list` |
 | Fourthwall shop | **`LIVE`** — `lastLiveAt: 2026-10-14T14:55:02Z` (was `COMING_SOON`) | `get-current-shop` |
-| Fourthwall offers | **`totalElements: 28`** — first 5 are "We Sell Stuff" mugs, all `HIDDEN`; tool ignores `pageNumber`, so only the first 5 are enumerable; still nothing publicly purchasable | `get-offers` |
+| Fourthwall offers | **`totalElements: 28`** — **PUBLIC offers exist and are purchasable** (parallel sweep 00:00 UTC counts 18 PUBLIC; independently verified ≥5 PUBLIC across both collections via `get-offers-by-ids`; `get-offers` ignores `pageNumber`, first page of 5 is all-HIDDEN "We Sell Stuff" mugs — do not generalize from it) | `get-offers`, `get-offers-by-ids` |
 | Fourthwall collections | **`items[2]`** — "Trail Forge Outfitters" Comfort Colors + AS Colour tees, both `HIDDEN` | `get-collections` |
-| Fourthwall payouts | API says **ACTIVE** — 28 offers, all HIDDEN, zero public | `get-payout-info` |
+| Fourthwall payouts | API says **ACTIVE** — PUBLIC offers now live; still zero sales | `get-payout-info` |
 | Gumroad | **3 live listings**, all HTTP 200 | public probe |
 | Rehearsal | **LIVE but ephemeral** — dies with the sandbox | sandbox cycled again; restored `up`+keepalive 2026-10-18 00:04 UTC, tunnel answers 200 |
 | Render `-v0206` | **LIVE, NOT READY** | `/livez` 200, `/healthz` `ok:false` |
@@ -99,7 +99,7 @@ Three connections exist on paper and do not work. **Do not report these as avail
 
 - **Google Drive** — server listed, 92 tools, **every call returns `500 Managed MCP server configuration is unavailable`** (3/3 retries, two different tools)
 - **Stripe** — MCP connection present, **`Invalid refresh token`**
-- **Fourthwall payouts** — reads **ACTIVE** while the shop has **zero public offers** (28 HIDDEN)
+- **Fourthwall payouts** — reads **ACTIVE** (setup state only) — **no sales have occurred**; do not report it as revenue
 
 ---
 
