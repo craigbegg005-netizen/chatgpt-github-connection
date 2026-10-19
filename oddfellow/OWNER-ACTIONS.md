@@ -34,16 +34,16 @@ Gumroad dashboard → Products → for each of the 3 listings: open → Content 
 Optional **decision**: a $4.99 test purchase of your own listing end-to-end (only spend on this list, your call).
 
 ## 4. Approve + post the promotion drafts  🟡 revenue-first
-Drafts ready: `oddfellow/promotion/DRAFTS-2026-10-14.md` (X post + Reddit-style post per listing, all factual). Review → post from your accounts when ready. Time: ~10 min.
+Drafts ready: `oddfellow/promotion/DRAFTS-2026-10-14.md` (X post + Reddit-style post per listing, all factual). Review → post from your accounts when ready. **Update 2026-10-19: the drafts point at Gumroad; the Fourthwall storefront is now live with 44 public products — consider posting storefront links too (or instead).** Time: ~10 min.
 
 ## 5. Reconnect BOTH Google integrations  🟡 blocks file verification + comms failover
-Letta chat → connections → reconnect **Google Drive** AND **Gmail** together (they share one broken provisioning path; both 500 "Managed MCP server configuration is unavailable" since 02:00 UTC). **Unblocks: Samurai source-file hash verification, Drive-based asset transfer, the comms failover chain.** Time: ~2 min of taps.
+Letta chat → connections → reconnect **Google Drive** AND **Gmail** together (they share one broken provisioning path; both 500 "Managed MCP server configuration is unavailable" since 02:00 UTC). **Unblocks: Drive-based asset transfer + the comms failover chain.** (The Samurai hash loop CLOSED 2026-10-15 — hero verified locally against the manifest.) Time: ~2 min of taps.
 
 ## 6. Refresh the BeggAi (Stripe) token  🟡
 Same connections page → BeggAi → reconnect (refresh token invalid). Time: ~1 min.
 
-## 7. Fourthwall dashboard session  🟡 unblocks poster launch decisions
-Fourthwall creator dashboard (phone browser works): confirm 0 offers; check payout/support-email readiness; get **per-size base costs** for the Enhanced Matte Poster (the only source — public catalog shows one $5.50 from-price). Do NOT create public products — shop is **LIVE and empty**; anything public is immediately visible. Time: ~15 min.
+## 7. Fourthwall dashboard session  🟡 catalog hygiene + agent unblock
+The catalog is live: **44 PUBLIC products** (verified 2026-10-19 00:02 UTC). Remaining dashboard-gated items: (a) the four We Sell Stuff mug designs appear **twice each** in the catalog — if those are accidental duplicates, archive one of each; (b) per-size base costs for the Enhanced Matte Poster (still the only source — public catalog shows one $5.50 from-price); (c) the samurai-motif AS Colour tees are PUBLIC — if any uses image 01 (the calligraphy-flagged artwork), that review gate is still OPEN on our side; (d) media-library MCP tools remain `tool_not_found`, so agent-side product creation still needs one dashboard upload per design. Time: ~15 min.
 
 ## 8. Higher-resolution artwork originals  🟡 unblocks the poster range
 If a higher-res original of the Samurai artwork exists (bigger than 1122×1402), upload it to the shared Drive folder. Current source caps at 5×7@200DPI / soft 8×10. Time: whatever it takes to look.
