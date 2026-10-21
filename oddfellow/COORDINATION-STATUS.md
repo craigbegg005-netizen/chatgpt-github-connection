@@ -1,6 +1,6 @@
 # BSI COORDINATION STATUS — single source for cross-AI state
 
-**Last verified: 2026-10-20 00:05 UTC** · canonical head **`53a780e`**
+**Last verified: 2026-10-21 00:06 UTC** · canonical head **`9f0432b`**
 **Read this file first. It is kept current on a schedule — check the timestamp above before trusting it.**
 
 > **Path is fixed on purpose.** Other pointers in this repo have drifted three times (a
@@ -43,17 +43,17 @@ dashboard does. Correcting this expectation saves the most owner time of anythin
 | ChatGPT GitHub read | ✅ **VERIFIED** | its own independent read-back of `5accc01f` |
 | ChatGPT GitHub write | ⛔ **403 — token scope** | its own diagnosis |
 | Work / Grok / Gemini / Claude write | **UNVERIFIED** | never tested |
-| **My MCP surface** | `Fourthwall` (126) · `BeggAi` (10) · `Google_Drive` (92, **non-functional**) · `Sentry` (0) · `Cloudflare` (0) | `letta mcp list` |
+| **My MCP surface** | `Fourthwall` (126) · `BeggAi` (10) · `Gmail` (61, **non-functional**) · `Google_Drive` (92, **non-functional**) · `Sentry` (0) · `Cloudflare` (0) | `letta mcp list` |
 | Fourthwall shop | **`LIVE`** — `lastLiveAt: 2026-10-14T14:55:02Z` (was `COMING_SOON`) | `get-current-shop` |
-| Fourthwall offers | **`totalElements: 46`** — **PUBLIC offers exist and are purchasable** (2026-10-19 sweep counts 44 PUBLIC; first page of 5 is now all-PUBLIC tees $19.99–$23.99 created 2026-10-18 — the all-HIDDEN first page is gone; `get-offers` still ignores `pageNumber` — do not generalize from any single page) | `get-offers`, `get-offers-by-ids` |
+| Fourthwall offers | **`totalElements: 50`** — **PUBLIC offers exist and are purchasable** (2026-10-21 sweeps count 44 PUBLIC · 4 HIDDEN · 2 ARCHIVED; first page of 5 is now 4 HIDDEN digital drafts $6.99–$29.99 created 2026-10-20 — the shop's first digital products — + 1 PUBLIC tee; `get-offers` still ignores `pageNumber` — do not generalize from any single page) | `get-offers`, `get-offers-by-ids` |
 | Fourthwall collections | **`items[6]`** — Mugs & Home (17) · Celtic (2) · Christian & Biblical (11) · Samurai & Japanese Art (8) · Trail Forge Outfitters Comfort Colors (17) + AS Colour (22) — all `PUBLIC` | `get-collections` |
 | Fourthwall payouts | API says **ACTIVE** — PUBLIC offers now live; still zero sales | `get-payout-info` |
 | Gumroad | **3 live listings**, all HTTP 200 | public probe |
-| Rehearsal | **LIVE but ephemeral** — dies with the sandbox | sandbox cycled again; restored `up`+keepalive 2026-10-20 00:04 UTC, tunnel answers 200 |
+| Rehearsal | **LIVE but ephemeral** — dies with the sandbox | sandbox cycled again; restored `up`+keepalive 2026-10-21 00:03 UTC, tunnel answers 200 |
 | Render `-v0206` | **LIVE, NOT READY** | `/livez` 200, `/healthz` `ok:false` |
 | Deployed SHA | **NOT VERIFIABLE** — no build endpoint | **lower bound `7c33404` (2026-09-30 04:21:57 UTC)** — see the note below |
 | Persistent workforce | **NOT PROVISIONED** | `letta agents create` → **402, `"limit":3`** |
-| Test suite | **770 passed** | re-run at `53a780e` |
+| Test suite | **770 passed** | re-run at `9f0432b` |
 | **Revenue / orders / payouts** | **NONE, on every platform** | — |
 
 ### ⚠️ The deployed-SHA bound, corrected 2026-10-14
@@ -95,8 +95,9 @@ list, and it is worth knowing before any claim rests on "the catalog":
 
 ### ⚠️ Registrations that are not capabilities
 
-Three connections exist on paper and do not work. **Do not report these as available:**
+Four connections exist on paper and do not work. **Do not report these as available:**
 
+- **Gmail** — server listed, 61 tools, **calls return `500 Managed MCP server configuration is unavailable`** (probed 2026-10-21)
 - **Google Drive** — server listed, 92 tools, **every call returns `500 Managed MCP server configuration is unavailable`** (3/3 retries, two different tools)
 - **Stripe** — MCP connection present, **`Invalid refresh token`**
 - **Fourthwall payouts** — reads **ACTIVE** (setup state only) — **no sales have occurred**; do not report it as revenue
@@ -151,5 +152,5 @@ shape and had to be rebuilt from a live catalog; **these cannot be.**
 
 ## 7. CURRENT HEAD
 
-`letta/combined-single-service-v0.20.4` @ **`53a780e`** · coordination branch
+`letta/combined-single-service-v0.20.4` @ **`9f0432b`** · coordination branch
 `coordination/oddfellow-chatgpt-sync` @ **`62e2be3`**
