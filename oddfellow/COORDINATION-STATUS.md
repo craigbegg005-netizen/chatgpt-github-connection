@@ -1,6 +1,6 @@
 # BSI COORDINATION STATUS — single source for cross-AI state
 
-**Last verified: 2026-10-26 02:05 UTC** · canonical head **`63af8d3`**
+**Last verified: 2026-10-27 00:05 UTC** · canonical head **`3ba447b`**
 **Read this file first. It is kept current on a schedule — check the timestamp above before trusting it.**
 
 > **Path is fixed on purpose.** Other pointers in this repo have drifted three times (a
@@ -14,7 +14,7 @@
 | # | Blocker | Owner action | Blocks |
 |---|---|---|---|
 | 1 | **Fourthwall media-library MCP tools not exposed** | upload artwork in the dashboard | the **entire** Phase-1 launch |
-| 2 | **Google Drive: 92 tools registered, every call 500s** | disconnect + reconnect Drive | artwork transfer |
+| 2 | **Google Drive: 92 tools registered, calls fail 403 insufficient scopes** (was 500) | disconnect + reconnect Drive | artwork transfer |
 | 3 | **Four archives never received** | upload to Drive, or attach here | artwork, PWA, addenda |
 | 4 | **Gate A: two Render env vars unset** | set them in Render | production readiness |
 | 5 | **Render DB expires 2026-10-27** | `/32` allowlist + secret | data preservation |
@@ -49,11 +49,11 @@ dashboard does. Correcting this expectation saves the most owner time of anythin
 | Fourthwall collections | **`items[7]`** — Norse/Nordic (1, first recorded 2026-10-22) · Mugs & Home (17) · Celtic (5) · Christian & Biblical (12) · Samurai & Japanese Art (8) · Trail Forge Outfitters Comfort Colors (17) + AS Colour (22) — all `PUBLIC` | `get-collections` |
 | Fourthwall payouts | API says **ACTIVE** — PUBLIC offers now live; still zero sales | `get-payout-info` |
 | Gumroad | **3 live listings**, all HTTP 200 | public probe |
-| Rehearsal | **LIVE but ephemeral** — dies with the sandbox | sandbox cycled again; restored `up`+keepalive 2026-10-26 02:01 UTC, tunnel answers 200 |
+| Rehearsal | **LIVE but ephemeral** — dies with the sandbox | sandbox cycled again; restored `up`+keepalive 2026-10-27 00:02 UTC, tunnel answers 200 |
 | Render `-v0206` | **LIVE, NOT READY** | `/livez` 200, `/healthz` `ok:false` |
 | Deployed SHA | **NOT VERIFIABLE** — no build endpoint | **lower bound `7c33404` (2026-09-30 04:21:57 UTC)** — see the note below |
 | Persistent workforce | **NOT PROVISIONED** | `letta agents create` → **402, `"limit":3`** |
-| Test suite | **770 passed** | re-run at `63af8d3` |
+| Test suite | **770 passed** | re-run at `3ba447b` |
 | **Revenue / orders / payouts** | **NONE, on every platform** | — |
 
 ### ⚠️ The deployed-SHA bound, corrected 2026-10-14
@@ -98,7 +98,7 @@ list, and it is worth knowing before any claim rests on "the catalog":
 Four connections exist on paper and do not work. **Do not report these as available:**
 
 - **Gmail** — server listed, 61 tools, **calls return `500 Managed MCP server configuration is unavailable`** (probed 2026-10-21)
-- **Google Drive** — server listed, 92 tools, **every call returns `500 Managed MCP server configuration is unavailable`** (3/3 retries, two different tools)
+- **Google Drive** — server listed, 92 tools, **calls now execute but fail `403 Request had insufficient authentication scopes`** (`ACCESS_TOKEN_SCOPE_INSUFFICIENT`, DriveFiles.List; probed 2026-10-27). Was `500 Managed MCP server configuration is unavailable` through 2026-10-26. Disconnect + reconnect still the owner action — the token needs the scopes re-granted.
 - **Stripe** — MCP connection present, **`Invalid refresh token`**
 - **Fourthwall payouts** — reads **ACTIVE** (setup state only) — **no sales have occurred**; do not report it as revenue
 
@@ -152,5 +152,5 @@ shape and had to be rebuilt from a live catalog; **these cannot be.**
 
 ## 7. CURRENT HEAD
 
-`letta/combined-single-service-v0.20.4` @ **`63af8d3`** · coordination branch
+`letta/combined-single-service-v0.20.4` @ **`3ba447b`** · coordination branch
 `coordination/oddfellow-chatgpt-sync` @ **`62e2be3`**
