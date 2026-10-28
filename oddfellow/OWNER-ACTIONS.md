@@ -8,7 +8,15 @@ Render dashboard → service **oddfellow-letta-backend-v0206** → Environment �
 - `ODDFELLOW_OWNER_TOKEN` (any long random string; must match what the app stores)
 Save → service redeploys (~2 min). **Unblocks: the whole acceptance sequence.** Time: ~5 min.
 
-## 2. Render DB preservation — deadline **2026-10-27T23:21:01Z**  🔴 data loss risk
+## 2. Render DB preservation — free-access deadline **PASSED** (2026-10-27T23:21:01Z); Render deletes the data at **~2026-11-10**  🔴 data loss risk
+
+**State as of 2026-10-28:** the zero-spend window closed without action. The database is now in
+Render's 14-day grace period: the data still exists, but reading it **requires upgrading the
+database to a paid plan** — a spend decision that is yours alone (I will not spend without your
+explicit authorization). If you want the data: authorize the upgrade, then follow Route A below
+exactly as written (the mechanics are unchanged). After I verify the dump you can downgrade and
+the preservation stands at zero ongoing cost. If nothing happens by ~2026-11-10, Render deletes
+the database and the data is gone.
 
 **Pick ONE of the two routes. They need different IPs allowlisted, and mixing them fails.**
 
