@@ -64,3 +64,26 @@ not cover.** Env var values were not read, and reading them is owner-gated.
 
 No table inventory, no row counts, no schema. The database was not read — only its door was tested,
 and the door is shut.
+
+## Addendum 2026-10-28 — a fourth response shape appeared after the free-access deadline; do not misread it
+
+Probed 2026-10-28 00:04 UTC (after the 2026-10-27T23:21:01Z free-access deadline passed, no dump
+ever taken). The tell table above has three rows; this probe found a **fourth shape** and one trap.
+
+| Client / packet | Response |
+|---|---|
+| `psql` (real client, dummy password) | **"SSL connection has been closed unexpectedly"** — the silent-close shape, unchanged from 2026-10-13. Allowlist never opened. |
+| Hand-rolled minimal startup packet (`user=<x>\0database=postgres\0\0`, protocol 3.0, over TLS) | **`E` ErrorResponse: `SFATAL C28000 Muser is required`** — repeatedly, for any user value |
+| Hand-rolled packet with no user parameter | silent close |
+| TLS connect, no packet sent | server silent for 8 s ×3 — it never speaks first |
+
+**The trap:** `user is required` looks like a genuine PostgreSQL complaint and could be misread as
+"the allowlist opened and we reached the real backend." It is not evidence of that — a real client
+(`psql`) against the same endpoint, same minute, still gets the silent close. The mechanism is
+**unexplained** (the hand-rolled packet differs from libpq's in ways the platform proxy evidently
+treats differently). Until it is explained, **classify this endpoint only by a real client's
+behavior**, and treat `user is required` from hand-rolled packets as unclassified noise.
+
+What the probes do support: the endpoint still resolves (same `35.227.164.209` as 2026-10-13),
+accepts TCP, completes TLS 1.3 — consistent with the 14-day grace window (deletion ~2026-11-10 per
+the preservation runbook), and consistent with the 00:00 UTC sweep's read of the runbook.
