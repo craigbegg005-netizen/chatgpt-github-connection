@@ -17,7 +17,7 @@
 | 2 | **Google Drive: 92 tools registered, calls fail 403 insufficient scopes** (was 500) | disconnect + reconnect Drive | artwork transfer |
 | 3 | **Four archives never received** | upload to Drive, or attach here | artwork, PWA, addenda |
 | 4 | **Gate A: two Render env vars unset** | set them in Render | production readiness |
-| 5 | **Render DB deadline PASSED 2026-10-27T23:21:01Z — no dump was taken** (no `ODDFELLOW_DB_URL` secret was ever set; psql from the sandbox still gets the silent-close shape, so the allowlist was never opened; the endpoint still resolves and accepts TCP+TLS, so a **late dump may still work if the DB survives — unverifiable from here**) | `/32` allowlist (egress `170.9.4.232`) + secret — **urgent** | data preservation |
+| 5 | **Render DB free-access deadline PASSED 2026-10-27T23:21:01Z — no dump was taken** (no `ODDFELLOW_DB_URL` secret was ever set; psql from the sandbox still gets the silent-close shape, so the allowlist was never opened; endpoint still resolves + accepts TCP+TLS — consistent with grace). **Deletion ~2026-11-10** (runbook: expiry + 14-day grace); recovery now requires a **paid upgrade — spend decision, owner's alone** — then Route A as written | authorize upgrade (spend) → `/32` allowlist (egress `170.9.4.232`) + secret | data preservation |
 | 6 | **GitHub Pages disabled** (API 404, URL 404) | one repo toggle | store + PWA hosting |
 | 7 | **Spreadshop: no access path** | sign-in in sandbox browser | second storefront |
 | 8 | **Gumroad delivered file unverifiable** | 2 min in seller view | closes 11-vs-12-page question |
