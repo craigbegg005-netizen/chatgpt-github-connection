@@ -1,6 +1,6 @@
 # BSI COORDINATION STATUS — single source for cross-AI state
 
-**Last verified: 2026-10-27 00:05 UTC** · canonical head **`3ba447b`**
+**Last verified: 2026-10-28 00:07 UTC** · canonical head **`6f9c3d6`**
 **Read this file first. It is kept current on a schedule — check the timestamp above before trusting it.**
 
 > **Path is fixed on purpose.** Other pointers in this repo have drifted three times (a
@@ -17,7 +17,7 @@
 | 2 | **Google Drive: 92 tools registered, calls fail 403 insufficient scopes** (was 500) | disconnect + reconnect Drive | artwork transfer |
 | 3 | **Four archives never received** | upload to Drive, or attach here | artwork, PWA, addenda |
 | 4 | **Gate A: two Render env vars unset** | set them in Render | production readiness |
-| 5 | **Render DB expires 2026-10-27** | `/32` allowlist + secret | data preservation |
+| 5 | **Render DB deadline PASSED 2026-10-27T23:21:01Z — no dump was taken** (no `ODDFELLOW_DB_URL` secret was ever set; psql from the sandbox still gets the silent-close shape, so the allowlist was never opened; the endpoint still resolves and accepts TCP+TLS, so a **late dump may still work if the DB survives — unverifiable from here**) | `/32` allowlist (egress `170.9.4.232`) + secret — **urgent** | data preservation |
 | 6 | **GitHub Pages disabled** (API 404, URL 404) | one repo toggle | store + PWA hosting |
 | 7 | **Spreadshop: no access path** | sign-in in sandbox browser | second storefront |
 | 8 | **Gumroad delivered file unverifiable** | 2 min in seller view | closes 11-vs-12-page question |
@@ -49,11 +49,11 @@ dashboard does. Correcting this expectation saves the most owner time of anythin
 | Fourthwall collections | **`items[7]`** — Norse/Nordic (1, first recorded 2026-10-22) · Mugs & Home (17) · Celtic (5) · Christian & Biblical (12) · Samurai & Japanese Art (8) · Trail Forge Outfitters Comfort Colors (17) + AS Colour (22) — all `PUBLIC` | `get-collections` |
 | Fourthwall payouts | API says **ACTIVE** — PUBLIC offers now live; still zero sales | `get-payout-info` |
 | Gumroad | **3 live listings**, all HTTP 200 | public probe |
-| Rehearsal | **LIVE but ephemeral** — dies with the sandbox | sandbox cycled again; restored `up`+keepalive 2026-10-27 00:02 UTC, tunnel answers 200 |
+| Rehearsal | **LIVE but ephemeral** — dies with the sandbox | sandbox cycled again; restored `up`+keepalive 2026-10-28 00:02 UTC, tunnel answers 200 |
 | Render `-v0206` | **LIVE, NOT READY** | `/livez` 200, `/healthz` `ok:false` |
 | Deployed SHA | **NOT VERIFIABLE** — no build endpoint | **lower bound `7c33404` (2026-09-30 04:21:57 UTC)** — see the note below |
 | Persistent workforce | **NOT PROVISIONED** | `letta agents create` → **402, `"limit":3`** |
-| Test suite | **770 passed** | re-run at `3ba447b` |
+| Test suite | **770 passed** | re-run at `6f9c3d6` |
 | **Revenue / orders / payouts** | **NONE, on every platform** | — |
 
 ### ⚠️ The deployed-SHA bound, corrected 2026-10-14
@@ -152,5 +152,5 @@ shape and had to be rebuilt from a live catalog; **these cannot be.**
 
 ## 7. CURRENT HEAD
 
-`letta/combined-single-service-v0.20.4` @ **`3ba447b`** · coordination branch
+`letta/combined-single-service-v0.20.4` @ **`6f9c3d6`** · coordination branch
 `coordination/oddfellow-chatgpt-sync` @ **`62e2be3`**
