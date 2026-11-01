@@ -82,7 +82,36 @@ transport. It cannot steal a job, bypass approval, or verify itself.
 `connect` prints a token **once**. It is not recoverable — a lost token is reissued,
 not restored. `tokens` lists metadata and never a value.
 
-## Status
+## Private queue snapshots
+
+From the `oddfellow` directory, preserve an existing connector database without
+opening `Store`, running migrations, or contacting a provider:
+
+```bash
+python -m connector.snapshot --source /private/queue.db --destination /private/backups/queue-2026-10-31.sqlite
+```
+
+The destination directory must already exist; the destination file must not.
+The command uses SQLite's online backup API, includes committed WAL pages,
+checks database integrity, and returns only size and SHA-256 evidence. It
+publishes a complete file with private `0600` permissions and refuses to replace
+any existing file or symlink. `--timeout 30` bounds backup progress; it does not
+bound filesystem I/O or the integrity scan. Use a trusted local filesystem with
+hard-link and fsync support. After an error, inspect for a completed destination
+before retrying under a new name.
+
+Keep snapshots outside the public checkout. They contain private job payloads,
+checkpoints and access-control records. Permissions are not encryption. This
+command creates a local snapshot, not a remote backup, Letta memory export, or
+Render Postgres dump. To inspect a copy without migrations:
+
+```bash
+python -c 'import sqlite3,sys; c=sqlite3.connect("file:"+sys.argv[1]+"?mode=ro",uri=True); print(c.execute("PRAGMA integrity_check").fetchone()[0])' /private/backups/queue-2026-10-31.sqlite
+```
+
+Existing checkpoint, pause, approval and verification semantics are preserved.
+
+## Runtime integration status
 
 🧪 **TESTED** — offline and deterministic · 🛠 **IMPLEMENTED** · ⏳ **NOT CONNECTED**
 to any provider · ⏳ **NOT DEPLOYED** as public MCP.

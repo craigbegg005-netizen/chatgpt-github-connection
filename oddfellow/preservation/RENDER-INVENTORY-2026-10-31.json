@@ -1,0 +1,185 @@
+{
+  "observedAtUTC": "2026-11-01T04:35Z",
+  "scope": "BSI only; independent Peace Framework excluded",
+  "services": [
+    {
+      "id": "srv-dauasgu0tbcc73em5org",
+      "name": "oddfellow-letta-backend-v0206",
+      "type": "web_service",
+      "branch": "letta/combined-single-service-v0.20.4",
+      "repo": "https://github.com/craigbegg005-netizen/chatgpt-github-connection",
+      "rootDir": "",
+      "autoDeploy": "no",
+      "plan": "free",
+      "envSourceNames": [],
+      "embeddedBuildSource": false
+    },
+    {
+      "id": "srv-dau73kmk1f9s73akjms0",
+      "name": "oddfellow-letta-ui-v020-pwa",
+      "type": "static_site",
+      "branch": "letta/frontend-letta-backend",
+      "repo": "https://github.com/craigbegg005-netizen/chatgpt-github-connection",
+      "rootDir": "",
+      "autoDeploy": "no",
+      "plan": null,
+      "envSourceNames": [],
+      "embeddedBuildSource": false
+    },
+    {
+      "id": "srv-dau6tgqd0e5s73egkocg",
+      "name": "oddfellow-letta-backend",
+      "type": "web_service",
+      "branch": "letta/combined-single-service-v0.20.4",
+      "repo": "https://github.com/craigbegg005-netizen/chatgpt-github-connection",
+      "rootDir": "oddfellow",
+      "autoDeploy": "no",
+      "plan": "free",
+      "envSourceNames": [],
+      "embeddedBuildSource": false
+    },
+    {
+      "id": "srv-dau5ls7avr4c73fpq3sg",
+      "name": "oddfellow-letta-ui-v020",
+      "type": "static_site",
+      "branch": "letta/frontend-letta-backend",
+      "repo": "https://github.com/craigbegg005-netizen/chatgpt-github-connection",
+      "rootDir": "",
+      "autoDeploy": "no",
+      "plan": null,
+      "envSourceNames": [],
+      "embeddedBuildSource": false
+    },
+    {
+      "id": "srv-dau4uouk1f9s73ace5o0",
+      "name": "oddfellow-letta-poc",
+      "type": "web_service",
+      "branch": "main",
+      "repo": "https://github.com/craigbegg005-netizen/chatgpt-github-connection",
+      "rootDir": "",
+      "autoDeploy": "no",
+      "plan": "free",
+      "envSourceNames": [
+        "ODDFELLOW_LETTA_SRC"
+      ],
+      "embeddedBuildSource": true
+    },
+    {
+      "id": "srv-dau3rm60tbcc73fs4tt0",
+      "name": "oddfellow-synthetic-v020",
+      "type": "static_site",
+      "branch": "main",
+      "repo": "https://github.com/craigbegg005-netizen/chatgpt-github-connection",
+      "rootDir": "",
+      "autoDeploy": "no",
+      "plan": null,
+      "envSourceNames": [],
+      "embeddedBuildSource": true
+    },
+    {
+      "id": "srv-dat4h08jo6nc73e7ibeg",
+      "name": "oddfellow-personal-v019b",
+      "type": "static_site",
+      "branch": "main",
+      "repo": "https://github.com/craigbegg005-netizen/chatgpt-github-connection",
+      "rootDir": "",
+      "autoDeploy": "no",
+      "plan": null,
+      "envSourceNames": [
+        "ODD_BOOT"
+      ],
+      "embeddedBuildSource": true
+    },
+    {
+      "id": "srv-dat4e7npn0mc73art900",
+      "name": "oddfellow-personal-v019",
+      "type": "static_site",
+      "branch": "main",
+      "repo": "https://github.com/craigbegg005-netizen/chatgpt-github-connection",
+      "rootDir": "",
+      "autoDeploy": "no",
+      "plan": null,
+      "envSourceNames": [
+        "ODD_BOOT_01",
+        "ODD_BOOT_02"
+      ],
+      "embeddedBuildSource": true
+    },
+    {
+      "id": "srv-dat341e0tbcc739mgah0",
+      "name": "oddfellow-personal-staging-v017b",
+      "type": "web_service",
+      "branch": "main",
+      "repo": "https://github.com/craigbegg005-netizen/chatgpt-github-connection",
+      "rootDir": "",
+      "autoDeploy": "no",
+      "plan": "free",
+      "envSourceNames": [],
+      "embeddedBuildSource": true
+    },
+    {
+      "id": "srv-dat2va17lnhs73beme00",
+      "name": "oddfellow-personal-staging-v017",
+      "type": "web_service",
+      "branch": "main",
+      "repo": "https://github.com/craigbegg005-netizen/chatgpt-github-connection",
+      "rootDir": "",
+      "autoDeploy": "no",
+      "plan": "free",
+      "envSourceNames": [
+        "ODDFELLOW_BUNDLE"
+      ],
+      "embeddedBuildSource": true
+    },
+    {
+      "id": "srv-dasvq797lnhs73b2tshg",
+      "name": "oddfellow-personal-secure",
+      "type": "web_service",
+      "branch": "main",
+      "repo": "https://github.com/craigbegg005-netizen/chatgpt-github-connection",
+      "rootDir": "",
+      "autoDeploy": "no",
+      "plan": "free",
+      "envSourceNames": [
+        "ODDFELLOW_SOURCE"
+      ],
+      "embeddedBuildSource": false
+    },
+    {
+      "id": "srv-dasuo9p7lnhs73auhifg",
+      "name": "begg-ai-industries-v013",
+      "type": "web_service",
+      "branch": "main",
+      "repo": "https://github.com/craigbegg005-netizen/chatgpt-github-connection",
+      "rootDir": "",
+      "autoDeploy": "no",
+      "plan": "free",
+      "envSourceNames": [],
+      "embeddedBuildSource": true
+    },
+    {
+      "id": "srv-dasrtp59fdbs73eqcs10",
+      "name": "begg-ai-core-v010",
+      "type": "web_service",
+      "branch": "main",
+      "repo": "https://github.com/craigbegg005-netizen/chatgpt-github-connection",
+      "rootDir": "",
+      "autoDeploy": "no",
+      "plan": "free",
+      "envSourceNames": [],
+      "embeddedBuildSource": true
+    },
+    {
+      "id": "srv-dasrrp8jo6nc73d52d1g",
+      "name": "begg-ai-core",
+      "type": "web_service",
+      "branch": "main",
+      "repo": "https://github.com/craigbegg005-netizen/chatgpt-github-connection",
+      "rootDir": "",
+      "autoDeploy": "no",
+      "plan": "free",
+      "envSourceNames": [],
+      "embeddedBuildSource": true
+    }
+  ]
+}
