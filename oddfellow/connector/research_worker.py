@@ -68,8 +68,8 @@ completed job returns its saved receipt without re-running the computation.
         if dep is None or dep.status is not Status.COMPLETE or not dep.verified:
             raise ClaimRefused("research dependency is incomplete or unverified")
     # Claim's conditional SQL update provides one winner for racing workers.
-    store.claim_job(job_id, provider, Transport.QUEUE, actor=provider,
-                    paused=store.is_paused())
+    claim = store.claim_job(job_id, provider, Transport.QUEUE, actor=provider,
+                            paused=store.is_paused())
     try:
         # A pure function cannot edit the caller's payload by aliasing it.
         value = screens[name](copy.deepcopy(payload["input"]))
@@ -87,10 +87,7 @@ completed job returns its saved receipt without re-running the computation.
         _json_bytes(receipt)
     except Exception:
         # Do not put exception messages (which may contain input/secrets) in audit.
-        store.fail_job(job_id, "local research computation failed", actor=provider,
-                       retryable=False)
+        store.finish_research_claim(claim, failed=True)
         raise RuntimeError("local research computation failed") from None
-    store.record_checkpoint(job_id, "local computation completed", actor=provider,
-                            evidence="sha256:" + receipt["output_sha256"])
-    completed, _ = store.submit_result(job_id, receipt, actor=provider, provider=provider)
+    completed = store.finish_research_claim(claim, result=receipt)
     return {"job_id": job_id, "executed": True, "receipt": completed.result}

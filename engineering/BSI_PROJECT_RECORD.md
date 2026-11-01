@@ -1,5 +1,58 @@
 # BSI coordinated research and engineering record
 
+## Continuation — November 1, 2026: protect replacement research claims
+
+**IMPLEMENTED / TESTED.** Reviewed the saved local worker before adding new
+capabilities. Found that lease expiry during a computation could let its old
+worker overwrite a replacement claim on failure, or submit a stale result when
+the replacement reused the same provider identifier. Successful late submission
+to a different provider also appended a misleading completion checkpoint before
+being refused. This was a newly found limitation of the preceding implementation.
+
+Added `Store.finish_research_claim`: obtains a SQLite write lock, checks the
+current provider, monotonically increasing attempt, task/risk and payload against
+the original claim, and commits completion/failure with its audit events in a
+single transaction. The computation runs outside the lock. The local worker uses
+this method for both success and failure. No schema migration or new dependency.
+
+Four developer-authored regression cases start a real second Python process
+which expires the first claim and reclaims the same job. They cover success and
+failure with both the same and a different provider. All four failed before the
+fix and pass afterward. Additional tests verify payload revision refusal,
+ordinary heartbeat acceptance, and rollback of result, checkpoint and audit
+changes when an injected audit-write failure aborts completion.
+
+Fresh evidence:
+
+| Check | Result |
+|---|---|
+| Before-fix claim-expiry regressions | 4 failed, demonstrating the gap |
+| Full guarded Oddfellow suite after fix | 792 passed, one dependency deprecation warning |
+| Unchanged Innovation Engine v1.1 suite | 207 passed |
+| Actual bridge first / second process | 3 computations / 0 computations; all results unverified |
+| `git diff --check` | clean |
+
+Files: `oddfellow/connector/store.py`, `research_worker.py`, worker regressions,
+test-count record/guard, this record, and new evidence in `engineering/evidence/`.
+`stale-attempt-before-20261101.txt` records the before-fix failures;
+`oddfellow-tests-20261101-continuation.txt` records the full passing run;
+`bridge-fenced-first-20261101.json` and `bridge-fenced-reopened-20261101.json`
+contain the fresh synthetic integration receipts.
+
+**Limitations:** tests use separate processes sharing one local SQLite database;
+they are not a distributed-system proof, independent evaluation or physical
+experiment. Only local research finalization uses this new attempt check; the
+older generic submission, failure and lease-expiry APIs retain their behavior.
+Audit infrastructure failure leaves the claim RUNNING with no partial completion;
+recovery uses the existing explicit lease-expiry flow. Trusted callbacks still
+need to be pure computations; timeouts/process isolation remain unimplemented.
+Live Letta synchronization was not attempted. No merge, deployment, new agent,
+spending or external submission occurred.
+
+Next priorities: review the new finalization path (S); evaluate the remaining
+generic queue mutation races before broader worker use (M); obtain independently
+authored engineering scenarios (M). Previous project priorities remain below.
+
 ## Session — November 1, 2026 (America/Chicago)
 
 Development branch: `work/bsi-offline-research-20261101`.

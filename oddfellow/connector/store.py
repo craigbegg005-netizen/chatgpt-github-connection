@@ -39,6 +39,7 @@ from .schema import (
     Job,
     Risk,
     Status,
+    TaskKind,
     canonical_json,
     canonical_provider,
     result_hash,
@@ -745,6 +746,55 @@ class Store:
         job.error = None
         job.claimed_at = None
         return self._update(job, actor, "job.result", result_hash=digest), True
+
+    def finish_research_claim(self, claim: Job, *, result: dict | None = None,
+                              failed: bool = False) -> Job:
+        """Atomically settle one local research attempt and its audit record.
+
+        The monotonically increasing attempt fences a late worker even when the
+        replacement uses the same provider id. Re-read under a SQLite write lock;
+        do not hold the lock while running the computation. Existing generic
+        submission/failure APIs retain their behavior; this guards the local worker.
+        """
+        provider = canonical_provider(claim.provider)
+        if type(failed) is not bool or (not failed and not isinstance(result, dict)):
+            raise ValueError("expected research result object or failed=True")
+        digest = None if failed else result_hash(result)
+        try:
+            self._conn.execute("BEGIN IMMEDIATE")
+            current = self._require(claim.job_id)
+            if (current.status is not Status.RUNNING or current.provider != provider
+                    or current.attempts != claim.attempts
+                    or current.kind is not TaskKind.RESEARCH or current.risk is not Risk.LOW
+                    or current.payload != claim.payload):
+                raise SubmitRefused("research claim attempt is no longer current")
+            at = _now()
+            checkpoints = list(current.checkpoints)
+            if not failed:
+                checkpoints.append({"at": at, "actor": provider,
+                                    "step": "local computation completed", "note": "",
+                                    "evidence": "sha256:" + digest})
+            status = Status.FAILED_TERMINAL if failed else Status.COMPLETE
+            self._conn.execute(
+                "UPDATE jobs SET status=?, result=?, result_hash=?, error=?, "
+                "checkpoints=?, claimed_at=NULL, verified=0, verified_by=NULL, "
+                "verification_evidence=NULL, updated_at=? WHERE job_id=?",
+                (status.value, None if failed else canonical_json(result), digest,
+                 "local research computation failed" if failed else None,
+                 canonical_json(checkpoints), at, claim.job_id))
+            # Insert directly: audit() commits, which would split this transaction.
+            events = ["job.research.failed"] if failed else ["job.checkpoint", "job.result"]
+            for event in events:
+                self._conn.execute(
+                    "INSERT INTO audit (at, actor, event, job_id, detail) VALUES (?,?,?,?,?)",
+                    (at, provider, event, claim.job_id,
+                     canonical_json({"attempt": claim.attempts, "status": status.value,
+                                     "result_hash": digest})))
+            self._conn.commit()
+        except Exception:
+            self._conn.rollback()
+            raise
+        return self._require(claim.job_id)
 
     def verify_result(
         self, job_id: str, verified_by: str, evidence: str

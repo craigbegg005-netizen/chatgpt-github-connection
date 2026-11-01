@@ -3,12 +3,15 @@ import json
 import os
 import subprocess
 import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 import pytest
 
 from connector import Job, Risk, Status, Store, TaskKind, Transport
 from connector.research_worker import run_research_job
-from connector.store import ClaimRefused
+from connector.store import ClaimRefused, SubmitRefused
 
 
 def make_job(store, job_id="research", **kwargs):
@@ -153,3 +156,86 @@ def test_corrupted_saved_receipt_not_reused():
         store.submit_result("research", receipt, actor="other", provider="other")
         with pytest.raises(ClaimRefused):
             run_research_job(store, "research", {"sum-v1": add})
+
+
+@pytest.mark.parametrize("replacement", ["local-research", "replacement"])
+@pytest.mark.parametrize("fails", [False, True])
+def test_expired_attempt_cannot_finish_replacement_claim(tmp_path, replacement, fails):
+    """A real second process reclaims the job while the first is computing."""
+    db = str(tmp_path / "race.sqlite")
+    def delayed(data):
+        code = '''
+import sys
+from datetime import datetime, timezone, timedelta
+from connector import Store, Transport
+with Store(sys.argv[1]) as store:
+    expired = store.expire_stale_claims(now=datetime.now(timezone.utc)+timedelta(hours=2))
+    assert len(expired) == 1
+    store.claim_job("research", sys.argv[2], Transport.QUEUE, actor=sys.argv[2])
+'''
+        from pathlib import Path
+        subprocess.run([sys.executable, "-c", code, db, replacement],
+                       env={**os.environ, "PYTHONPATH": os.pathsep.join([
+                           str(Path(__file__).resolve().parents[2]),
+                           os.environ.get("PYTHONPATH", "")])},
+                       capture_output=True, text=True, check=True, timeout=10)
+        if fails:
+            raise ValueError("old attempt failed after replacement")
+        return add(data)
+    with Store(db) as store:
+        make_job(store)
+        with pytest.raises(SubmitRefused):
+            run_research_job(store, "research", {"sum-v1": delayed})
+        current = store.get_job("research")
+        assert current.status is Status.RUNNING
+        assert current.provider == replacement
+        assert current.attempts == 2
+        assert current.result is None
+        assert current.error is None
+        assert current.checkpoints == ()
+
+
+def test_audit_failure_rolls_back_result_and_checkpoint():
+    import sqlite3
+    with Store() as store:
+        make_job(store)
+        store._conn.execute("""CREATE TRIGGER reject_completion BEFORE INSERT ON audit
+            WHEN NEW.event = 'job.result'
+            BEGIN SELECT RAISE(ABORT, 'injected audit failure'); END""")
+        with pytest.raises(sqlite3.IntegrityError, match="injected audit failure"):
+            run_research_job(store, "research", {"sum-v1": add})
+        current = store.get_job("research")
+        assert current.status is Status.RUNNING
+        assert current.result is None
+        assert current.checkpoints == ()
+        assert not any(e["event"] == "job.checkpoint" for e in store.audit_trail())
+
+
+def test_heartbeat_keeps_same_attempt_valid(tmp_path):
+    db = str(tmp_path / "heartbeat.sqlite")
+    def heartbeat(data):
+        with Store(db) as second:
+            second.renew_lease("research", actor="local-research")
+        return add(data)
+    with Store(db) as store:
+        make_job(store)
+        assert run_research_job(store, "research", {"sum-v1": heartbeat})["executed"]
+        assert store.get_job("research").attempts == 1
+
+
+def test_payload_revision_during_computation_refuses_stale_result(tmp_path):
+    db = str(tmp_path / "revision.sqlite")
+    def revise(data):
+        with Store(db) as second:
+            job = second.get_job("research")
+            job.payload["input"]["a"] = 100
+            second.set_status(job, Status.RUNNING, actor="owner")
+        return add(data)
+    with Store(db) as store:
+        make_job(store)
+        with pytest.raises(SubmitRefused):
+            run_research_job(store, "research", {"sum-v1": revise})
+        current = store.get_job("research")
+        assert current.payload["input"]["a"] == 100
+        assert current.result is None
+        assert current.checkpoints == ()
