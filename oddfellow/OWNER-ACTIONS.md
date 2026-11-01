@@ -1,12 +1,17 @@
 # Owner actions — the whole queue, tap-sized (updated 2026-10-14 19:00 UTC)
 
-Everything currently blocked on Craig, one card per action, phone-first. Each card: what, where to tap, time, what it unblocks. Nothing here spends money except the two items marked **decision**.
+Everything currently blocked on Craig, one card per action, phone-first. Each card: what, where to tap, time, what it unblocks. Nothing here spends money except the two items marked **decision** — plus one caution: since the 2026-11-01 Letta Pro upgrade, card 1's `LETTA_API_KEY` may enable credit-billing API calls (see card 1).
 
 ## 1. Gate A — two Render secrets  🔴 blocks Oddfellow v0.20 acceptance
 Render dashboard → service **oddfellow-letta-backend-v0206** → Environment → add:
 - `LETTA_API_KEY` (from letta.com dashboard → API keys)
 - `ODDFELLOW_OWNER_TOKEN` (any long random string; must match what the app stores)
 Save → service redeploys (~2 min). **Unblocks: the whole acceptance sequence.** Time: ~5 min.
+
+⚠️ **Since the 2026-11-01 Letta Pro upgrade:** API-key usage may draw **paid credits** (not the
+daily quota) — so once this key is set, the backend's Letta calls could bill. This is unverified;
+if it's a concern, tell me and I'll verify the billing behavior first, or we keep the backend's
+call volume minimal during acceptance.
 
 ## 2. Render DB preservation — free-access deadline **PASSED** (2026-10-27T23:21:01Z); Render deletes the data at **~2026-11-10**  🔴 data loss risk
 
