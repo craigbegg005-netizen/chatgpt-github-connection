@@ -1,6 +1,6 @@
 # BSI COORDINATION STATUS — single source for cross-AI state
 
-**Last verified: 2026-11-01 07:02 UTC** · canonical head **`de61180`**
+**Last verified: 2026-11-01 07:45 UTC** · canonical head **`4d6638b`**
 **Read this file first. It is kept current on a schedule — check the timestamp above before trusting it.**
 
 > **Path is fixed on purpose.** Other pointers in this repo have drifted three times (a
@@ -51,7 +51,7 @@ dashboard does. Correcting this expectation saves the most owner time of anythin
 | Gumroad | **3 live listings**, all HTTP 200 | public probe |
 | Rehearsal | **LIVE but ephemeral** — dies with the sandbox | cycled again after the 00:02 UTC restore; restored `up`+keepalive 2026-11-01 06:04 UTC, tunnel answers 200 |
 | Render `-v0206` | **LIVE, NOT READY** | `/livez` 200, `/healthz` `ok:false` |
-| Render census (10 documented) | **8 LIVE · 2 NOT SERVING** — live: backend-v0206, core-v010, industries-v013, ui-v020, ui-v020-pwa, synthetic-v020, personal-secure(303), personal-staging-v017b(303); not serving: old `oddfellow-letta-backend`, `poc`. **3 Command Center variants exist, none match the repo (9,610 B vs 14,290 B vs 17,260 B) — both deployed copies now preserved.** Owner reports 19 services — 9 undocumented in repo | public probes 2026-11-01 ~06:55 UTC; branch `letta/recovery-render-census-2026-11-01` (`0c72886`) |
+| Render census — **all 20 services documented** (owner screenshots 07:38 UTC + probes) | **14 LIVE · DB Available-but-verified-empty · 5 NOT SERVING** (cleanup candidates: `begg-ai-core`, `global-peace-human-security-framework`, old `oddfellow-letta-backend`, `oddfellow-personal-staging-v017`, `oddfellow-letta-poc`). **PgHero instance is wired to the rescued DB (401, auth-gated) — deleting the DB orphans it; delete both.** `oddfellow-personal-v019` proves "Failed deploy" can still serve (200). 3 Command Center variants, none match repo | dashboard + probes 2026-11-01 07:45 UTC; recovery doc addendum `a2115a6` on `letta/recovery-render-census-2026-11-01` |
 | Deployed SHA | **NOT VERIFIABLE** — no build endpoint | **lower bound `7c33404` (2026-09-30 04:21:57 UTC)** — see the note below |
 | Persistent workforce | **NOT PROVISIONED — limit lifted, creation untested** | account upgraded to **Personal Pro 2026-11-01** (`letta usage`: plan `pro`); docs: **up to 20 stateful agents** (was 3); no new agents created — owner has not authorized any |
 | Test suite | **780 passed** | `letta/pr1-salvage-2026-11-01` (`ad8de38`): PR#1's unique remainder cherry-picked cleanly (part was already on canonical); +10 tests. Suite on canonical remains 770 until owner approves the salvage merge |
