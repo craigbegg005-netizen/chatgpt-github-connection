@@ -1,6 +1,6 @@
 # BSI COORDINATION STATUS — single source for cross-AI state
 
-**Last verified: 2026-11-01 07:45 UTC** · canonical head **`4d6638b`**
+**Last verified: 2026-11-01 07:44 UTC** · canonical head **`44e368b`**
 **Read this file first. It is kept current on a schedule — check the timestamp above before trusting it.**
 
 > **Path is fixed on purpose.** Other pointers in this repo have drifted three times (a
@@ -54,7 +54,7 @@ dashboard does. Correcting this expectation saves the most owner time of anythin
 | Render census — **all 20 services documented** (owner screenshots 07:38 UTC + probes) | **14 LIVE · DB Available-but-verified-empty · 5 NOT SERVING** (cleanup candidates: `begg-ai-core`, `global-peace-human-security-framework`, old `oddfellow-letta-backend`, `oddfellow-personal-staging-v017`, `oddfellow-letta-poc`). **PgHero instance is wired to the rescued DB (401, auth-gated) — deleting the DB orphans it; delete both.** `oddfellow-personal-v019` proves "Failed deploy" can still serve (200). 3 Command Center variants, none match repo | dashboard + probes 2026-11-01 07:45 UTC; recovery doc addendum `a2115a6` on `letta/recovery-render-census-2026-11-01` |
 | Deployed SHA | **NOT VERIFIABLE** — no build endpoint | **lower bound `7c33404` (2026-09-30 04:21:57 UTC)** — see the note below |
 | Persistent workforce | **NOT PROVISIONED — limit lifted, creation untested** | account upgraded to **Personal Pro 2026-11-01** (`letta usage`: plan `pro`); docs: **up to 20 stateful agents** (was 3); no new agents created — owner has not authorized any |
-| Test suite | **780 passed** | `letta/pr1-salvage-2026-11-01` (`ad8de38`): PR#1's unique remainder cherry-picked cleanly (part was already on canonical); +10 tests. Suite on canonical remains 770 until owner approves the salvage merge |
+| Test suite | **780 passed on canonical** | merge `44e368b` (owner-approved 2026-11-01): PR#1 salvage merged, re-run verified; **PR #1 closed as superseded** |
 | **Revenue / orders / payouts** | **NONE, on every platform** | — |
 
 ### 🟢 Plan change 2026-11-01 — Letta account upgraded to Personal Pro
