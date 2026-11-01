@@ -7,6 +7,15 @@ based on canonical `ab961e366b85bcbb20c331fc4be98ebfed0ecb32`.
 This section supersedes earlier current-state and PR-status descriptions below;
 the earlier implementation and continuation sections are historical evidence.
 
+Draft PR #9 is open for this upgrade:
+https://github.com/craigbegg005-netizen/chatgpt-github-connection/pull/9
+It remains draft and unmerged. A further compatibility check applied this patch
+to canonical `25a424ca92b698631b5e5b8f2b7338312298d9e8` in a disposable detached
+checkout: **805 passed, zero skipped**, one dependency warning. Changes between
+the original base and that newer canonical snapshot were documentation/handoff
+updates. The compatibility run did not update canonical or create a merge.
+Evidence: `engineering/evidence/oddfellow-latest-base-tests-20261101.txt`.
+
 Canonical already contains the PR #1 salvage (`44e368b`); GitHub reports PR #1
 closed without merging that original PR. The review branch retains those current
 canonical changes and carries over only the local research worker, its finalizer,
@@ -47,7 +56,7 @@ Generic submit/fail/renew operations have not all been redesigned, and live Lett
 integration, worker isolation/timeouts, independent evaluation, scientific
 validation and neural model training remain outside this change. No production
 merge, deployment, new agent, paid service or external research submission.
-Prepare a separate draft PR against canonical for owner review.
+The separate draft PR above is available for owner review.
 
 Next: review the narrow queue mutations (S), extend consistent attempt checks to
 other generic mutation paths when their callers can supply claim identity (M),
