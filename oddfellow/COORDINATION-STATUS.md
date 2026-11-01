@@ -1,6 +1,6 @@
 # BSI COORDINATION STATUS — single source for cross-AI state
 
-**Last verified: 2026-11-01 06:06 UTC** · canonical head **`97e5584`**
+**Last verified: 2026-11-01 06:45 UTC** · canonical head **`97e5584`**
 **Read this file first. It is kept current on a schedule — check the timestamp above before trusting it.**
 
 > **Path is fixed on purpose.** Other pointers in this repo have drifted three times (a
@@ -17,7 +17,7 @@
 | 2 | **Google Drive: 92 tools registered, calls fail 403 insufficient scopes** (was 500) | disconnect + reconnect Drive | artwork transfer |
 | 3 | **Four archives never received** | upload to Drive, or attach here | artwork, PWA, addenda |
 | 4 | **Gate A: two Render env vars unset** | set them in Render | production readiness |
-| 5 | **Render DB free-access deadline PASSED 2026-10-27T23:21:01Z — no dump yet; `ODDFELLOW_DB_URL` secret NOW SET** (first seen by the armed check 2026-11-01 06:00 UTC) **but the path is still blocked** — "SSL connection has been closed unexpectedly" (psql 18, 3 attempts, two proxy IPs, 06:00 UTC; re-confirmed 06:06 UTC; 3rd occurrence of the silent-close shape: 10-13, 10-28, 11-01 — probe-doc addendum) — so either the `/32` allowlist is still not open, or the free instance is suspended post-expiry (not distinguishable client-side); endpoint still resolves + accepts TCP+TLS. Dump tooling ready: `db_preserve.sh doctor` PASS (pg_dump 18.6) — the armed check dumps + restore-verifies automatically once a connection succeeds. **Deletion ~2026-11-10**; recovery = **paid upgrade (spend, owner's alone) if not already done** + `/32` allowlist, then Route A as written | add the `/32` allowlist (egress `170.9.4.232`) on `begg-ai-core-db` → Networking — secret ✅ in place; if the rule is already added and it still fails, that classifies suspension → authorize the paid upgrade (spend) | data preservation |
+| ~~5~~ | **RESOLVED 2026-11-01 06:44 UTC — DB preservation complete; the DB was EMPTY.** Owner set `ODDFELLOW_DB_URL` and allowlisted the sandbox egress (`170.9.15.3/32` — note: egress changed from the old `170.9.4.232` with a sandbox cycle; always re-verify at action time). Full runbook path passed against the real server: recon → dump → verify (1,379 B, `pg_restore --list` parses) → restore-verify (row counts match exactly). **Contents: 0 user tables, 7,686 kB (virgin Postgres size) — nothing was ever stored; the "Command Center may use it" signal was a false alarm.** Artifacts: `/root/oddfellow-db-backups/begg-ai-core-db-20261101T064404Z.dump` (+ `.sql.gz`) + delivered to owner downloads. Owner may now delete/downgrade the DB — deletion is verified zero-loss. **Also settled:** the silent-close was the allowlist the whole time, not the expired plan — diagnosis probe: TLS handshake completes, startup message gets a clean close with no FATAL. | none — closed | data preservation |
 | 6 | **GitHub Pages disabled** (API 404, URL 404) | one repo toggle | store + PWA hosting |
 | 7 | **Spreadshop: no access path** | sign-in in sandbox browser | second storefront |
 | 8 | **Gumroad delivered file unverifiable** | 2 min in seller view | closes 11-vs-12-page question |
