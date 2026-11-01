@@ -1,6 +1,6 @@
 # BSI COORDINATION STATUS — single source for cross-AI state
 
-**Last verified: 2026-11-01 00:07 UTC** · canonical head **`d7e4160`**
+**Last verified: 2026-11-01 04:30 UTC** · canonical head **`4ded6e8`**
 **Read this file first. It is kept current on a schedule — check the timestamp above before trusting it.**
 
 > **Path is fixed on purpose.** Other pointers in this repo have drifted three times (a
@@ -52,9 +52,26 @@ dashboard does. Correcting this expectation saves the most owner time of anythin
 | Rehearsal | **LIVE but ephemeral** — dies with the sandbox | cycled again after the 02:03 UTC restore; restored `up`+keepalive 2026-11-01 00:02 UTC, tunnel answers 200 |
 | Render `-v0206` | **LIVE, NOT READY** | `/livez` 200, `/healthz` `ok:false` |
 | Deployed SHA | **NOT VERIFIABLE** — no build endpoint | **lower bound `7c33404` (2026-09-30 04:21:57 UTC)** — see the note below |
-| Persistent workforce | **NOT PROVISIONED** | `letta agents create` → **402, `"limit":3`** |
+| Persistent workforce | **NOT PROVISIONED — limit lifted, creation untested** | account upgraded to **Personal Pro 2026-11-01** (`letta usage`: plan `pro`); docs: **up to 20 stateful agents** (was 3); no new agents created — owner has not authorized any |
 | Test suite | **770 passed** | re-run at `d7e4160` |
 | **Revenue / orders / payouts** | **NONE, on every platform** | — |
+
+### 🟢 Plan change 2026-11-01 — Letta account upgraded to Personal Pro
+
+Verified via `letta usage` at 04:25 UTC: plan **`pro`**; `letta/*` quota bucket **full** (daily:
+full), window end 2026-11-01T08:00Z, daily reset 2026-11-02T00:00Z; **credits balance 0**.
+Per docs.letta.com/pricing, Pro includes: Letta Auto weekly + monthly quota · **up to 20
+stateful agents** (free was 3 — the 402 blocker is lifted per docs, untested) · **50 MiB per
+memory repository** (free was 5; current use 3.2 MiB) · pay-as-you-go overage **requires
+purchasing credits** (balance 0 — none will be purchased without owner authorization).
+
+**Two cautions for every AI reading this:**
+1. Personal-plan quota requires OAuth (CLI/web). **API-key-authenticated usage draws credits,
+   not quota** — so the Render backend's `LETTA_API_KEY` calls may bill credits once Gate A is
+   set. Unverified until Gate A lands; do not assume the backend runs on Pro quota.
+2. The 5 active schedules total ~78 agent turns/day. Quota is currently full and resets daily,
+   so nothing is being exhausted — but consolidation (5 → 3 schedules) is recommended and
+   pending owner approval. Do not add new schedules without checking for overlap.
 
 ### ⚠️ The deployed-SHA bound, corrected 2026-10-14
 
