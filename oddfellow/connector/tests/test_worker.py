@@ -134,3 +134,63 @@ def test_tick_reports_dead_letters(store, tmp_path):
     store.fail_job(j.job_id, "permanent", actor="letta")
     report = tick(store, "claude", tmp_path)
     assert report["dead_letters"] == 1
+
+
+def test_switching_provider_renders_the_same_queue(store, tmp_path):
+    store.create_job(job("shared work"), actor="x")
+    tick(store, "claude", tmp_path)
+    report = tick(store, "gemini", tmp_path)
+    assert report["rendered"] is not None
+    assert "handoff for gemini" in (tmp_path / "handoff-gemini.md").read_text()
+
+
+@pytest.mark.parametrize("damage", ["delete", "truncate", "other_directory"])
+def test_tick_recovers_output_after_storage_loss(store, tmp_path, damage):
+    store.create_job(job("durable work"), actor="x")
+    tick(store, "claude", tmp_path)
+    path = tmp_path / "handoff-claude.md"
+    expected = path.read_text()
+    if damage == "delete":
+        path.unlink()
+    elif damage == "truncate":
+        path.write_text("incomplete")
+    else:
+        tmp_path = tmp_path / "new-sandbox"
+    assert tick(store, "claude", tmp_path)["rendered"] is not None
+    assert (tmp_path / "handoff-claude.md").read_text() == expected
+
+
+def test_saved_progress_refreshes_handoff_without_manual_reset(store, tmp_path):
+    j, _ = store.create_job(job("resume research"), actor="x")
+    tick(store, "claude", tmp_path)
+    store.record_checkpoint(j.job_id, "research complete", actor="x",
+                            note="Continue with analysis", evidence="checked source")
+    report = tick(store, "claude", tmp_path)
+    assert report["rendered"] is not None
+    text = (tmp_path / "handoff-claude.md").read_text()
+    assert "research complete" in text
+    assert "checked source" in text
+    assert "untrusted context" in text
+    assert store.get_job(j.job_id).verified is False
+
+
+@pytest.mark.parametrize("limit", [0, -1, True, 1.5])
+def test_invalid_limits_are_rejected_before_output(store, tmp_path, limit):
+    store.create_job(job("work"), actor="x")
+    with pytest.raises(ValueError, match="positive integer"):
+        tick(store, "claude", tmp_path, limit=limit)
+    assert not list(tmp_path.iterdir())
+
+
+def test_handoff_recovers_progress_after_store_reopens(tmp_path):
+    database = str(tmp_path / "queue.sqlite")
+    output = tmp_path / "handoffs"
+    with Store(database) as first:
+        j, _ = first.create_job(job("survive restart"), actor="x")
+        first.record_checkpoint(j.job_id, "first step saved", actor="x")
+        tick(first, "claude", output)
+    (output / "handoff-claude.md").unlink()
+    with Store(database) as resumed:
+        assert tick(resumed, "claude", output)["rendered"] is not None
+        assert "first step saved" in (output / "handoff-claude.md").read_text()
+        assert tick(resumed, "claude", output)["rendered"] is None
