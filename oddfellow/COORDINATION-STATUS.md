@@ -1,6 +1,6 @@
 # BSI COORDINATION STATUS — single source for cross-AI state
 
-**Last verified: 2026-11-01 04:30 UTC** · canonical head **`4ded6e8`**
+**Last verified: 2026-11-01 06:06 UTC** · canonical head **`97e5584`**
 **Read this file first. It is kept current on a schedule — check the timestamp above before trusting it.**
 
 > **Path is fixed on purpose.** Other pointers in this repo have drifted three times (a
@@ -17,7 +17,7 @@
 | 2 | **Google Drive: 92 tools registered, calls fail 403 insufficient scopes** (was 500) | disconnect + reconnect Drive | artwork transfer |
 | 3 | **Four archives never received** | upload to Drive, or attach here | artwork, PWA, addenda |
 | 4 | **Gate A: two Render env vars unset** | set them in Render | production readiness |
-| 5 | **Render DB free-access deadline PASSED 2026-10-27T23:21:01Z — no dump yet; `ODDFELLOW_DB_URL` secret NOW SET** (first seen by the armed check 2026-11-01 06:00 UTC) **but the path is still blocked** — psql + hand-rolled probes both silent-close (3rd occurrence: 10-13, 10-28, 11-01; probe-doc addendum), so the allowlist is still the blocker; endpoint still resolves + accepts TCP+TLS. **Deletion ~2026-11-10**; recovery = **paid upgrade (spend, owner's alone) if not already done** + `/32` allowlist, then the armed check dumps + restore-verifies automatically | authorize upgrade (spend, if not done) → `/32` allowlist (egress `170.9.4.232`) — secret ✅ in place | data preservation |
+| 5 | **Render DB free-access deadline PASSED 2026-10-27T23:21:01Z — no dump yet; `ODDFELLOW_DB_URL` secret NOW SET** (first seen by the armed check 2026-11-01 06:00 UTC) **but the path is still blocked** — "SSL connection has been closed unexpectedly" (psql 18, 3 attempts, two proxy IPs, 06:00 UTC; re-confirmed 06:06 UTC; 3rd occurrence of the silent-close shape: 10-13, 10-28, 11-01 — probe-doc addendum) — so either the `/32` allowlist is still not open, or the free instance is suspended post-expiry (not distinguishable client-side); endpoint still resolves + accepts TCP+TLS. Dump tooling ready: `db_preserve.sh doctor` PASS (pg_dump 18.6) — the armed check dumps + restore-verifies automatically once a connection succeeds. **Deletion ~2026-11-10**; recovery = **paid upgrade (spend, owner's alone) if not already done** + `/32` allowlist, then Route A as written | add the `/32` allowlist (egress `170.9.4.232`) on `begg-ai-core-db` → Networking — secret ✅ in place; if the rule is already added and it still fails, that classifies suspension → authorize the paid upgrade (spend) | data preservation |
 | 6 | **GitHub Pages disabled** (API 404, URL 404) | one repo toggle | store + PWA hosting |
 | 7 | **Spreadshop: no access path** | sign-in in sandbox browser | second storefront |
 | 8 | **Gumroad delivered file unverifiable** | 2 min in seller view | closes 11-vs-12-page question |
@@ -49,11 +49,11 @@ dashboard does. Correcting this expectation saves the most owner time of anythin
 | Fourthwall collections | **`items[7]`** — Norse/Nordic (1, first recorded 2026-10-22) · Mugs & Home (17) · Celtic (5) · Christian & Biblical (12) · Samurai & Japanese Art (8) · Trail Forge Outfitters Comfort Colors (17) + AS Colour (22) — all `PUBLIC` | `get-collections` |
 | Fourthwall payouts | API says **ACTIVE** — PUBLIC offers now live; still zero sales | `get-payout-info` |
 | Gumroad | **3 live listings**, all HTTP 200 | public probe |
-| Rehearsal | **LIVE but ephemeral** — dies with the sandbox | cycled again after the 02:03 UTC restore; restored `up`+keepalive 2026-11-01 00:02 UTC, tunnel answers 200 |
+| Rehearsal | **LIVE but ephemeral** — dies with the sandbox | cycled again after the 00:02 UTC restore; restored `up`+keepalive 2026-11-01 06:04 UTC, tunnel answers 200 |
 | Render `-v0206` | **LIVE, NOT READY** | `/livez` 200, `/healthz` `ok:false` |
 | Deployed SHA | **NOT VERIFIABLE** — no build endpoint | **lower bound `7c33404` (2026-09-30 04:21:57 UTC)** — see the note below |
 | Persistent workforce | **NOT PROVISIONED — limit lifted, creation untested** | account upgraded to **Personal Pro 2026-11-01** (`letta usage`: plan `pro`); docs: **up to 20 stateful agents** (was 3); no new agents created — owner has not authorized any |
-| Test suite | **770 passed** | re-run at `d7e4160` |
+| Test suite | **770 passed** | re-run at `401bc98` (docs-only commits since) |
 | **Revenue / orders / payouts** | **NONE, on every platform** | — |
 
 ### 🟢 Plan change 2026-11-01 — Letta account upgraded to Personal Pro
@@ -169,5 +169,5 @@ shape and had to be rebuilt from a live catalog; **these cannot be.**
 
 ## 7. CURRENT HEAD
 
-`letta/combined-single-service-v0.20.4` @ **`d7e4160`** · coordination branch
+`letta/combined-single-service-v0.20.4` @ **`97e5584`** · coordination branch
 `coordination/oddfellow-chatgpt-sync` @ **`62e2be3`**
