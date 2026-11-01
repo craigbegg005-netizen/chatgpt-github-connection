@@ -64,3 +64,51 @@ LIVE: backend-v0206, core-v010, industries-v013, ui-v020-pwa, ui-v020, synthetic
 personal-secure, personal-staging-v017b · NOT SERVING: backend (old), poc · VERIFIED: census
 above, 2026-11-01 ~06:55 UTC · BLOCKED: Gate A secrets (unchanged), 9 undocumented services,
 Command Center deployed-source provenance.
+
+---
+
+## Addendum 2026-11-01 07:45 UTC — full 20-service reconciliation (owner dashboard screenshots)
+
+Owner uploaded 6 dashboard screenshots ("SERVICE NAME 20"). Combined with probes, every service
+is now documented. **Dashboard status ≠ serving status** (proven below: v019 "Failed deploy"
+still serves; PgHero sleeping ≠ down).
+
+| # | Service | Dashboard | Probe | Verdict |
+|---|---|---|---|---|
+| 1 | begg-ai-core | Failed deploy | 000 | NOT SERVING — cleanup candidate |
+| 2 | **begg-ai-core-db** | **Available · PostgreSQL 18 · updated 1 h ago** | dumped, verified empty | **LIVE, EMPTY** — delete/downgrade is owner's tap |
+| 3 | begg-ai-core-v010 | Deployed | 200 · 14,290 B CC | LIVE |
+| 4 | begg-ai-industries-v013 | Deployed | 200 · 17,260 B CC | LIVE |
+| 5 | global-peace-human-security-framework | Failed deploy | 404 | NOT SERVING — cleanup candidate |
+| 6 | global-peace-human-security-full-rc1 | Deployed | 200 · 36,808 B | LIVE (peace lane) |
+| 7 | global-peace-human-security-rc1 | Deployed | 200 · 4,049 B | LIVE (peace lane) |
+| 8 | oddfellow-letta-backend | Failed deploy | 000 | NOT SERVING (dead since 10-01) — cleanup candidate |
+| 9 | oddfellow-letta-backend-v0206 | Deployed | 200 · v0.20.6 · ready:false | **LIVE, NOT READY** (Gate A secrets unset) |
+| 10 | oddfellow-letta-poc | (row cut off in screenshot) | 404 platform | NOT SERVING — cleanup candidate |
+| 11 | oddfellow-letta-ui-v020 | Deployed | 200 · 20,216 B | LIVE |
+| 12 | oddfellow-letta-ui-v020-pwa | Deployed | 200 · 20,897 B | LIVE |
+| 13 | oddfellow-personal-secure | Deployed | 303 | LIVE (auth redirect) |
+| 14 | oddfellow-personal-staging-v017 | Failed deploy | 000 | NOT SERVING — cleanup candidate |
+| 15 | oddfellow-personal-staging-v017b | Deployed | 303 | LIVE |
+| 16 | **oddfellow-personal-v019** | **Failed deploy** | **200 · 16,223 B** | **LIVE — failed deploy left last good build serving** |
+| 17 | oddfellow-personal-v019b | Deployed | 200 · 16,276 B | LIVE (near-duplicate build of v019) |
+| 18 | oddfellow-synthetic-v020 | Deployed | 200 · 15,721 B | LIVE |
+| 19 | peace-framework-global-language-access | Deployed | 200 · 2,277 B | LIVE (peace lane) |
+| 20 | **PgHero-dpg-dasq9ne0tbcc738ifeug-a** | (row cut off) | **401** (75 s retry — first 25 s probe hit cold-start 000) | **LIVE, auth-gated — wired to begg-ai-core-db** (name carries the DB's internal host ID) |
+
+**Tally: 14 LIVE · 1 DB Available (empty) · 5 NOT SERVING = 20.**
+
+### New findings
+
+5. **A PgHero monitoring instance is wired to the rescued DB** (suffix = its internal host ID,
+   `dpg-dasq9ne0tbcc738ifeug-a`). Deployer unknown (not in repo records). Consequence for the
+   owner's DB decision: deleting `begg-ai-core-db` orphans PgHero — delete both together.
+   Keeping a paid $6/mo plan for a verified-empty DB + its monitor has no value.
+6. **Five safe-deletion candidates** (failed deploy + confirmed not serving): `begg-ai-core`,
+   `global-peace-human-security-framework`, `oddfellow-letta-backend`,
+   `oddfellow-personal-staging-v017`, `oddfellow-letta-poc`. Owner decision; deleting them
+   changes nothing that serves.
+7. **"Failed deploy" can still serve.** `oddfellow-personal-v019` proves it: dashboard red,
+   HTTP 200. Never trust the dashboard badge alone — probe.
+8. **Dashboard badge drift:** header says 20 services; owner's directive said 19 — the 20th
+   (PgHero) is likely newer or was missed. Dashboard is authoritative.
