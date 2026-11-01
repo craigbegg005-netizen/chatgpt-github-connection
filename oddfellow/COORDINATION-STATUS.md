@@ -1,6 +1,6 @@
 # BSI COORDINATION STATUS — single source for cross-AI state
 
-**Last verified: 2026-11-01 07:00 UTC** · canonical head **`6155dd0`**
+**Last verified: 2026-11-01 07:02 UTC** · canonical head **`de61180`**
 **Read this file first. It is kept current on a schedule — check the timestamp above before trusting it.**
 
 > **Path is fixed on purpose.** Other pointers in this repo have drifted three times (a
@@ -54,7 +54,7 @@ dashboard does. Correcting this expectation saves the most owner time of anythin
 | Render census (10 documented) | **8 LIVE · 2 NOT SERVING** — live: backend-v0206, core-v010, industries-v013, ui-v020, ui-v020-pwa, synthetic-v020, personal-secure(303), personal-staging-v017b(303); not serving: old `oddfellow-letta-backend`, `poc`. **3 Command Center variants exist, none match the repo (9,610 B vs 14,290 B vs 17,260 B) — both deployed copies now preserved.** Owner reports 19 services — 9 undocumented in repo | public probes 2026-11-01 ~06:55 UTC; branch `letta/recovery-render-census-2026-11-01` (`0c72886`) |
 | Deployed SHA | **NOT VERIFIABLE** — no build endpoint | **lower bound `7c33404` (2026-09-30 04:21:57 UTC)** — see the note below |
 | Persistent workforce | **NOT PROVISIONED — limit lifted, creation untested** | account upgraded to **Personal Pro 2026-11-01** (`letta usage`: plan `pro`); docs: **up to 20 stateful agents** (was 3); no new agents created — owner has not authorized any |
-| Test suite | **770 passed** | re-run at `401bc98` (docs-only commits since) |
+| Test suite | **780 passed** | `letta/pr1-salvage-2026-11-01` (`ad8de38`): PR#1's unique remainder cherry-picked cleanly (part was already on canonical); +10 tests. Suite on canonical remains 770 until owner approves the salvage merge |
 | **Revenue / orders / payouts** | **NONE, on every platform** | — |
 
 ### 🟢 Plan change 2026-11-01 — Letta account upgraded to Personal Pro
