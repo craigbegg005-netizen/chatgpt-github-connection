@@ -87,3 +87,31 @@ behavior**, and treat `user is required` from hand-rolled packets as unclassifie
 What the probes do support: the endpoint still resolves (same `35.227.164.209` as 2026-10-13),
 accepts TCP, completes TLS 1.3 — consistent with the 14-day grace window (deletion ~2026-11-10 per
 the preservation runbook), and consistent with the 00:00 UTC sweep's read of the runbook.
+
+## Addendum 2026-11-01 — the credential arrived; the path is still blocked
+
+Probed 2026-11-01 06:00 UTC by the armed 2h check — the **first firing to find
+`ODDFELLOW_DB_URL` PRESENT** (the owner added the secret sometime after the 2026-10-28 probe;
+the URL's host matches this doc's `dpg-dasq9ne0tbcc738ifeug-a` endpoint, port 5432, user and
+password populated — none of it printed or stored anywhere).
+
+| Client / packet | Response |
+|---|---|
+| Hand-rolled (SSLRequest → `S` → TLS → startup `user=x`) | **silent close, no ErrorResponse** |
+| Real client (`psql` 15.19, dummy creds, `sslmode=require`) | **"SSL connection has been closed unexpectedly"** — the silent-close shape, third occurrence (2026-10-13, 2026-10-28, now) |
+
+No `user is required` noise this time: hand-rolled and real client **agree**, so the
+classification is unambiguous under the 2026-10-28 addendum's rule.
+
+**Verdict: still blocked from this sandbox.** The silent close is the allowlist shape; it is
+formally indistinguishable from an expiry drop, but the shape predates expiry (first seen
+2026-10-13), so the allowlist remains the primary reading. Whether the Render DB has been
+upgraded to paid (the other half of the recovery path) **cannot be determined from here** —
+the connection dies before any auth-level response.
+
+Egress IP at probe time: `170.9.4.232` (same as 2026-10-12; not stable across sandbox cycles).
+
+**Remaining owner actions:** paid upgrade if not already done (spend decision, owner's alone)
+**+** a temporary `/32` allowlist rule for the egress IP — or run the dump from an allowlisted
+machine. Deletion deadline ~2026-11-10. The armed check was **not** deleted; it will run
+doctor → recon → dump → verify → restore-verify automatically the moment the path opens.
