@@ -13,15 +13,16 @@ daily quota) — so once this key is set, the backend's Letta calls could bill. 
 if it's a concern, tell me and I'll verify the billing behavior first, or we keep the backend's
 call volume minimal during acceptance.
 
-## 2. Render DB preservation — free-access deadline **PASSED** (2026-10-27T23:21:01Z); Render deletes the data at **~2026-11-10**  🔴 data loss risk
+## 2. Render DB preservation — ✅ RESOLVED 2026-11-01 06:44 UTC: the database was EMPTY
 
-**State as of 2026-10-28:** the zero-spend window closed without action. The database is now in
-Render's 14-day grace period: the data still exists, but reading it **requires upgrading the
-database to a paid plan** — a spend decision that is yours alone (I will not spend without your
-explicit authorization). If you want the data: authorize the upgrade, then follow Route A below
-exactly as written (the mechanics are unchanged). After I verify the dump you can downgrade and
-the preservation stands at zero ongoing cost. If nothing happens by ~2026-11-10, Render deletes
-the database and the data is gone.
+**Resolved:** the full dump + verify + restore-verify ran against the real server and passed.
+The database held **0 user tables (7,686 kB virgin)** — it never contained data, so nothing was
+ever at stake. You may now **delete or downgrade `begg-ai-core-db` at will — verified zero-loss.**
+Dump artifacts are preserved in `/root/oddfellow-db-backups/` and the owner downloads. **No
+further action is needed on this card.**
+
+The route mechanics below are kept for the record only (they worked; the allowlist was the
+blocker all along — TLS completes, startup gets a clean close when the IP isn't allowlisted).
 
 **Pick ONE of the two routes. They need different IPs allowlisted, and mixing them fails.**
 
