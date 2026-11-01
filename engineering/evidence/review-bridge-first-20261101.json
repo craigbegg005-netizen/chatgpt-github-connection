@@ -1,0 +1,110 @@
+{
+  "mode": "LOCAL_SYNTHETIC_CONNECTOR_BRIDGE",
+  "live_letta_used": false,
+  "field_validation": false,
+  "new_agents_created": 0,
+  "receipts": [
+    {
+      "job_id": "job-7f2faff52a3740326a0b32c7e2ab98da",
+      "executed": true,
+      "receipt": {
+        "input_sha256": "601fd9adea9be30609d3784ff9d205b99f7b071436b858c464a81de5efddfeff",
+        "output_sha256": "534f802bde946c59a524a361fd0da9659c80052b7f7123001f2d343c38efefb3",
+        "result": {
+          "assumptions": "One interval; fixed isothermal reservoirs; steady state; no storage change or losses; nominal exact inputs.",
+          "data_origin": "invented_example",
+          "energy_ledger": {
+            "absolute_uncertainty_kWh": 0.0,
+            "accounted_input_kWh": 40.0,
+            "accounted_output_kWh": 40.0,
+            "residual_kWh": 0.0,
+            "screening_policy": "Uncertainty >= 25% of accounted input blocks interpretation; policy, not physical law.",
+            "status": "ENERGY_LEDGER_ARITHMETIC_ONLY",
+            "unverified": "Completeness of system boundary; measurement quality; energy quality/exergy; heat-pump COP; time-varying operation; actual savings and performance"
+          },
+          "ideal_Carnot_heating_COP": 11.0,
+          "limitations": "Passing is not feasibility. Finite streams, approach temperatures, uncertainty, part-load behavior, equipment capacity, water chemistry and economics require separate models.",
+          "nominal_balance_residual_kWh": 0.0,
+          "nominal_heating_COP": 4.0,
+          "scientifically_validated": false,
+          "site_data_used": false,
+          "status": "TWO_RESERVOIR_NOMINAL_SCREEN_ONLY"
+        },
+        "scientifically_validated": false,
+        "scope": "LOCAL_COMPUTATION_ONLY",
+        "screen": "heat-pump-v11",
+        "worker": "local-research-v1"
+      },
+      "case_id": "HP01",
+      "job_verified": false
+    },
+    {
+      "job_id": "job-617ef860ce1885d280d8b7f59beb4a9f",
+      "executed": true,
+      "receipt": {
+        "input_sha256": "fd0f7f0565895304abd0387b73d56be77134cbd73f8901a4a95f19fdb96dc7e6",
+        "output_sha256": "d00aad29f2992b16006b73b4957ec45754575ab9b956e6d6444f5719b460c0e3",
+        "result": {
+          "assumptions": "One interval; fixed isothermal reservoirs; steady state; no storage change or losses; nominal exact inputs.",
+          "data_origin": "invented_example",
+          "energy_ledger": {
+            "absolute_uncertainty_kWh": 0.0,
+            "accounted_input_kWh": 10.0,
+            "accounted_output_kWh": 40.0,
+            "residual_kWh": -30.0,
+            "screening_policy": "Uncertainty >= 25% of accounted input blocks interpretation; policy, not physical law.",
+            "status": "BLOCKED_OUTPUT_EXCEEDS_ACCOUNTED_INPUT",
+            "unverified": "Completeness of system boundary; measurement quality; energy quality/exergy; heat-pump COP; time-varying operation; actual savings and performance"
+          },
+          "ideal_Carnot_heating_COP": 11.0,
+          "limitations": "Passing is not feasibility. Finite streams, approach temperatures, uncertainty, part-load behavior, equipment capacity, water chemistry and economics require separate models.",
+          "nominal_balance_residual_kWh": -30.0,
+          "nominal_heating_COP": 4.0,
+          "scientifically_validated": false,
+          "site_data_used": false,
+          "status": "BLOCKED_OUTPUT_EXCEEDS_ACCOUNTED_INPUT"
+        },
+        "scientifically_validated": false,
+        "scope": "LOCAL_COMPUTATION_ONLY",
+        "screen": "heat-pump-v11",
+        "worker": "local-research-v1"
+      },
+      "case_id": "HP02",
+      "job_verified": false
+    },
+    {
+      "job_id": "job-43ef1dbd8fabbb37ad5a8512c667716d",
+      "executed": true,
+      "receipt": {
+        "input_sha256": "03742e4b08ff839bb1147a06d67035c97d5774258f8c31565009518bc794b421",
+        "output_sha256": "68e5210e060963b2d1c71b71f580529819e3dda6a64344ff1dc5c300e19891c7",
+        "result": {
+          "assumptions": "One interval; fixed isothermal reservoirs; steady state; no storage change or losses; nominal exact inputs.",
+          "data_origin": "invented_example",
+          "energy_ledger": {
+            "absolute_uncertainty_kWh": 0.0,
+            "accounted_input_kWh": 120.0,
+            "accounted_output_kWh": 120.0,
+            "residual_kWh": 0.0,
+            "screening_policy": "Uncertainty >= 25% of accounted input blocks interpretation; policy, not physical law.",
+            "status": "ENERGY_LEDGER_ARITHMETIC_ONLY",
+            "unverified": "Completeness of system boundary; measurement quality; energy quality/exergy; heat-pump COP; time-varying operation; actual savings and performance"
+          },
+          "ideal_Carnot_heating_COP": 11.0,
+          "limitations": "Passing is not feasibility. Finite streams, approach temperatures, uncertainty, part-load behavior, equipment capacity, water chemistry and economics require separate models.",
+          "nominal_balance_residual_kWh": 0.0,
+          "nominal_heating_COP": 12.0,
+          "scientifically_validated": false,
+          "site_data_used": false,
+          "status": "BLOCKED_EXCEEDS_CARNOT_HEATING_BOUND"
+        },
+        "scientifically_validated": false,
+        "scope": "LOCAL_COMPUTATION_ONLY",
+        "screen": "heat-pump-v11",
+        "worker": "local-research-v1"
+      },
+      "case_id": "HP03",
+      "job_verified": false
+    }
+  ]
+}

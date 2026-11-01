@@ -1,0 +1,306 @@
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+__ test_expired_attempt_cannot_finish_replacement_claim[False-local-research] __
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-0/test_expired_attempt_cannot_fi0')
+replacement = 'local-research', fails = False
+
+    @pytest.mark.parametrize("replacement", ["local-research", "replacement"])
+    @pytest.mark.parametrize("fails", [False, True])
+    def test_expired_attempt_cannot_finish_replacement_claim(tmp_path, replacement, fails):
+        """A real second process reclaims the job while the first is computing."""
+        db = str(tmp_path / "race.sqlite")
+        def delayed(data):
+            code = '''
+    import sys
+    from datetime import datetime, timezone, timedelta
+    from connector import Store, Transport
+    with Store(sys.argv[1]) as store:
+        expired = store.expire_stale_claims(now=datetime.now(timezone.utc)+timedelta(hours=2))
+        assert len(expired) == 1
+        store.claim_job("research", sys.argv[2], Transport.QUEUE, actor=sys.argv[2])
+    '''
+            from pathlib import Path
+            subprocess.run([sys.executable, "-c", code, db, replacement],
+                           env={**os.environ, "PYTHONPATH": os.pathsep.join([
+                               str(Path(__file__).resolve().parents[2]),
+                               os.environ.get("PYTHONPATH", "")])},
+                           capture_output=True, text=True, check=True, timeout=10)
+            if fails:
+                raise ValueError("old attempt failed after replacement")
+            return add(data)
+        with Store(db) as store:
+            make_job(store)
+>           with pytest.raises(SubmitRefused):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           Failed: DID NOT RAISE SubmitRefused
+
+oddfellow/connector/tests/test_research_worker.py:184: Failed
+___ test_expired_attempt_cannot_finish_replacement_claim[False-replacement] ____
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-0/test_expired_attempt_cannot_fi1')
+replacement = 'replacement', fails = False
+
+    @pytest.mark.parametrize("replacement", ["local-research", "replacement"])
+    @pytest.mark.parametrize("fails", [False, True])
+    def test_expired_attempt_cannot_finish_replacement_claim(tmp_path, replacement, fails):
+        """A real second process reclaims the job while the first is computing."""
+        db = str(tmp_path / "race.sqlite")
+        def delayed(data):
+            code = '''
+    import sys
+    from datetime import datetime, timezone, timedelta
+    from connector import Store, Transport
+    with Store(sys.argv[1]) as store:
+        expired = store.expire_stale_claims(now=datetime.now(timezone.utc)+timedelta(hours=2))
+        assert len(expired) == 1
+        store.claim_job("research", sys.argv[2], Transport.QUEUE, actor=sys.argv[2])
+    '''
+            from pathlib import Path
+            subprocess.run([sys.executable, "-c", code, db, replacement],
+                           env={**os.environ, "PYTHONPATH": os.pathsep.join([
+                               str(Path(__file__).resolve().parents[2]),
+                               os.environ.get("PYTHONPATH", "")])},
+                           capture_output=True, text=True, check=True, timeout=10)
+            if fails:
+                raise ValueError("old attempt failed after replacement")
+            return add(data)
+        with Store(db) as store:
+            make_job(store)
+            with pytest.raises(SubmitRefused):
+                run_research_job(store, "research", {"sum-v1": delayed})
+            current = store.get_job("research")
+            assert current.status is Status.RUNNING
+            assert current.provider == replacement
+            assert current.attempts == 2
+            assert current.result is None
+            assert current.error is None
+>           assert current.checkpoints == ()
+E           AssertionError: assert ({'actor': 'l...e': '', ...},) == ()
+E
+E             Left contains one more item: {'actor': 'local-research', 'at': '2026-11-01T07:41:48Z', 'evidence': 'sha256:4403134882233d347dfa35d23b98c42a4442478ce521631ef566d21df77e2a52', 'note': '', ...}
+E             Use -v to get more diff
+
+oddfellow/connector/tests/test_research_worker.py:192: AssertionError
+__ test_expired_attempt_cannot_finish_replacement_claim[True-local-research] ___
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-0/test_expired_attempt_cannot_fi2')
+replacement = 'local-research', fails = True
+
+    @pytest.mark.parametrize("replacement", ["local-research", "replacement"])
+    @pytest.mark.parametrize("fails", [False, True])
+    def test_expired_attempt_cannot_finish_replacement_claim(tmp_path, replacement, fails):
+        """A real second process reclaims the job while the first is computing."""
+        db = str(tmp_path / "race.sqlite")
+        def delayed(data):
+            code = '''
+    import sys
+    from datetime import datetime, timezone, timedelta
+    from connector import Store, Transport
+    with Store(sys.argv[1]) as store:
+        expired = store.expire_stale_claims(now=datetime.now(timezone.utc)+timedelta(hours=2))
+        assert len(expired) == 1
+        store.claim_job("research", sys.argv[2], Transport.QUEUE, actor=sys.argv[2])
+    '''
+            from pathlib import Path
+            subprocess.run([sys.executable, "-c", code, db, replacement],
+                           env={**os.environ, "PYTHONPATH": os.pathsep.join([
+                               str(Path(__file__).resolve().parents[2]),
+                               os.environ.get("PYTHONPATH", "")])},
+                           capture_output=True, text=True, check=True, timeout=10)
+            if fails:
+                raise ValueError("old attempt failed after replacement")
+            return add(data)
+        with Store(db) as store:
+            make_job(store)
+            with pytest.raises(SubmitRefused):
+>               run_research_job(store, "research", {"sum-v1": delayed})
+
+oddfellow/connector/tests/test_research_worker.py:185:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+store = <connector.store.Store object at 0x7f813ddfa660>, job_id = 'research'
+screens = {'sum-v1': <function test_expired_attempt_cannot_finish_replacement_claim.<locals>.delayed at 0x7f813dc71080>}
+provider = 'local-research'
+
+    def run_research_job(store: Store, job_id: str,
+                         screens: Mapping[str, Callable[[dict], dict]], *,
+                         provider: str = "local-research") -> dict:
+        """Execute one LOW-risk RESEARCH job once; no automatic retry or verification.
+
+    Registry keys should include the screen version (e.g. ``heat-pump-v11``).
+    Dependencies must have independently verified results before execution. A
+    completed job returns its saved receipt without re-running the computation.
+    """
+        provider = canonical_provider(provider)
+        job = store.get_job(job_id)
+        if job is None:
+            raise KeyError(job_id)
+        if job.kind is not TaskKind.RESEARCH or job.risk is not Risk.LOW:
+            raise ClaimRefused("local worker accepts LOW-risk RESEARCH jobs only")
+        if store.is_paused():
+            raise ClaimRefused("emergency pause is set")
+        payload = job.payload
+        if (not isinstance(payload, dict) or set(payload) != {"screen", "input"}
+                or not isinstance(payload["screen"], str)
+                or not isinstance(payload["input"], dict)):
+            raise ValueError("expected only screen name and input object")
+        name = payload["screen"]
+        if name not in screens or not callable(screens[name]):
+            raise ValueError("screen is not registered locally")
+        material = _json_bytes(payload)
+        input_sha = hashlib.sha256(material).hexdigest()
+        if job.status is Status.COMPLETE:
+            saved = job.result
+            if (not isinstance(saved, dict) or saved.get("worker") != "local-research-v1"
+                    or saved.get("input_sha256") != input_sha
+                    or saved.get("screen") != name
+                    or not isinstance(saved.get("result"), dict)
+                    or saved.get("output_sha256") != hashlib.sha256(
+                        _json_bytes(saved["result"])).hexdigest()):
+                raise ClaimRefused("completed result is not a matching local receipt")
+            return {"job_id": job_id, "executed": False, "receipt": saved}
+        for dep_id in job.depends_on:
+            dep = store.get_job(dep_id)
+            if dep is None or dep.status is not Status.COMPLETE or not dep.verified:
+                raise ClaimRefused("research dependency is incomplete or unverified")
+        # Claim's conditional SQL update provides one winner for racing workers.
+        store.claim_job(job_id, provider, Transport.QUEUE, actor=provider,
+                        paused=store.is_paused())
+        try:
+            # A pure function cannot edit the caller's payload by aliasing it.
+            value = screens[name](copy.deepcopy(payload["input"]))
+            if not isinstance(value, dict):
+                raise ValueError("screen result must be an object")
+            result_bytes = _json_bytes(value)
+            receipt = {
+                "worker": "local-research-v1", "screen": name,
+                "input_sha256": input_sha,
+                "output_sha256": hashlib.sha256(result_bytes).hexdigest(),
+                "scope": "LOCAL_COMPUTATION_ONLY",
+                "scientifically_validated": False,
+                "result": value,
+            }
+            _json_bytes(receipt)
+        except Exception:
+            # Do not put exception messages (which may contain input/secrets) in audit.
+            store.fail_job(job_id, "local research computation failed", actor=provider,
+                           retryable=False)
+>           raise RuntimeError("local research computation failed") from None
+E           RuntimeError: local research computation failed
+
+oddfellow/connector/research_worker.py:92: RuntimeError
+____ test_expired_attempt_cannot_finish_replacement_claim[True-replacement] ____
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-0/test_expired_attempt_cannot_fi3')
+replacement = 'replacement', fails = True
+
+    @pytest.mark.parametrize("replacement", ["local-research", "replacement"])
+    @pytest.mark.parametrize("fails", [False, True])
+    def test_expired_attempt_cannot_finish_replacement_claim(tmp_path, replacement, fails):
+        """A real second process reclaims the job while the first is computing."""
+        db = str(tmp_path / "race.sqlite")
+        def delayed(data):
+            code = '''
+    import sys
+    from datetime import datetime, timezone, timedelta
+    from connector import Store, Transport
+    with Store(sys.argv[1]) as store:
+        expired = store.expire_stale_claims(now=datetime.now(timezone.utc)+timedelta(hours=2))
+        assert len(expired) == 1
+        store.claim_job("research", sys.argv[2], Transport.QUEUE, actor=sys.argv[2])
+    '''
+            from pathlib import Path
+            subprocess.run([sys.executable, "-c", code, db, replacement],
+                           env={**os.environ, "PYTHONPATH": os.pathsep.join([
+                               str(Path(__file__).resolve().parents[2]),
+                               os.environ.get("PYTHONPATH", "")])},
+                           capture_output=True, text=True, check=True, timeout=10)
+            if fails:
+                raise ValueError("old attempt failed after replacement")
+            return add(data)
+        with Store(db) as store:
+            make_job(store)
+            with pytest.raises(SubmitRefused):
+>               run_research_job(store, "research", {"sum-v1": delayed})
+
+oddfellow/connector/tests/test_research_worker.py:185:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+store = <connector.store.Store object at 0x7f813ddfb4d0>, job_id = 'research'
+screens = {'sum-v1': <function test_expired_attempt_cannot_finish_replacement_claim.<locals>.delayed at 0x7f813dc71300>}
+provider = 'local-research'
+
+    def run_research_job(store: Store, job_id: str,
+                         screens: Mapping[str, Callable[[dict], dict]], *,
+                         provider: str = "local-research") -> dict:
+        """Execute one LOW-risk RESEARCH job once; no automatic retry or verification.
+
+    Registry keys should include the screen version (e.g. ``heat-pump-v11``).
+    Dependencies must have independently verified results before execution. A
+    completed job returns its saved receipt without re-running the computation.
+    """
+        provider = canonical_provider(provider)
+        job = store.get_job(job_id)
+        if job is None:
+            raise KeyError(job_id)
+        if job.kind is not TaskKind.RESEARCH or job.risk is not Risk.LOW:
+            raise ClaimRefused("local worker accepts LOW-risk RESEARCH jobs only")
+        if store.is_paused():
+            raise ClaimRefused("emergency pause is set")
+        payload = job.payload
+        if (not isinstance(payload, dict) or set(payload) != {"screen", "input"}
+                or not isinstance(payload["screen"], str)
+                or not isinstance(payload["input"], dict)):
+            raise ValueError("expected only screen name and input object")
+        name = payload["screen"]
+        if name not in screens or not callable(screens[name]):
+            raise ValueError("screen is not registered locally")
+        material = _json_bytes(payload)
+        input_sha = hashlib.sha256(material).hexdigest()
+        if job.status is Status.COMPLETE:
+            saved = job.result
+            if (not isinstance(saved, dict) or saved.get("worker") != "local-research-v1"
+                    or saved.get("input_sha256") != input_sha
+                    or saved.get("screen") != name
+                    or not isinstance(saved.get("result"), dict)
+                    or saved.get("output_sha256") != hashlib.sha256(
+                        _json_bytes(saved["result"])).hexdigest()):
+                raise ClaimRefused("completed result is not a matching local receipt")
+            return {"job_id": job_id, "executed": False, "receipt": saved}
+        for dep_id in job.depends_on:
+            dep = store.get_job(dep_id)
+            if dep is None or dep.status is not Status.COMPLETE or not dep.verified:
+                raise ClaimRefused("research dependency is incomplete or unverified")
+        # Claim's conditional SQL update provides one winner for racing workers.
+        store.claim_job(job_id, provider, Transport.QUEUE, actor=provider,
+                        paused=store.is_paused())
+        try:
+            # A pure function cannot edit the caller's payload by aliasing it.
+            value = screens[name](copy.deepcopy(payload["input"]))
+            if not isinstance(value, dict):
+                raise ValueError("screen result must be an object")
+            result_bytes = _json_bytes(value)
+            receipt = {
+                "worker": "local-research-v1", "screen": name,
+                "input_sha256": input_sha,
+                "output_sha256": hashlib.sha256(result_bytes).hexdigest(),
+                "scope": "LOCAL_COMPUTATION_ONLY",
+                "scientifically_validated": False,
+                "result": value,
+            }
+            _json_bytes(receipt)
+        except Exception:
+            # Do not put exception messages (which may contain input/secrets) in audit.
+            store.fail_job(job_id, "local research computation failed", actor=provider,
+                           retryable=False)
+>           raise RuntimeError("local research computation failed") from None
+E           RuntimeError: local research computation failed
+
+oddfellow/connector/research_worker.py:92: RuntimeError
+=========================== short test summary info ============================
+FAILED oddfellow/connector/tests/test_research_worker.py::test_expired_attempt_cannot_finish_replacement_claim[False-local-research]
+FAILED oddfellow/connector/tests/test_research_worker.py::test_expired_attempt_cannot_finish_replacement_claim[False-replacement]
+FAILED oddfellow/connector/tests/test_research_worker.py::test_expired_attempt_cannot_finish_replacement_claim[True-local-research]
+FAILED oddfellow/connector/tests/test_research_worker.py::test_expired_attempt_cannot_finish_replacement_claim[True-replacement]
+4 failed, 223 deselected in 0.58s

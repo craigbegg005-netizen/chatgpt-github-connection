@@ -1,0 +1,148 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+______ test_expiry_cannot_overwrite_a_claim_changed_after_scan[complete] _______
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-0/test_expiry_cannot_overwrite_a0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fe8e5ccb6e0>
+intervening = 'complete'
+
+    @pytest.mark.parametrize("intervening", ["complete", "renew", "reclaim"])
+    def test_expiry_cannot_overwrite_a_claim_changed_after_scan(tmp_path, monkeypatch, intervening):
+        """Force another process to change a claim after the expiry scan reads it."""
+        import json
+        import subprocess
+        from pathlib import Path
+        db = str(tmp_path / "expiry-race.sqlite")
+        with Store(db) as store:
+            jid = claimed(store)
+            store._conn.execute("UPDATE jobs SET claimed_at=? WHERE job_id=?",
+                                ("2000-01-01T00:00:00Z", jid))
+            store._conn.commit()
+            scanned = store.jobs(Status.RUNNING)
+            code = '''
+    import json,sys
+    from connector import Store,Transport
+    with Store(sys.argv[1]) as store:
+        jid, action = sys.argv[2:]
+        if action == "complete":
+            store.submit_result(jid, {"winner": 1}, actor="grok", provider="grok")
+        elif action == "renew":
+            store.renew_lease(jid, actor="grok")
+        else:
+            store.release_claim(jid, actor="grok", reason="replacement test")
+            store.claim_job(jid, "grok", Transport.QUEUE, actor="grok")
+        print(json.dumps(store.get_job(jid).to_row()))
+    '''
+            proc = subprocess.run([sys.executable, "-c", code, db, jid, intervening],
+                                  env={**os.environ, "PYTHONPATH": os.pathsep.join([
+                                      str(Path(__file__).resolve().parents[2]),
+                                      os.environ.get("PYTHONPATH", "")])},
+                                  capture_output=True, text=True, check=True, timeout=10)
+            expected = json.loads(proc.stdout)
+            monkeypatch.setattr(store, "jobs", lambda status=None: scanned)
+>           assert store.expire_stale_claims() == []
+E           AssertionError: assert [Job(job_id='...1T20:57:39Z')] == []
+E
+E             Left contains one more item: Job(job_id='job-116a81f2a1e26f23ade61ee6cf07cf62', kind=<TaskKind.RESEARCH: 'research'>, title='t', payload={'spec': '...ckpoints=(), claimed_at=None, lease_seconds=3600, created_at='2026-11-01T20:57:39Z', updated_at='2026-11-01T20:57:39Z')
+E             Use -v to get more diff
+
+oddfellow/connector/tests/test_lease.py:86: AssertionError
+________ test_expiry_cannot_overwrite_a_claim_changed_after_scan[renew] ________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-0/test_expiry_cannot_overwrite_a1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fe8e5cf3b90>
+intervening = 'renew'
+
+    @pytest.mark.parametrize("intervening", ["complete", "renew", "reclaim"])
+    def test_expiry_cannot_overwrite_a_claim_changed_after_scan(tmp_path, monkeypatch, intervening):
+        """Force another process to change a claim after the expiry scan reads it."""
+        import json
+        import subprocess
+        from pathlib import Path
+        db = str(tmp_path / "expiry-race.sqlite")
+        with Store(db) as store:
+            jid = claimed(store)
+            store._conn.execute("UPDATE jobs SET claimed_at=? WHERE job_id=?",
+                                ("2000-01-01T00:00:00Z", jid))
+            store._conn.commit()
+            scanned = store.jobs(Status.RUNNING)
+            code = '''
+    import json,sys
+    from connector import Store,Transport
+    with Store(sys.argv[1]) as store:
+        jid, action = sys.argv[2:]
+        if action == "complete":
+            store.submit_result(jid, {"winner": 1}, actor="grok", provider="grok")
+        elif action == "renew":
+            store.renew_lease(jid, actor="grok")
+        else:
+            store.release_claim(jid, actor="grok", reason="replacement test")
+            store.claim_job(jid, "grok", Transport.QUEUE, actor="grok")
+        print(json.dumps(store.get_job(jid).to_row()))
+    '''
+            proc = subprocess.run([sys.executable, "-c", code, db, jid, intervening],
+                                  env={**os.environ, "PYTHONPATH": os.pathsep.join([
+                                      str(Path(__file__).resolve().parents[2]),
+                                      os.environ.get("PYTHONPATH", "")])},
+                                  capture_output=True, text=True, check=True, timeout=10)
+            expected = json.loads(proc.stdout)
+            monkeypatch.setattr(store, "jobs", lambda status=None: scanned)
+>           assert store.expire_stale_claims() == []
+E           AssertionError: assert [Job(job_id='...1T20:57:39Z')] == []
+E
+E             Left contains one more item: Job(job_id='job-116a81f2a1e26f23ade61ee6cf07cf62', kind=<TaskKind.RESEARCH: 'research'>, title='t', payload={'spec': '...ckpoints=(), claimed_at=None, lease_seconds=3600, created_at='2026-11-01T20:57:39Z', updated_at='2026-11-01T20:57:39Z')
+E             Use -v to get more diff
+
+oddfellow/connector/tests/test_lease.py:86: AssertionError
+_______ test_expiry_cannot_overwrite_a_claim_changed_after_scan[reclaim] _______
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-0/test_expiry_cannot_overwrite_a2')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fe8e5cf6e40>
+intervening = 'reclaim'
+
+    @pytest.mark.parametrize("intervening", ["complete", "renew", "reclaim"])
+    def test_expiry_cannot_overwrite_a_claim_changed_after_scan(tmp_path, monkeypatch, intervening):
+        """Force another process to change a claim after the expiry scan reads it."""
+        import json
+        import subprocess
+        from pathlib import Path
+        db = str(tmp_path / "expiry-race.sqlite")
+        with Store(db) as store:
+            jid = claimed(store)
+            store._conn.execute("UPDATE jobs SET claimed_at=? WHERE job_id=?",
+                                ("2000-01-01T00:00:00Z", jid))
+            store._conn.commit()
+            scanned = store.jobs(Status.RUNNING)
+            code = '''
+    import json,sys
+    from connector import Store,Transport
+    with Store(sys.argv[1]) as store:
+        jid, action = sys.argv[2:]
+        if action == "complete":
+            store.submit_result(jid, {"winner": 1}, actor="grok", provider="grok")
+        elif action == "renew":
+            store.renew_lease(jid, actor="grok")
+        else:
+            store.release_claim(jid, actor="grok", reason="replacement test")
+            store.claim_job(jid, "grok", Transport.QUEUE, actor="grok")
+        print(json.dumps(store.get_job(jid).to_row()))
+    '''
+            proc = subprocess.run([sys.executable, "-c", code, db, jid, intervening],
+                                  env={**os.environ, "PYTHONPATH": os.pathsep.join([
+                                      str(Path(__file__).resolve().parents[2]),
+                                      os.environ.get("PYTHONPATH", "")])},
+                                  capture_output=True, text=True, check=True, timeout=10)
+            expected = json.loads(proc.stdout)
+            monkeypatch.setattr(store, "jobs", lambda status=None: scanned)
+>           assert store.expire_stale_claims() == []
+E           AssertionError: assert [Job(job_id='...1T20:57:39Z')] == []
+E
+E             Left contains one more item: Job(job_id='job-116a81f2a1e26f23ade61ee6cf07cf62', kind=<TaskKind.RESEARCH: 'research'>, title='t', payload={'spec': '...ckpoints=(), claimed_at=None, lease_seconds=3600, created_at='2026-11-01T20:57:39Z', updated_at='2026-11-01T20:57:39Z')
+E             Use -v to get more diff
+
+oddfellow/connector/tests/test_lease.py:86: AssertionError
+=========================== short test summary info ============================
+FAILED oddfellow/connector/tests/test_lease.py::test_expiry_cannot_overwrite_a_claim_changed_after_scan[complete]
+FAILED oddfellow/connector/tests/test_lease.py::test_expiry_cannot_overwrite_a_claim_changed_after_scan[renew]
+FAILED oddfellow/connector/tests/test_lease.py::test_expiry_cannot_overwrite_a_claim_changed_after_scan[reclaim]
+3 failed, 11 deselected in 0.45s

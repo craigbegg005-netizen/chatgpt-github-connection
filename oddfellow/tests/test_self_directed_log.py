@@ -58,7 +58,7 @@ def _cited_shas() -> list[str]:
 
 def test_every_cited_commit_exists():
     """A log entry naming a commit that does not exist is a false record."""
-    if not os.path.isdir(os.path.join(REPO, ".git")):
+    if _git("rev-parse", "--is-inside-work-tree").returncode != 0:
         pytest.skip("not a git checkout")
     cited = _cited_shas()
     if not cited:
