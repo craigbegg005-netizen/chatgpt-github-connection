@@ -18,6 +18,8 @@ call volume minimal during acceptance.
 **Resolved:** the full dump + verify + restore-verify ran against the real server and passed.
 The database held **0 user tables (7,686 kB virgin)** — it never contained data, so nothing was
 ever at stake. You may now **delete or downgrade `begg-ai-core-db` at will — verified zero-loss.**
+⚠️ **Delete PgHero together with it** (the 2026-11-01 census found PgHero is wired to this
+database — removing one without the other leaves a broken service pointing at nothing).
 Dump artifacts are preserved in `/root/oddfellow-db-backups/` and the owner downloads. **No
 further action is needed on this card.**
 
