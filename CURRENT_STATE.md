@@ -1,3 +1,11 @@
+# Session continuation — 2026-11-02
+
+TESTED on `work/bsi-advance-20261102`: 809 guarded offline tests pass.
+Four new renewal regressions fail against PR #9's original implementation and
+pass after the atomic, field-specific renewal fix. Details and limits:
+`engineering/SESSION_2026-11-02.md`. This is development-branch evidence;
+no merge or deployment performed. Older records below are historical snapshots.
+
 # CURRENT_STATE
 
 **Date:** 2026-10-05 12:00 UTC
@@ -185,7 +193,7 @@ of the live one caused a 20-hour blind spot on 2026-10-01.
 
 ## Where the branch actually is
 
-- `letta/combined-single-service-v0.20.4` — the head moves hourly, so read the newest `oddfellow/HANDOFF-*.md` for where it is. (A SHA was written here and went stale for three days: it still named a 2026-10-08 commit while the branch had moved ~100 commits.) **805 tests pass** (isolated research review branch, 2026-11-01; validation evidence: `engineering/BSI_PROJECT_RECORD.md`) — run `pytest` from the repo root; the canonical invocation collects both `oddfellow/tests` and `oddfellow/connector/tests`, and a run scoped to one root silently skips the count guard. Recent additions: the Cognitive Capability Profile (`oddfellow/cognition/`), a durable open-goal register (`GOALS.json`), and the tool-invocation audit corpus.
+- `letta/combined-single-service-v0.20.4` — the head moves hourly, so read the newest `oddfellow/HANDOFF-*.md` for where it is. (A SHA was written here and went stale for three days: it still named a 2026-10-08 commit while the branch had moved ~100 commits.) **809 tests pass** (isolated continuation branch, 2026-11-02; validation evidence: `engineering/BSI_PROJECT_RECORD.md`) — run `pytest` from the repo root; the canonical invocation collects both `oddfellow/tests` and `oddfellow/connector/tests`, and a run scoped to one root silently skips the count guard. Recent additions: the Cognitive Capability Profile (`oddfellow/cognition/`), a durable open-goal register (`GOALS.json`), and the tool-invocation audit corpus.
 
 ## ⚠️ NEW P0 — Render DB `begg-ai-core-db` expires 2026-10-27T23:21:01Z
 

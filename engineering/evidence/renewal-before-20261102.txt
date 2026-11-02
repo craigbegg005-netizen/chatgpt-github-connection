@@ -1,0 +1,181 @@
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+______________ test_renewal_preserves_intervening_work[complete] _______________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-0/test_renewal_preserves_interve0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f2f4611fad0>
+intervening = 'complete'
+
+    @pytest.mark.parametrize("intervening", ["complete", "reclaim", "checkpoint"])
+    def test_renewal_preserves_intervening_work(tmp_path, monkeypatch, intervening):
+        """A late heartbeat cannot resurrect or overwrite work by another process."""
+        import json
+        import subprocess
+        from pathlib import Path
+        db = str(tmp_path / "renewal.sqlite")
+        with Store(db) as store:
+            jid = claimed(store)
+            original = store._require
+            observed = []
+            code = '''
+    import json,sys
+    from connector import Store,Transport
+    with Store(sys.argv[1]) as store:
+        jid, action = sys.argv[2:]
+        if action == "complete":
+            store.submit_result(jid, {"winner": 1}, actor="grok", provider="grok")
+        elif action == "reclaim":
+            store.release_claim(jid, actor="grok", reason="replacement test")
+            store.claim_job(jid, "grok", Transport.QUEUE, actor="grok")
+        else:
+            store.record_checkpoint(jid, "new progress", actor="grok", evidence="tests/result.json")
+        print(json.dumps(store.get_job(jid).to_row()))
+    '''
+            def read_then_intervene(job_id):
+                snapshot = original(job_id)
+                if not observed:
+                    proc = subprocess.run([sys.executable, "-c", code, db, jid, intervening],
+                        env={**os.environ, "PYTHONPATH": os.pathsep.join([
+                            str(Path(__file__).resolve().parents[2]), os.environ.get("PYTHONPATH", "")])},
+                        capture_output=True, text=True, check=True, timeout=10)
+                    observed.append(json.loads(proc.stdout))
+                return snapshot
+            monkeypatch.setattr(store, "_require", read_then_intervene)
+            if intervening == "checkpoint":
+                store.renew_lease(jid, actor="grok")
+                assert store.get_job(jid).to_row()["checkpoints"] == observed[0]["checkpoints"]
+            else:
+>               with pytest.raises(ValueError, match="changed"):
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               Failed: DID NOT RAISE ValueError
+
+oddfellow/connector/tests/test_lease.py:91: Failed
+_______________ test_renewal_preserves_intervening_work[reclaim] _______________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-0/test_renewal_preserves_interve1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f2f46143350>
+intervening = 'reclaim'
+
+    @pytest.mark.parametrize("intervening", ["complete", "reclaim", "checkpoint"])
+    def test_renewal_preserves_intervening_work(tmp_path, monkeypatch, intervening):
+        """A late heartbeat cannot resurrect or overwrite work by another process."""
+        import json
+        import subprocess
+        from pathlib import Path
+        db = str(tmp_path / "renewal.sqlite")
+        with Store(db) as store:
+            jid = claimed(store)
+            original = store._require
+            observed = []
+            code = '''
+    import json,sys
+    from connector import Store,Transport
+    with Store(sys.argv[1]) as store:
+        jid, action = sys.argv[2:]
+        if action == "complete":
+            store.submit_result(jid, {"winner": 1}, actor="grok", provider="grok")
+        elif action == "reclaim":
+            store.release_claim(jid, actor="grok", reason="replacement test")
+            store.claim_job(jid, "grok", Transport.QUEUE, actor="grok")
+        else:
+            store.record_checkpoint(jid, "new progress", actor="grok", evidence="tests/result.json")
+        print(json.dumps(store.get_job(jid).to_row()))
+    '''
+            def read_then_intervene(job_id):
+                snapshot = original(job_id)
+                if not observed:
+                    proc = subprocess.run([sys.executable, "-c", code, db, jid, intervening],
+                        env={**os.environ, "PYTHONPATH": os.pathsep.join([
+                            str(Path(__file__).resolve().parents[2]), os.environ.get("PYTHONPATH", "")])},
+                        capture_output=True, text=True, check=True, timeout=10)
+                    observed.append(json.loads(proc.stdout))
+                return snapshot
+            monkeypatch.setattr(store, "_require", read_then_intervene)
+            if intervening == "checkpoint":
+                store.renew_lease(jid, actor="grok")
+                assert store.get_job(jid).to_row()["checkpoints"] == observed[0]["checkpoints"]
+            else:
+>               with pytest.raises(ValueError, match="changed"):
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               Failed: DID NOT RAISE ValueError
+
+oddfellow/connector/tests/test_lease.py:91: Failed
+_____________ test_renewal_preserves_intervening_work[checkpoint] ______________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-0/test_renewal_preserves_interve2')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f2f46144260>
+intervening = 'checkpoint'
+
+    @pytest.mark.parametrize("intervening", ["complete", "reclaim", "checkpoint"])
+    def test_renewal_preserves_intervening_work(tmp_path, monkeypatch, intervening):
+        """A late heartbeat cannot resurrect or overwrite work by another process."""
+        import json
+        import subprocess
+        from pathlib import Path
+        db = str(tmp_path / "renewal.sqlite")
+        with Store(db) as store:
+            jid = claimed(store)
+            original = store._require
+            observed = []
+            code = '''
+    import json,sys
+    from connector import Store,Transport
+    with Store(sys.argv[1]) as store:
+        jid, action = sys.argv[2:]
+        if action == "complete":
+            store.submit_result(jid, {"winner": 1}, actor="grok", provider="grok")
+        elif action == "reclaim":
+            store.release_claim(jid, actor="grok", reason="replacement test")
+            store.claim_job(jid, "grok", Transport.QUEUE, actor="grok")
+        else:
+            store.record_checkpoint(jid, "new progress", actor="grok", evidence="tests/result.json")
+        print(json.dumps(store.get_job(jid).to_row()))
+    '''
+            def read_then_intervene(job_id):
+                snapshot = original(job_id)
+                if not observed:
+                    proc = subprocess.run([sys.executable, "-c", code, db, jid, intervening],
+                        env={**os.environ, "PYTHONPATH": os.pathsep.join([
+                            str(Path(__file__).resolve().parents[2]), os.environ.get("PYTHONPATH", "")])},
+                        capture_output=True, text=True, check=True, timeout=10)
+                    observed.append(json.loads(proc.stdout))
+                return snapshot
+            monkeypatch.setattr(store, "_require", read_then_intervene)
+            if intervening == "checkpoint":
+                store.renew_lease(jid, actor="grok")
+>               assert store.get_job(jid).to_row()["checkpoints"] == observed[0]["checkpoints"]
+E               assert '[]' == '[{"actor":"g...w progress"}]'
+E                 
+E                 - [{"actor":"grok","at":"2026-11-02T15:00:37Z","evidence":"tests/result.json","note":"","step":"new progress"}]
+E                 + []
+
+oddfellow/connector/tests/test_lease.py:89: AssertionError
+____________________ test_renewal_audit_failure_rolls_back _____________________
+
+    def test_renewal_audit_failure_rolls_back():
+        import sqlite3
+        with Store() as store:
+            jid = claimed(store)
+            store._conn.execute("UPDATE jobs SET claimed_at='2000-01-01T00:00:00Z' WHERE job_id=?", (jid,))
+            store._conn.commit()
+            before = store.get_job(jid).to_row()
+            store._conn.execute("CREATE TRIGGER reject_renewal BEFORE INSERT ON audit "
+                                "WHEN NEW.event='job.lease.renewed' BEGIN SELECT RAISE(ABORT, 'test'); END")
+            store._conn.commit()
+            with pytest.raises(sqlite3.IntegrityError):
+                store.renew_lease(jid, actor="grok")
+>           assert store.get_job(jid).to_row() == before
+E           assert {'job_id': 'j...c":"t"}', ...} == {'job_id': 'j...c":"t"}', ...}
+E             
+E             Omitting 28 identical items, use -vv to show
+E             Differing items:
+E             {'claimed_at': '2026-11-02T15:00:37Z'} != {'claimed_at': '2000-01-01T00:00:00Z'}
+E             Use -v to get more diff
+
+oddfellow/connector/tests/test_lease.py:108: AssertionError
+=========================== short test summary info ============================
+FAILED oddfellow/connector/tests/test_lease.py::test_renewal_preserves_intervening_work[complete]
+FAILED oddfellow/connector/tests/test_lease.py::test_renewal_preserves_intervening_work[reclaim]
+FAILED oddfellow/connector/tests/test_lease.py::test_renewal_preserves_intervening_work[checkpoint]
+FAILED oddfellow/connector/tests/test_lease.py::test_renewal_audit_failure_rolls_back
+4 failed, 14 deselected in 0.41s

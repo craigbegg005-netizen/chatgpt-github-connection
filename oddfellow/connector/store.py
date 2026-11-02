@@ -941,8 +941,25 @@ class Store:
             raise ValueError(
                 f"job is {job.status.value}, not RUNNING -- there is no claim to renew"
             )
-        job.claimed_at = _now()
-        return self._update(job, actor, "job.lease.renewed", provider=job.provider)
+        # A heartbeat must not write a stale whole Job over concurrent results
+        # or checkpoints. Fence this read by attempt and provider, and commit
+        # the clock and audit together. This does not authenticate the actor or
+        # fence a caller that supplies only a job id after its attempt ended.
+        at = _now()
+        with self._conn:
+            cur = self._conn.execute(
+                "UPDATE jobs SET claimed_at=?, updated_at=? WHERE job_id=? "
+                "AND status=? AND attempts=? AND provider IS ? AND claimed_at IS ?",
+                (at, at, job_id, Status.RUNNING.value, job.attempts,
+                 job.provider, job.claimed_at))
+            if cur.rowcount != 1:
+                raise ValueError("claim changed during lease renewal")
+            self._conn.execute(
+                "INSERT INTO audit (at, actor, event, job_id, detail) VALUES (?,?,?,?,?)",
+                (at, actor, "job.lease.renewed", job_id,
+                 canonical_json({"provider": job.provider})))
+            updated = self._require(job_id)
+        return updated
 
     def expire_stale_claims(
         self, actor: str = "oddfellow", *, now: datetime | None = None

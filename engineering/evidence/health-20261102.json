@@ -1,0 +1,14 @@
+{
+  "url": "https://oddfellow-letta-backend-v0206.onrender.com/livez",
+  "http_status": 200,
+  "health": {
+    "live": true,
+    "ready": false,
+    "checks_failed": [
+      "LETTA_API_KEY",
+      "ODDFELLOW_OWNER_TOKEN"
+    ],
+    "service": "oddfellow_letta_backend",
+    "version": "0.20.6"
+  }
+}

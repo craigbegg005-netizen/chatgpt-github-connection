@@ -49,6 +49,65 @@ def test_claim_starts_the_clock():
         assert j.lease_seconds == 3600
 
 
+@pytest.mark.parametrize("intervening", ["complete", "reclaim", "checkpoint"])
+def test_renewal_preserves_intervening_work(tmp_path, monkeypatch, intervening):
+    """A late heartbeat cannot resurrect or overwrite work by another process."""
+    import json
+    import subprocess
+    from pathlib import Path
+    db = str(tmp_path / "renewal.sqlite")
+    with Store(db) as store:
+        jid = claimed(store)
+        original = store._require
+        observed = []
+        code = '''
+import json,sys
+from connector import Store,Transport
+with Store(sys.argv[1]) as store:
+    jid, action = sys.argv[2:]
+    if action == "complete":
+        store.submit_result(jid, {"winner": 1}, actor="grok", provider="grok")
+    elif action == "reclaim":
+        store.release_claim(jid, actor="grok", reason="replacement test")
+        store.claim_job(jid, "grok", Transport.QUEUE, actor="grok")
+    else:
+        store.record_checkpoint(jid, "new progress", actor="grok", evidence="tests/result.json")
+    print(json.dumps(store.get_job(jid).to_row()))
+'''
+        def read_then_intervene(job_id):
+            snapshot = original(job_id)
+            if not observed:
+                proc = subprocess.run([sys.executable, "-c", code, db, jid, intervening],
+                    env={**os.environ, "PYTHONPATH": os.pathsep.join([
+                        str(Path(__file__).resolve().parents[2]), os.environ.get("PYTHONPATH", "")])},
+                    capture_output=True, text=True, check=True, timeout=10)
+                observed.append(json.loads(proc.stdout))
+            return snapshot
+        monkeypatch.setattr(store, "_require", read_then_intervene)
+        if intervening == "checkpoint":
+            store.renew_lease(jid, actor="grok")
+            assert store.get_job(jid).to_row()["checkpoints"] == observed[0]["checkpoints"]
+        else:
+            with pytest.raises(ValueError, match="changed"):
+                store.renew_lease(jid, actor="grok")
+            assert store.get_job(jid).to_row() == observed[0]
+
+
+def test_renewal_audit_failure_rolls_back():
+    import sqlite3
+    with Store() as store:
+        jid = claimed(store)
+        store._conn.execute("UPDATE jobs SET claimed_at='2000-01-01T00:00:00Z' WHERE job_id=?", (jid,))
+        store._conn.commit()
+        before = store.get_job(jid).to_row()
+        store._conn.execute("CREATE TRIGGER reject_renewal BEFORE INSERT ON audit "
+                            "WHEN NEW.event='job.lease.renewed' BEGIN SELECT RAISE(ABORT, 'test'); END")
+        store._conn.commit()
+        with pytest.raises(sqlite3.IntegrityError):
+            store.renew_lease(jid, actor="grok")
+        assert store.get_job(jid).to_row() == before
+
+
 @pytest.mark.parametrize("intervening", ["complete", "renew", "reclaim"])
 def test_expiry_cannot_overwrite_a_claim_changed_after_scan(tmp_path, monkeypatch, intervening):
     """Force another process to change a claim after the expiry scan reads it."""
