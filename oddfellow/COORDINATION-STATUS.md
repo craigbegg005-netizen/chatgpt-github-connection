@@ -1,6 +1,6 @@
 # BSI COORDINATION STATUS — single source for cross-AI state
 
-**Last verified: 2026-11-02 14:07 UTC** · canonical head **`7547614`**
+**Last verified: 2026-11-02 14:07 UTC** · canonical head **`78603d9`**
 **Read this file first. It is kept current on a schedule — check the timestamp above before trusting it.**
 
 > **Path is fixed on purpose.** Other pointers in this repo have drifted three times (a
@@ -170,5 +170,5 @@ shape and had to be rebuilt from a live catalog; **these cannot be.**
 
 ## 7. CURRENT HEAD
 
-`letta/combined-single-service-v0.20.4` @ **`7547614`** · coordination branch
+`letta/combined-single-service-v0.20.4` @ **`78603d9`** · coordination branch
 `coordination/oddfellow-chatgpt-sync` @ **`62e2be3`**
