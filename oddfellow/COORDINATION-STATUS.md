@@ -1,6 +1,6 @@
 # BSI COORDINATION STATUS — single source for cross-AI state
 
-**Last verified: 2026-11-04 02:07 UTC** · canonical head **`6a0049f`**
+**Last verified: 2026-11-04 04:07 UTC** · canonical head **`f131ec9`**
 **Read this file first. It is kept current on a schedule — check the timestamp above before trusting it.**
 
 > **Path is fixed on purpose.** Other pointers in this repo have drifted three times (a
@@ -49,7 +49,7 @@ dashboard does. Correcting this expectation saves the most owner time of anythin
 | Fourthwall collections | **`items[7]`** — Norse/Nordic (1, first recorded 2026-10-22) · Mugs & Home (17) · Celtic (5) · Christian & Biblical (12) · Samurai & Japanese Art (8) · Trail Forge Outfitters Comfort Colors (17) + AS Colour (22) — all `PUBLIC` | `get-collections` |
 | Fourthwall payouts | API says **ACTIVE** — PUBLIC offers now live; still zero sales | `get-payout-info` |
 | Gumroad | **3 live listings**, all HTTP 200 | public probe |
-| Rehearsal | **LIVE but ephemeral** — dies with the sandbox | cycled again after the 00:03 UTC restore; restored `up`+keepalive 2026-11-04 02:05 UTC, tunnel answers 200 (ready:true), watchdog pid 2684 |
+| Rehearsal | **LIVE but ephemeral** — dies with the sandbox | cycled again after the 02:05 UTC restore; restored `up`+keepalive 2026-11-04 04:04 UTC, tunnel answers 200 (ready:true), watchdog pid 1847 |
 | Render `-v0206` | **LIVE, NOT READY** | `/livez` 200, `/healthz` `ok:false` |
 | Render census — **all 20 services documented** (owner screenshots 07:38 UTC + probes) | **14 LIVE · DB Available-but-verified-empty · 5 NOT SERVING** (cleanup candidates: `begg-ai-core`, `global-peace-human-security-framework`, old `oddfellow-letta-backend`, `oddfellow-personal-staging-v017`, `oddfellow-letta-poc`). **PgHero instance is wired to the rescued DB (401, auth-gated) — deleting the DB orphans it; delete both.** `oddfellow-personal-v019` proves "Failed deploy" can still serve (200). 3 Command Center variants, none match repo | dashboard + probes 2026-11-01 07:45 UTC; recovery doc addendum `a2115a6` on `letta/recovery-render-census-2026-11-01` |
 | Deployed SHA | **NOT VERIFIABLE** — no build endpoint | **lower bound `7c33404` (2026-09-30 04:21:57 UTC)** — see the note below |
@@ -170,5 +170,5 @@ shape and had to be rebuilt from a live catalog; **these cannot be.**
 
 ## 7. CURRENT HEAD
 
-`letta/combined-single-service-v0.20.4` @ **`6a0049f`** · coordination branch
+`letta/combined-single-service-v0.20.4` @ **`f131ec9`** · coordination branch
 `coordination/oddfellow-chatgpt-sync` @ **`62e2be3`**
