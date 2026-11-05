@@ -1,6 +1,6 @@
 # BSI COORDINATION STATUS — single source for cross-AI state
 
-**Last verified: 2026-11-05 20:05 UTC** · canonical head **`7a4d02f`**
+**Last verified: 2026-11-05 22:10 UTC** · canonical head **`19b92a9`**
 **Read this file first. It is kept current on a schedule — check the timestamp above before trusting it.**
 
 > **Path is fixed on purpose.** Other pointers in this repo have drifted three times (a
@@ -45,11 +45,11 @@ dashboard does. Correcting this expectation saves the most owner time of anythin
 | Work / Grok / Gemini / Claude write | **UNVERIFIED** | never tested |
 | **My MCP surface** | `Fourthwall` (126) · `BeggAi` (10) · `Gmail` (61, **non-functional**) · `Google_Drive` (92, **non-functional**) · `Sentry` (0) · `Cloudflare` (0) | `letta mcp list` |
 | Fourthwall shop | **`LIVE`** — `lastLiveAt: 2026-10-14T14:55:02Z` (was `COMING_SOON`) | `get-current-shop` |
-| Fourthwall offers | **`totalElements: 50`** — **PUBLIC offers exist and are purchasable** (2026-10-21 sweeps count 44 PUBLIC · 4 HIDDEN · 2 ARCHIVED; first page of 5 is now 4 HIDDEN digital drafts $6.99–$29.99 created 2026-10-20 — the shop's first digital products — + 1 PUBLIC tee; `get-offers` still ignores `pageNumber` — do not generalize from any single page) | `get-offers`, `get-offers-by-ids` |
+| Fourthwall offers | **`totalElements: 50`** — **PUBLIC offers exist and are purchasable** (2026-10-21 sweeps count 44 PUBLIC · 4 HIDDEN · 2 ARCHIVED; first page of 5 is now 5 PUBLIC tees $19.99–$23.99 created 2026-10-18 — the 2026-10-20 digital drafts no longer appear on page 0; `get-offers` still ignores `pageNumber` — do not generalize from any single page) | `get-offers`, `get-offers-by-ids` |
 | Fourthwall collections | **`items[7]`** — Norse/Nordic (1, first recorded 2026-10-22) · Mugs & Home (17) · Celtic (5) · Christian & Biblical (12) · Samurai & Japanese Art (8) · Trail Forge Outfitters Comfort Colors (17) + AS Colour (22) — all `PUBLIC` | `get-collections` |
 | Fourthwall payouts | API says **ACTIVE** — PUBLIC offers now live; still zero sales | `get-payout-info` |
 | Gumroad | **3 live listings**, all HTTP 200 | public probe |
-| Rehearsal | **LIVE but ephemeral** — dies with the sandbox | cycled again after the 18:05 UTC restore; restored `up`+keepalive 2026-11-05 20:01 UTC, tunnel answers 200 (ready:true), watchdog pid 1748, acceptance harness all-pass |
+| Rehearsal | **LIVE but ephemeral** — dies with the sandbox | cycled again after the 20:01 UTC restore; restored `up`+keepalive 2026-11-05 22:04 UTC, tunnel answers 200 (ready:true), watchdog pid 1828, acceptance harness all-pass |
 | Render `-v0206` | **LIVE, NOT READY** | `/livez` 200, `/healthz` `ok:false` |
 | Render census — **all 20 services documented** (owner screenshots 07:38 UTC + probes) | **14 LIVE · DB Available-but-verified-empty · 5 NOT SERVING** (cleanup candidates: `begg-ai-core`, `global-peace-human-security-framework`, old `oddfellow-letta-backend`, `oddfellow-personal-staging-v017`, `oddfellow-letta-poc`). **PgHero instance is wired to the rescued DB (401, auth-gated) — deleting the DB orphans it; delete both.** `oddfellow-personal-v019` proves "Failed deploy" can still serve (200). 3 Command Center variants, none match repo | dashboard + probes 2026-11-01 07:45 UTC; recovery doc addendum `a2115a6` on `letta/recovery-render-census-2026-11-01` |
 | Deployed SHA | **NOT VERIFIABLE** — no build endpoint | **lower bound `7c33404` (2026-09-30 04:21:57 UTC)** — see the note below |
@@ -116,7 +116,7 @@ list, and it is worth knowing before any claim rests on "the catalog":
 Four connections exist on paper and do not work. **Do not report these as available:**
 
 - **Gmail** — server listed, 61 tools, **calls return `500 Managed MCP server configuration is unavailable`** (probed 2026-10-21)
-- **Google Drive** — server listed, 92 tools, **calls now execute but fail `403 Request had insufficient authentication scopes`** (`ACCESS_TOKEN_SCOPE_INSUFFICIENT`, DriveFiles.List; probed 2026-10-31). Was `500 Managed MCP server configuration is unavailable` through 2026-10-26. Disconnect + reconnect still the owner action — the token needs the scopes re-granted.
+- **Google Drive** — server listed, 92 tools, **calls now execute but fail `403 Request had insufficient authentication scopes`** (`ACCESS_TOKEN_SCOPE_INSUFFICIENT`, DriveFiles.List; probed 2026-10-31, re-probed unchanged 2026-11-05). Was `500 Managed MCP server configuration is unavailable` through 2026-10-26. Disconnect + reconnect still the owner action — the token needs the scopes re-granted.
 - **Stripe** — MCP connection present, **`Invalid refresh token`**
 - **Fourthwall payouts** — reads **ACTIVE** (setup state only) — **no sales have occurred**; do not report it as revenue
 
@@ -170,5 +170,5 @@ shape and had to be rebuilt from a live catalog; **these cannot be.**
 
 ## 7. CURRENT HEAD
 
-`letta/combined-single-service-v0.20.4` @ **`7a4d02f`** · coordination branch
+`letta/combined-single-service-v0.20.4` @ **`19b92a9`** · coordination branch
 `coordination/oddfellow-chatgpt-sync` @ **`62e2be3`**
