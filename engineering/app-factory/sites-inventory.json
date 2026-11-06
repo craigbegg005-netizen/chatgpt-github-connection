@@ -1,0 +1,385 @@
+{
+  "observed_at": "2026-11-06",
+  "sites": [
+    {
+      "id": "appgprj_6ab8e26732e081919b2c9f099895c247",
+      "title": "App Factory",
+      "slug": "begg-app-factory-50",
+      "latest_version_number": 6,
+      "status": "active",
+      "source_status": "RECOVERED",
+      "release_readiness": "IN DEVELOPMENT",
+      "evidence": "Metadata discovery; does not establish functional or live verification."
+    },
+    {
+      "id": "appgprj_6ab8a01faad881919bfbf6243851d00e",
+      "title": "Clean Sweep",
+      "slug": "clean-sweep-game",
+      "latest_version_number": 3,
+      "status": "active",
+      "source_status": "DISCOVERED",
+      "release_readiness": "IN DEVELOPMENT",
+      "evidence": "Metadata discovery; does not establish functional or live verification."
+    },
+    {
+      "id": "appgprj_6ab89ff4fca4819185d538b4512b0ce9",
+      "title": "Begg AI Partnership Pipeline",
+      "slug": "begg-partnership-pipeline",
+      "latest_version_number": 1,
+      "status": "active",
+      "source_status": "DISCOVERED",
+      "release_readiness": "IN DEVELOPMENT",
+      "evidence": "Metadata discovery; does not establish functional or live verification."
+    },
+    {
+      "id": "appgprj_6ab89fdb1f648191aff3e67b0ca23dbd",
+      "title": "Begg AI Automation Recipe Board",
+      "slug": "begg-automation-recipe-board",
+      "latest_version_number": 1,
+      "status": "active",
+      "source_status": "DISCOVERED",
+      "release_readiness": "IN DEVELOPMENT",
+      "evidence": "Metadata discovery; does not establish functional or live verification."
+    },
+    {
+      "id": "appgprj_6ab89fae94b48191a12b5838cd61abac",
+      "title": "Begg AI Security Risk Register",
+      "slug": "begg-security-risk-register",
+      "latest_version_number": 1,
+      "status": "active",
+      "source_status": "DISCOVERED",
+      "release_readiness": "IN DEVELOPMENT",
+      "evidence": "Metadata discovery; does not establish functional or live verification."
+    },
+    {
+      "id": "appgprj_6ab89f963e488191984ff2feac42e011",
+      "title": "Merge Forge",
+      "slug": "merge-forge-game",
+      "latest_version_number": 3,
+      "status": "active",
+      "source_status": "DISCOVERED",
+      "release_readiness": "IN DEVELOPMENT",
+      "evidence": "Metadata discovery; does not establish functional or live verification."
+    },
+    {
+      "id": "appgprj_6ab89f9228f481919e1663e17ac8abcc",
+      "title": "Begg AI Metric Ledger",
+      "slug": "begg-metric-ledger",
+      "latest_version_number": 1,
+      "status": "active",
+      "source_status": "DISCOVERED",
+      "release_readiness": "IN DEVELOPMENT",
+      "evidence": "Metadata discovery; does not establish functional or live verification."
+    },
+    {
+      "id": "appgprj_6ab89f77046081919cd32e6cc18fdd12",
+      "title": "Begg AI Product Listing Desk",
+      "slug": "begg-product-listing-desk",
+      "latest_version_number": 1,
+      "status": "active",
+      "source_status": "DISCOVERED",
+      "release_readiness": "IN DEVELOPMENT",
+      "evidence": "Metadata discovery; does not establish functional or live verification."
+    },
+    {
+      "id": "appgprj_6ab89f3e6a9c8191a01cb97c24500e03",
+      "title": "Begg AI Social Post Queue",
+      "slug": "begg-social-post-queue",
+      "latest_version_number": 1,
+      "status": "active",
+      "source_status": "DISCOVERED",
+      "release_readiness": "IN DEVELOPMENT",
+      "evidence": "Metadata discovery; does not establish functional or live verification."
+    },
+    {
+      "id": "appgprj_6ab89f24f7ac8191b03d7e6fcb0cde0b",
+      "title": "Begg AI Media Production Tracker",
+      "slug": "begg-media-production-tracker",
+      "latest_version_number": 1,
+      "status": "active",
+      "source_status": "DISCOVERED",
+      "release_readiness": "IN DEVELOPMENT",
+      "evidence": "Metadata discovery; does not establish functional or live verification."
+    },
+    {
+      "id": "appgprj_6ab89f0460648191806e5b4afad1c044",
+      "title": "Begg AI Creative Brief Board",
+      "slug": "begg-creative-brief-board",
+      "latest_version_number": 1,
+      "status": "active",
+      "source_status": "DISCOVERED",
+      "release_readiness": "IN DEVELOPMENT",
+      "evidence": "Metadata discovery; does not establish functional or live verification."
+    },
+    {
+      "id": "appgprj_6ab89ee9e5688191bbf9c1f4af366141",
+      "title": "Begg AI Customer Feedback Board",
+      "slug": "begg-customer-feedback-board",
+      "latest_version_number": 1,
+      "status": "active",
+      "source_status": "DISCOVERED",
+      "release_readiness": "IN DEVELOPMENT",
+      "evidence": "Metadata discovery; does not establish functional or live verification."
+    },
+    {
+      "id": "appgprj_6ab89ec2b9508191ad10b82c7f66dfd7",
+      "title": "Begg AI Sales Lead Board",
+      "slug": "begg-sales-lead-board",
+      "latest_version_number": 1,
+      "status": "active",
+      "source_status": "DISCOVERED",
+      "release_readiness": "IN DEVELOPMENT",
+      "evidence": "Metadata discovery; does not establish functional or live verification."
+    },
+    {
+      "id": "appgprj_6ab89e96e31c8191a9d604680adaa497",
+      "title": "Begg AI Marketing Campaign Planner",
+      "slug": "begg-marketing-campaign-planner",
+      "latest_version_number": 1,
+      "status": "active",
+      "source_status": "DISCOVERED",
+      "release_readiness": "IN DEVELOPMENT",
+      "evidence": "Metadata discovery; does not establish functional or live verification."
+    },
+    {
+      "id": "appgprj_6ab89e78e3508191b33d864439233d17",
+      "title": "Begg AI Product Experiment Board",
+      "slug": "begg-product-experiment-board",
+      "latest_version_number": 1,
+      "status": "active",
+      "source_status": "DISCOVERED",
+      "release_readiness": "IN DEVELOPMENT",
+      "evidence": "Metadata discovery; does not establish functional or live verification."
+    },
+    {
+      "id": "appgprj_6ab89e5c6c188191966c5b5729689035",
+      "title": "Begg AI Release Checklist",
+      "slug": "begg-release-checklist",
+      "latest_version_number": 1,
+      "status": "active",
+      "source_status": "DISCOVERED",
+      "release_readiness": "IN DEVELOPMENT",
+      "evidence": "Metadata discovery; does not establish functional or live verification."
+    },
+    {
+      "id": "appgprj_6ab89e42b0248191939f4a2d2d78d2a2",
+      "title": "Begg AI Research Evidence Ledger",
+      "slug": "begg-research-evidence-ledger",
+      "latest_version_number": 1,
+      "status": "active",
+      "source_status": "DISCOVERED",
+      "release_readiness": "IN DEVELOPMENT",
+      "evidence": "Metadata discovery; does not establish functional or live verification."
+    },
+    {
+      "id": "appgprj_6ab89e258c208191b44a5979e9628b8f",
+      "title": "Begg AI Technology Incident Log",
+      "slug": "begg-technology-incident-log",
+      "latest_version_number": 1,
+      "status": "active",
+      "source_status": "DISCOVERED",
+      "release_readiness": "IN DEVELOPMENT",
+      "evidence": "Metadata discovery; does not establish functional or live verification."
+    },
+    {
+      "id": "appgprj_6ab89dfc8b988191ad343123b27d8d82",
+      "title": "Begg AI People Skills Roster",
+      "slug": "begg-people-skills-roster",
+      "latest_version_number": 1,
+      "status": "active",
+      "source_status": "DISCOVERED",
+      "release_readiness": "IN DEVELOPMENT",
+      "evidence": "Metadata discovery; does not establish functional or live verification."
+    },
+    {
+      "id": "appgprj_6ab89ddf8b708191b5ca5b75896e048b",
+      "title": "Begg AI Compliance Obligation Tracker",
+      "slug": "begg-compliance-obligation-tracker",
+      "latest_version_number": 1,
+      "status": "active",
+      "source_status": "DISCOVERED",
+      "release_readiness": "IN DEVELOPMENT",
+      "evidence": "Metadata discovery; does not establish functional or live verification."
+    },
+    {
+      "id": "appgprj_6ab89dc3ceb48191924ec7665dff441e",
+      "title": "Begg AI Accounting Entry Log",
+      "slug": "begg-accounting-entry-log",
+      "latest_version_number": 1,
+      "status": "active",
+      "source_status": "DISCOVERED",
+      "release_readiness": "IN DEVELOPMENT",
+      "evidence": "Metadata discovery; does not establish functional or live verification."
+    },
+    {
+      "id": "appgprj_6ab89da3fe2481919c7556846eb16c86",
+      "title": "Begg AI Finance Cash Outlook",
+      "slug": "begg-finance-cash-outlook",
+      "latest_version_number": 1,
+      "status": "active",
+      "source_status": "DISCOVERED",
+      "release_readiness": "IN DEVELOPMENT",
+      "evidence": "Metadata discovery; does not establish functional or live verification."
+    },
+    {
+      "id": "appgprj_6ab89d86fb908191ae225a7dfb7df41b",
+      "title": "Begg AI Operations Runbook",
+      "slug": "begg-operations-runbook",
+      "latest_version_number": 1,
+      "status": "active",
+      "source_status": "DISCOVERED",
+      "release_readiness": "IN DEVELOPMENT",
+      "evidence": "Metadata discovery; does not establish functional or live verification."
+    },
+    {
+      "id": "appgprj_6ab89d416dfc8191b7779c805598f1d8",
+      "title": "Sort Sprint",
+      "slug": "begg-sort-sprint",
+      "latest_version_number": 1,
+      "status": "active",
+      "source_status": "DISCOVERED",
+      "release_readiness": "IN DEVELOPMENT",
+      "evidence": "Metadata discovery; does not establish functional or live verification."
+    },
+    {
+      "id": "appgprj_6ab89cf18e0c81919934120fad509c62",
+      "title": "Begg AI Executive Decision Desk",
+      "slug": "begg-executive-decision-desk",
+      "latest_version_number": 1,
+      "status": "active",
+      "source_status": "DISCOVERED",
+      "release_readiness": "IN DEVELOPMENT",
+      "evidence": "Metadata discovery; does not establish functional or live verification."
+    },
+    {
+      "id": "appgprj_6ab851a458688191820993b73edee4b3",
+      "title": "Oddfellow — Begg AI",
+      "slug": "begg-oddfellow",
+      "latest_version_number": 9,
+      "status": "active",
+      "source_status": "DISCOVERED",
+      "release_readiness": "IN DEVELOPMENT",
+      "evidence": "Metadata discovery; does not establish functional or live verification."
+    },
+    {
+      "id": "appgprj_6ab80e1b25b48191bbfa8c12a6d28d4c",
+      "title": "Begg AI Industries Command Center",
+      "slug": "begg-ai-command-center",
+      "latest_version_number": 8,
+      "status": "active",
+      "source_status": "DISCOVERED",
+      "release_readiness": "IN DEVELOPMENT",
+      "evidence": "Metadata discovery; does not establish functional or live verification."
+    },
+    {
+      "id": "appgprj_6ab7dd82f3208191a372a42df6f726de",
+      "title": "Home Ledger",
+      "slug": "home-ledger",
+      "latest_version_number": 3,
+      "status": "active",
+      "source_status": "DISCOVERED",
+      "release_readiness": "IN DEVELOPMENT",
+      "evidence": "Metadata discovery; does not establish functional or live verification."
+    },
+    {
+      "id": "appgprj_6ab7d17b9d148191a27d6710c85fc7ad",
+      "title": "Ready Card",
+      "slug": "ready-card",
+      "latest_version_number": 3,
+      "status": "active",
+      "source_status": "DISCOVERED",
+      "release_readiness": "IN DEVELOPMENT",
+      "evidence": "Metadata discovery; does not establish functional or live verification."
+    },
+    {
+      "id": "appgprj_6ab7c6633bc48191a95d64b55256ba78",
+      "title": "Small Business Starter",
+      "slug": "small-business-starter",
+      "latest_version_number": 2,
+      "status": "active",
+      "source_status": "DISCOVERED",
+      "release_readiness": "IN DEVELOPMENT",
+      "evidence": "Metadata discovery; does not establish functional or live verification."
+    },
+    {
+      "id": "appgprj_6ab7c11fa1048191b5e9f39de555a4f7",
+      "title": "Renewal Watch",
+      "slug": "renewal-watch",
+      "latest_version_number": 3,
+      "status": "active",
+      "source_status": "DISCOVERED",
+      "release_readiness": "IN DEVELOPMENT",
+      "evidence": "Metadata discovery; does not establish functional or live verification."
+    },
+    {
+      "id": "appgprj_6ab7b3560ddc8191937b4f2ade10e6a9",
+      "title": "Keep the Receipt",
+      "slug": "keep-the-receipt",
+      "latest_version_number": 2,
+      "status": "active",
+      "source_status": "DISCOVERED",
+      "release_readiness": "IN DEVELOPMENT",
+      "evidence": "Metadata discovery; does not establish functional or live verification."
+    },
+    {
+      "id": "appgprj_6ab7a71daad881919be60e130f5d5628",
+      "title": "Service Mile",
+      "slug": "service-mile",
+      "latest_version_number": 2,
+      "status": "active",
+      "source_status": "DISCOVERED",
+      "release_readiness": "IN DEVELOPMENT",
+      "evidence": "Metadata discovery; does not establish functional or live verification."
+    },
+    {
+      "id": "appgprj_6ab7973a80308191b3ea00413131c507",
+      "title": "Pantry First",
+      "slug": "pantry-first",
+      "latest_version_number": 2,
+      "status": "active",
+      "source_status": "DISCOVERED",
+      "release_readiness": "IN DEVELOPMENT",
+      "evidence": "Metadata discovery; does not establish functional or live verification."
+    },
+    {
+      "id": "appgprj_6ab7510fd0e081919fa7dd1596687ce7",
+      "title": "Household Task Board",
+      "slug": "household-task-board",
+      "latest_version_number": 2,
+      "status": "active",
+      "source_status": "DISCOVERED",
+      "release_readiness": "IN DEVELOPMENT",
+      "evidence": "Metadata discovery; does not establish functional or live verification."
+    },
+    {
+      "id": "appgprj_6ab7506f8ad8819185d385026b9db2d1",
+      "title": "Everyday Tools",
+      "slug": "everyday-use-tools",
+      "latest_version_number": 2,
+      "status": "active",
+      "source_status": "DISCOVERED",
+      "release_readiness": "IN DEVELOPMENT",
+      "evidence": "Metadata discovery; does not establish functional or live verification."
+    },
+    {
+      "id": "appgprj_6ab74aadb9048191b773789cf3998ab7",
+      "title": "The 7-Day Reset Planner",
+      "slug": "seven-day-reset-planner",
+      "latest_version_number": 7,
+      "status": "active",
+      "source_status": "RECOVERED",
+      "release_readiness": "IN DEVELOPMENT",
+      "evidence": "Metadata discovery; does not establish functional or live verification."
+    },
+    {
+      "id": "appgprj_6ab6d8fc3e948191911542287b0ddeb6",
+      "title": "The 7 Day Reset Planner",
+      "slug": "craig-seven-day-reset-planner",
+      "latest_version_number": 1,
+      "status": "active",
+      "source_status": "DISCOVERED",
+      "release_readiness": "IN DEVELOPMENT",
+      "evidence": "Metadata discovery; does not establish functional or live verification."
+    }
+  ]
+}
