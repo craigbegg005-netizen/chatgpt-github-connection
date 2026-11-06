@@ -14,6 +14,7 @@ from .profile import (  # noqa: F401
     render,
     summarise,
 )
+from .memory import Memory, MemoryStore  # noqa: F401
 
 __all__ = [
     "Confidence",
@@ -22,4 +23,6 @@ __all__ = [
     "build_profile",
     "render",
     "summarise",
+    "Memory",
+    "MemoryStore",
 ]
