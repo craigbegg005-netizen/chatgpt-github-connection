@@ -49,6 +49,45 @@ def test_claim_starts_the_clock():
         assert j.lease_seconds == 3600
 
 
+@pytest.mark.parametrize("intervening", ["complete", "renew", "reclaim"])
+def test_expiry_cannot_overwrite_a_claim_changed_after_scan(tmp_path, monkeypatch, intervening):
+    """Force another process to change a claim after the expiry scan reads it."""
+    import json
+    import subprocess
+    from pathlib import Path
+    db = str(tmp_path / "expiry-race.sqlite")
+    with Store(db) as store:
+        jid = claimed(store)
+        store._conn.execute("UPDATE jobs SET claimed_at=? WHERE job_id=?",
+                            ("2000-01-01T00:00:00Z", jid))
+        store._conn.commit()
+        scanned = store.jobs(Status.RUNNING)
+        code = '''
+import json,sys
+from connector import Store,Transport
+with Store(sys.argv[1]) as store:
+    jid, action = sys.argv[2:]
+    if action == "complete":
+        store.submit_result(jid, {"winner": 1}, actor="grok", provider="grok")
+    elif action == "renew":
+        store.renew_lease(jid, actor="grok")
+    else:
+        store.release_claim(jid, actor="grok", reason="replacement test")
+        store.claim_job(jid, "grok", Transport.QUEUE, actor="grok")
+    print(json.dumps(store.get_job(jid).to_row()))
+'''
+        proc = subprocess.run([sys.executable, "-c", code, db, jid, intervening],
+                              env={**os.environ, "PYTHONPATH": os.pathsep.join([
+                                  str(Path(__file__).resolve().parents[2]),
+                                  os.environ.get("PYTHONPATH", "")])},
+                              capture_output=True, text=True, check=True, timeout=10)
+        expected = json.loads(proc.stdout)
+        monkeypatch.setattr(store, "jobs", lambda status=None: scanned)
+        assert store.expire_stale_claims() == []
+        assert store.get_job(jid).to_row() == expected
+        assert not any(e["event"] == "job.lease.expired" for e in store.audit_trail())
+
+
 def test_expired_claim_is_released_and_audited():
     with Store() as store:
         jid = claimed(store)
