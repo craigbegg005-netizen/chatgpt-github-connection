@@ -1,4 +1,4 @@
-# Owner actions — the whole queue, tap-sized (updated 2026-10-14 19:00 UTC)
+# Owner actions — the whole queue, tap-sized (updated 2026-11-06 20:0x UTC)
 
 Everything currently blocked on Craig, one card per action, phone-first. Each card: what, where to tap, time, what it unblocks. Nothing here spends money except the two items marked **decision** — plus one caution: since the 2026-11-01 Letta Pro upgrade, card 1's `LETTA_API_KEY` may enable credit-billing API calls (see card 1).
 
@@ -67,6 +67,31 @@ If a higher-res original of the Samurai artwork exists (bigger than 1122×1402),
 ## 9. Pages toggle  ⚪ low urgency
 GitHub repo → Settings → Pages → enable on canonical branch (turns the storefront page live). One toggle.
 
+## 10. Grants — two lanes open and free; one closes with the December 2026 round  🟡 deadline-bound
+
+**This lane was missing from this board entirely** (added 2026-11-06). It is tracked in
+`GRANTS-NON-DILUTIVE-PIPELINE-2026-10-01.md` and the company file, but no card here mentioned it — so a
+live $10,000 opportunity with a closing window was not on your queue.
+
+**Verizon Small Business Digital Ready — $10,000.** Re-verified 2026-11-06 against Verizon's own page.
+The window closes with the **December 2026** round: *"Applications will be reviewed monthly from June
+through December 2026. Each month, 10 small businesses will be selected."* The unlock is free and it is
+yours: *"Register and complete any combination of two free courses or events anytime in 2026 to unlock
+the grant application."* No LLC, no SAM registration, no spend. **Once unlocked, I can draft the
+application for your review** — Verizon has no rule against AI assistance.
+⚠️ **Unsettled, do not assume either way:** the page says selected businesses *"complete a verification
+process to confirm good financial and legal standing before funds are awarded"*, and whether a sole
+proprietorship satisfies that is **not stated** (the FAQ sits behind a JavaScript accordion).
+
+**Emergent Ventures — open, no stated deadline, but the writing must be yours.** Form live
+(re-verified 2026-11-06); award size deliberately unspecified, very small grants explicitly in scope,
+for-profit explicitly fine. 🔴 *"Emergent Ventures no longer accepts AI-written applications. We will
+test all submissions and reject those using AI for anything other than proofreading."* **I can
+proofread; I must not draft.**
+
+**Unblocks: the only non-dilutive funding lane that is open and costs nothing.** Time: ~2–3 h of your
+time for the Verizon courses; the EV proposal is a writing task of yours.
+
 ---
 
 ## Verification of this queue — 2026-10-15 04:0x UTC
@@ -82,6 +107,21 @@ tap. All of them hold:
 | 5 | Both Google integrations return 500 | `Google_Drive`, `Gmail` | ✅ both `500 Managed MCP server configuration is unavailable` |
 | 6 | BeggAi (Stripe) refresh token invalid | `list_available_accounts_or_orgs` | ✅ `Invalid refresh token` |
 | 9 | GitHub Pages disabled | Pages API + URL | ✅ API 404, URL 404 |
+
+## Verification of the grants lane — 2026-11-06 20:0x UTC
+
+Added because the lane was absent from this board. Both open programs were re-checked against their
+own primary sources today, not against a search hit:
+
+| Program | Claim | Checked | Result |
+|---|---|---|---|
+| Verizon Small Business Digital Ready | still open; $10,000; monthly review June–December 2026; two free courses unlock it | `digitalready.verizonwireless.com/grants` | ✅ all hold verbatim |
+| Verizon | final decision by 2027-01-12 | same page | ✅ *"All applicants will receive a final decision by January 12, 2027."* |
+| Emergent Ventures | application form still live | `mercatus.tfaforms.net/5099527` | ✅ live, 1500-word limit, no PDFs |
+| Emergent Ventures | AI-written applications rejected | same form | ✅ *"…reject those using AI for anything other than proofreading."* |
+
+**Also re-verified this cycle, unchanged:** the Fourthwall MCP surface is still **126 tools** with none
+of the three media-library tools exposed — the Phase-1 launch blocker stands.
 
 **One correction made:** item 2 read *"deadline 2026-10-27 (13 days)"*. A hand-maintained day count is
 stale the next day — it was already 12 by the time this was checked. **The countdown is gone; the
