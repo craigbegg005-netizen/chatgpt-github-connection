@@ -1,0 +1,4 @@
+name,investor_type,sectors,stages,geographies,min_check_usd,max_check_usd,source_url,checked_on,source_evidence,contact_route,status
+NFX,Venture capital,ai|software|enterprise,pre-seed|seed,us|israel|latin america|europe,,,https://www.nfx.com/about,2026-11-02,Official site pre-seed seed and US investing; AI portfolio at nfx.com/generative-ai,Signal founder investor network,research_only
+Cadron Capital Partners,Venture capital,technology,unknown,unknown,,,https://www.cadroncapital.com/our-focus,2026-11-02,Official focus describes growth-oriented technology ventures; stage and check size unknown,Official website contact route to verify,research_only
+NewRoad Capital Partners,Venture capital,retail technology|marketing technology|supply chain,growth,us,5000000,20000000,https://newroadcp.com/approach/,2026-11-02,Official investment approach specifies initial 5M to 20M and product-market fit; not pre-seed,Official website for later stages,research_only
