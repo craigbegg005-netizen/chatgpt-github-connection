@@ -1,6 +1,6 @@
 # BSI COORDINATION STATUS — single source for cross-AI state
 
-**Last verified: 2026-11-06 00:04 UTC** · canonical head **`a279fca`**
+**Last verified: 2026-11-06 02:04 UTC** · canonical head **`33bdd6f`**
 **Read this file first. It is kept current on a schedule — check the timestamp above before trusting it.**
 
 > **Path is fixed on purpose.** Other pointers in this repo have drifted three times (a
@@ -45,11 +45,11 @@ dashboard does. Correcting this expectation saves the most owner time of anythin
 | Work / Grok / Gemini / Claude write | **UNVERIFIED** | never tested |
 | **My MCP surface** | `Fourthwall` (126) · `BeggAi` (10) · `Gmail` (61, **non-functional**) · `Google_Drive` (92, **non-functional**) · `Sentry` (0) · `Cloudflare` (0) | `letta mcp list` |
 | Fourthwall shop | **`LIVE`** — `lastLiveAt: 2026-10-14T14:55:02Z` (was `COMING_SOON`) | `get-current-shop` |
-| Fourthwall offers | **`totalElements: 53`** — **PUBLIC offers exist and are purchasable** (2026-10-21 sweeps counted 44 PUBLIC · 4 HIDDEN · 2 ARCHIVED; **2026-11-05 23:42 UTC added 3 new HIDDEN candle offers** — Grace/Joy/Faith Soy Wax Candle, $23 each — implying 44 PUBLIC · 7 HIDDEN · 2 ARCHIVED; page 0 now leads with those 3 HIDDEN candles, then 2 PUBLIC tees $19.99–$23.99 created 2026-10-18; `get-offers` still ignores `pageNumber` — do not generalize from any single page) | `get-offers`, `get-offers-by-ids` |
+| Fourthwall offers | **`totalElements: 55`** — **PUBLIC offers exist and are purchasable** (2026-10-21 sweeps counted 44 PUBLIC · 4 HIDDEN · 2 ARCHIVED; 2026-11-05 23:42 UTC added 3 HIDDEN candle offers — Grace/Joy/Faith Soy Wax Candle; **2026-11-06 00:20–00:24 UTC added 2 more HIDDEN offers — Trailforge Gildan Classic Hoodie + Heavy Blend Zip Hoodie — and repriced the Grace candle $23→$17.99 (00:25 UTC)** — implying 44 PUBLIC · 9 HIDDEN · 2 ARCHIVED; page 0 now leads with those 2 HIDDEN hoodies, then the 3 HIDDEN candles; `get-offers` still ignores `pageNumber` — do not generalize from any single page) | `get-offers`, `get-offers-by-ids` |
 | Fourthwall collections | **`items[7]`** — Norse/Nordic (1, first recorded 2026-10-22) · Mugs & Home (17) · Celtic (5) · Christian & Biblical (12) · Samurai & Japanese Art (8) · Trail Forge Outfitters Comfort Colors (17) + AS Colour (22) — all `PUBLIC` | `get-collections` |
 | Fourthwall payouts | API says **ACTIVE** — PUBLIC offers now live; still zero sales | `get-payout-info` |
 | Gumroad | **3 live listings**, all HTTP 200 | public probe |
-| Rehearsal | **LIVE but ephemeral** — dies with the sandbox | cycled again after the 22:04 UTC restore; restored `up`+keepalive 2026-11-06 00:01 UTC, tunnel answers 200 (ready:true), watchdog pid 1762, acceptance harness all-pass |
+| Rehearsal | **LIVE but ephemeral** — dies with the sandbox | cycled again after the 00:01 UTC restore; restored `up`+keepalive 2026-11-06 02:01 UTC, tunnel answers 200 (ready:true), watchdog pid 1769, acceptance harness all-pass |
 | Render `-v0206` | **LIVE, NOT READY** | `/livez` 200, `/healthz` `ok:false` |
 | Render census — **all 20 services documented** (owner screenshots 07:38 UTC + probes) | **14 LIVE · DB Available-but-verified-empty · 5 NOT SERVING** (cleanup candidates: `begg-ai-core`, `global-peace-human-security-framework`, old `oddfellow-letta-backend`, `oddfellow-personal-staging-v017`, `oddfellow-letta-poc`). **PgHero instance is wired to the rescued DB (401, auth-gated) — deleting the DB orphans it; delete both.** `oddfellow-personal-v019` proves "Failed deploy" can still serve (200). 3 Command Center variants, none match repo | dashboard + probes 2026-11-01 07:45 UTC; recovery doc addendum `a2115a6` on `letta/recovery-render-census-2026-11-01` |
 | Deployed SHA | **NOT VERIFIABLE** — no build endpoint | **lower bound `7c33404` (2026-09-30 04:21:57 UTC)** — see the note below |
