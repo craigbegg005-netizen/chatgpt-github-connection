@@ -6,12 +6,30 @@ Everything currently blocked on Craig, one card per action, phone-first. Each ca
 Render dashboard → service **oddfellow-letta-backend-v0206** → Environment → add:
 - `LETTA_API_KEY` (from letta.com dashboard → API keys)
 - `ODDFELLOW_OWNER_TOKEN` (any long random string; must match what the app stores)
-Save → service redeploys (~2 min). **Unblocks: the whole acceptance sequence.** Time: ~5 min.
+Save → service redeploys (~2 min). Time: ~5 min.
 
-⚠️ **Since the 2026-11-01 Letta Pro upgrade:** API-key usage may draw **paid credits** (not the
-daily quota) — so once this key is set, the backend's Letta calls could bill. This is unverified;
-if it's a concern, tell me and I'll verify the billing behavior first, or we keep the backend's
-call volume minimal during acceptance.
+🔴 **Setting these two is NOT sufficient any more — do not expect the phone to work straight after.**
+Added 2026-11-07. The agent's configured model **`letta/auto` has been retired** (it is not among the
+89 handles the API returns), so the chat path fails with HTTP 502 the moment it is reached. Production
+is insulated today **only** because Gate A still 503s before the model call — which means the failure
+surfaces at the worst possible moment: **the first time you try the phone.** Evidence:
+`oddfellow/evidence/MODEL-RETIRED-2026-11-07.md`.
+
+**The model fix needs your call** (it is a spend/quality decision), and there is a timing trap:
+- **`letta/auto-fast`** is the closest like-for-like replacement, **but the `letta/*` quota bucket is
+  EMPTY until 2026-11-07T12:00Z.** Switching before then would swap one failure for another, and the
+  new one would look like a bad model choice rather than an exhausted bucket.
+- **`letta/echo`** is probably free and I will not use it: it satisfies a "reply present" check
+  *without producing a real reply* — the vacuous-check shape this codebase has been burned by twice.
+- **An external-provider model** is what this agent itself now runs on
+  (`deepseek/deepseek-v4.1-flash`, via openrouter), so that path is known to work today.
+
+**Tell me which you want and I will apply it** — `rehearsal.sh:159`, `rehearsal_watchdog.sh:85` and
+`fault_injection_check.py` all hardcode `letta/auto` and have to move together.
+
+⚠️ **On billing:** the account now shows **12,763 credits** (agent memory recorded 0 on 2026-11-01).
+Credits cover **non-BYOK** models; `letta/*` models draw on the separate quota bucket instead — so a
+healthy credit balance does *not* mean a `letta/*` handle will work.
 
 ## 2. Render DB preservation — ✅ RESOLVED 2026-11-01 06:44 UTC: the database was EMPTY
 

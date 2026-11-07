@@ -81,6 +81,36 @@ guessing at it.** The options differ in ways I cannot resolve alone:
 **Recommendation: `letta/auto-fast`**, pending confirmation it is covered — it is the closest
 like-for-like replacement for the retired auto handle and keeps the harness meaningful.
 
+## Quota and credits — verified 2026-11-07 08:0x UTC, and it changes the recommendation's status
+
+`letta usage` (read-only) returns:
+
+```
+Current plan: pro
+Usage Credits (non-BYOK models)   Balance: 12763 credits
+Usage Quota (`letta/*` models)    Bucket: empty (daily: empty)
+                                  Quota Window End: 2026-11-07T12:00:00Z
+                                  Daily Quota Window End: 2026-11-08T00:00:00Z
+```
+
+**Two things follow, and the first is not in the recommendation above.**
+
+1. 🔴 **`letta/auto-fast` would ALSO fail right now.** It is a `letta/*` model, and the `letta/*`
+   quota bucket is **empty** until **2026-11-07T12:00:00Z**. So the recommended fix is sound but
+   **timing-dependent** — switching to it before the window resets would swap one failure for another,
+   and the new failure would look like a bad model choice rather than an exhausted bucket. Verify the
+   bucket is non-empty *at the moment of the change*.
+
+2. **The credits balance is no longer 0** — it is **12,763**, where agent memory recorded 0 on
+   2026-11-01. Credits cover **non-BYOK** models; `letta/*` models draw on the quota instead. So the
+   two pools are separate, and a non-empty credit balance does **not** mean a `letta/*` model will work.
+
+**A third option the report did not weigh: an external-provider model.** This agent's own configured
+model is now `deepseek/deepseek-v4.1-flash` (provider type `openrouter`) — i.e. the agent itself was
+already moved off `letta/auto` and onto an external provider, which sidesteps both the retirement and
+the quota bucket. That is the configuration known to be working right now, and it is worth considering
+for `rehearsal.sh` rather than assuming a `letta/*` handle is the only replacement.
+
 ## What is NOT claimed
 
 - **Not fixed.** The rehearsal chat path is still broken as of this report.
