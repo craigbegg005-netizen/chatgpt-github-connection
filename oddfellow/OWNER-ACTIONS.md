@@ -15,17 +15,22 @@ is insulated today **only** because Gate A still 503s before the model call — 
 surfaces at the worst possible moment: **the first time you try the phone.** Evidence:
 `oddfellow/evidence/MODEL-RETIRED-2026-11-07.md`.
 
-**The model fix needs your call** (it is a spend/quality decision), and there is a timing trap:
-- **`letta/auto-fast`** is the closest like-for-like replacement, **but the `letta/*` quota bucket is
-  EMPTY until 2026-11-07T12:00Z.** Switching before then would swap one failure for another, and the
-  new one would look like a bad model choice rather than an exhausted bucket.
+**The model fix needs your call** (it is a spend/quality decision). What is known about the options:
+- 🔴 **`letta/auto-fast` is NOT a viable fix right now — corrected 2026-11-07 12:0x UTC.** I wrote
+  here that the `letta/*` quota bucket was "empty until 12:00Z". **It is still `empty` after that
+  window rolled** (`letta usage` → `Bucket: empty (daily: empty)`, window end now 16:00Z). So a
+  `letta/*` handle fails for an exhausted bucket, not for a bad choice — and switching to one would
+  look like a model problem. **Do not pick a `letta/*` model until the bucket is non-empty.**
 - **`letta/echo`** is probably free and I will not use it: it satisfies a "reply present" check
   *without producing a real reply* — the vacuous-check shape this codebase has been burned by twice.
 - **An external-provider model** is what this agent itself now runs on
   (`deepseek/deepseek-v4.1-flash`, via openrouter), so that path is known to work today.
 
-**Tell me which you want and I will apply it** — `rehearsal.sh:159`, `rehearsal_watchdog.sh:85` and
-`fault_injection_check.py` all hardcode `letta/auto` and have to move together.
+**Tell me which you want and I will apply it.** The handle is hardcoded in four places across three
+files (`rehearsal.sh`, `rehearsal_watchdog.sh`, `fault_injection_check.py`), so a change has to move all
+of them together or the paths disagree — which is why they now read a single `ODDFELLOW_MODEL`
+environment variable instead, defaulting to the current value. **Applying your choice is then one
+setting, not four edits.**
 
 ⚠️ **On billing:** the account now shows **12,763 credits** (agent memory recorded 0 on 2026-11-01).
 Credits cover **non-BYOK** models; `letta/*` models draw on the separate quota bucket instead — so a

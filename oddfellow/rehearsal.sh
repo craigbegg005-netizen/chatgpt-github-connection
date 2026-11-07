@@ -156,7 +156,7 @@ up() {
 
   if ! curl -fsS --max-time 3 "http://127.0.0.1:$PORT/livez" >/dev/null 2>&1; then
     say "Starting the backend on 127.0.0.1:$PORT"
-    ( cd "$HERE" && ODDFELLOW_FRONTEND_DIR=frontend LETTA_MODEL=letta/auto \
+    ( cd "$HERE" && ODDFELLOW_FRONTEND_DIR=frontend LETTA_MODEL="${ODDFELLOW_MODEL:-letta/auto}" \
         LETTA_API_KEY="$LETTA_API_KEY" ODDFELLOW_OWNER_TOKEN="$ODDFELLOW_OWNER_TOKEN" \
         ODDFELLOW_AGENT_ID="${ODDFELLOW_AGENT_ID:-agent-a9a8eb2c-2fed-4554-9998-aa4783c7efc4}" \
         exec setsid --fork "$VENV/bin/python" -m uvicorn oddfellow_letta_backend:app \

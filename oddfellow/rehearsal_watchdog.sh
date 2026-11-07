@@ -82,7 +82,7 @@ ensure_venv() {
 
 start_backend() {
   ensure_venv || return 1
-  ( cd "$HERE" && ODDFELLOW_FRONTEND_DIR=frontend LETTA_MODEL=letta/auto \
+  ( cd "$HERE" && ODDFELLOW_FRONTEND_DIR=frontend LETTA_MODEL="${ODDFELLOW_MODEL:-letta/auto}" \
       LETTA_API_KEY="$LETTA_API_KEY" ODDFELLOW_OWNER_TOKEN="$ODDFELLOW_OWNER_TOKEN" \
       ODDFELLOW_AGENT_ID="${ODDFELLOW_AGENT_ID:-agent-a9a8eb2c-2fed-4554-9998-aa4783c7efc4}" \
       ODDFELLOW_QUEUE_DB="${ODDFELLOW_QUEUE_DB:-$STATE_DIR/queue.db}" \

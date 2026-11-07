@@ -190,7 +190,8 @@ class Backend:
             {
                 "LETTA_API_KEY": DUMMY_KEY,
                 "ODDFELLOW_OWNER_TOKEN": OWNER_TOKEN,
-                "LETTA_MODEL": "letta/auto",
+                # One source for the model handle: see ODDFELLOW_MODEL in OWNER-ACTIONS.md.
+                "LETTA_MODEL": os.environ.get("ODDFELLOW_MODEL", "letta/auto"),
                 "ODDFELLOW_AGENT_ID": AGENT_ID,
                 "ODDFELLOW_AUDIT_LOG": "false",
                 "ODDFELLOW_RATE_PER_MIN": "600",
