@@ -164,7 +164,7 @@ eligible sector** — so Oddfellow does not have to be reframed into aerospace o
 real constraint is sequencing: this is money *after* an SBIR award, so it is a Phase I follow-on,
 not an entry point.
 
-### 2b. ASBTDC — ✅ VERIFIED services (asbtdc.org's own pages, re-checked 2026-10-01 23:15 UTC)
+### 2b. ASBTDC — ✅ VERIFIED services (asbtdc.org's own pages, re-checked 2026-11-07)
 
 The **Arkansas Small Business and Technology Development Center** is funded in part through a
 cooperative agreement with the **U.S. Small Business Administration**, in partnership with **UA
@@ -197,15 +197,32 @@ Little Rock** and other Arkansas institutions.
 - **Lab2Launch Accelerator** (six-week virtual, agency-specific cohort; the summer 2026 cohort was
   an **NIH** proposal lab): **summer 2026 applications have closed.**
 
+**⚠️ Re-verified 2026-11-07, and one claim moved URL rather than changing.** The services table above
+still holds in full — ASBTDC moved it from `/sbir-sttr-assistance/` to
+**`asbtdc.org/sbir-services-and-resources-from-asbtdc/`**, and every row (consulting, prior-award
+searches, federal-registration help, drafting *and* review, budget preparation, GIS market research,
+university introductions, Lab2Launch, seminars, workshops, webinars, the Self-Assessment) is present
+there verbatim. **The old URL now 404s**, so cite the new one.
+
+**⚠️ A reauthorization risk worth knowing, from ASBTDC's own pages.** Their April 2026 and May 2026
+posts state that NSF was *"prepared to release a new solicitation and reopen the Project Pitch
+submission portal"* and that *"Project Pitch submissions are expected to reopen in the near future"* —
+i.e. the portal had been **closed pending SBIR reauthorization**. NSF's own page fetched 2026-11-07
+describes the pitch process and submission in the present tense, which suggests it is open again, but
+**this file's "Live status ✅ OPEN" row dates from 2026-10-02 and has not been re-confirmed against a
+submission-portal state.** Treat "the portal is accepting pitches today" as unverified.
+
 **🔑 The sequencing finding that matters most.** ASBTDC also runs an **SBIR/STTR Proposal Lab for
 NSF**, and its own page states the prerequisite plainly: *NSF requires an approved Project Pitch
 before a company may participate.* So the **Project Pitch is the true first step**, not the
 accelerator — and ASBTDC staff can help prepare the pitch. That reorders the action list below.
 
-**Reported by Claude but still NOT verified by me: the phone number (501) 916-3700.** ASBTDC's own
-pages show different contacts (e.g. Rebecca Todd, 501.831.2584, for the NSF Proposal Lab), so
-**treat 916-3700 as unconfirmed and use the contact form or the published address** until someone
-confirms it. This is the one Claude claim I could not close.
+**✅ The phone number (501) 916-3700 is now CONFIRMED — closed 2026-11-07.** This file carried it for
+five weeks as *"reported by Claude but still NOT verified by me"*. It is ASBTDC's own organisational
+telephone, published in the site's structured data on `asbtdc.org`:
+`"telephone":"+15019163700"` (alongside `"email":"leadcenter@asbtdc.org"`, `"foundingDate":"1980-06-01"`).
+The earlier caution was right to exist — a number in prose on one page is weak evidence — but it is
+settled now, and the number can be used. Rebecca Todd's 501.831.2584 remains the Proposal-Lab contact.
 
 **Why this is still the right first call:** it is free, it is the SBA's own Arkansas vehicle, it can
 answer the entity question below without spending anything, and it can help with the Project Pitch,
