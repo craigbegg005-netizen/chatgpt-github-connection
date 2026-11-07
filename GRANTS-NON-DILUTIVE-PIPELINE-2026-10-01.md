@@ -382,6 +382,14 @@ The Global Peace & Human Security Framework is **independent, noncommercial, non
 
 ## Next actions, in order
 
+⚠️ **Read this before working the list — added 2026-11-07.** The NSF lane (§1) is **likely not open to
+us**: the required Project Suitability Assessment is *"very likely not clearable on the product
+framing"*, and NSF's rule is that one "No" ends it. **Items 3 and 4 below are therefore conditional**
+on the verification-architecture framing clearing that gate, which is **not established** — they are
+not free steps. The lanes that *are* open are in item 5: **Verizon (deadline-bound — the window closes
+with the December 2026 round)** and **Emergent Ventures (open, but the writing must be Craig's own —
+the form rejects AI-written applications)**.
+
 **Reordered 2026-10-01 23:15 UTC after verifying ASBTDC's own pages** — the Project Pitch turns out
 to be the gating step, not the accelerator, and two accelerators are closed.
 
