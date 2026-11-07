@@ -30,7 +30,12 @@ Status vocabulary: `✅ VERIFIED` (checked against the program's own page) · `�
 
 ## 1. NSF America's Seed Fund — SBIR/STTR Phase I
 
-**Status:** ✅ **VERIFIED** (program terms, from nsf.gov) · ⚠️ **ELIGIBILITY UNKNOWN**
+**Status:** ✅ **VERIFIED** (program terms, from nsf.gov) · 🔴 **LIKELY NOT OPEN TO US — see the
+suitability assessment below.** This line read *"ELIGIBILITY UNKNOWN"* until 2026-11-07, which
+understated a finding this same section records 40 lines further down: the required Project
+Suitability Assessment is **very likely not clearable on the product framing** (two of its seven
+questions are a "No", and one "No" ends it). **Do not read this table alone and treat NSF as a
+live target.**
 
 | | |
 |---|---|
@@ -40,8 +45,8 @@ Status vocabulary: `✅ VERIFIED` (checked against the program's own page) · `�
 | Current solicitation | NSF 26-510 |
 | Gate | **A Project Pitch is mandatory.** No invitation, no proposal |
 | **Live status** | ✅ **OPEN** — verified against nsf.gov 2026-10-02 00:05 UTC |
-| **Deadlines (VERIFIED)** | **July 27 2026** (passed) · **November 4 2026** · **March 4 2027** · **July 7 2027** — all 5:00 p.m. submitter's local time |
-| **Next realistic target** | ⚠️ **March 4 2027** — see the timing note below |
+| **Deadlines (VERIFIED)** | **July 27 2026** (passed) · **November 4 2026** (passed — was 3 days away when this file was written; it is now 2026-11-07) · **March 4 2027** · **July 7 2027** — all 5:00 p.m. submitter's local time |
+| **Next realistic target** | ⚠️ **March 4 2027** — *if the suitability gate can be cleared at all*, which is the open question below. The timing note below assumes the lane is live; the suitability finding says it probably is not. |
 
 ### ⚠️ The timing note that changes the plan — pitch now, aim at March
 
@@ -90,11 +95,22 @@ start it well before any deadline.
   therefore the only one that can clear the gate — which is what this file's hard rule 3 already
   says, now with a reason. **The `[OWNER]` action that would test the read is a Program Director
   conversation** (free, and it does not consume one of the two pitches allowed per year).
-- ✅ **What the Market Opportunity section actually asks for**, quoted: *"Describe the customer
-  profile and pain point(s) that will be the near-term commercial focus related to this technical
-  project."* It asks for a **customer profile and a pain point, not market sizing** — worth stating
-  because a draft of the pitch prompt had asked for sourced market figures that NSF does not
-  request here.
+- ⚠️ **The Market Opportunity wording CHANGED — re-verified 2026-11-07.** This file used to quote
+  *"Describe the customer profile and pain point(s) that will be the near-term commercial focus…"*
+  and concluded it asks for a customer profile, **not market sizing**. NSF's current page says:
+  *"Explain the value of the technological innovation including the potential uses and those who will
+  benefit (who is the customer) and demonstrate a high-level understanding of the competitive
+  landscape and why this innovation has the potential to compete."* **The competitive landscape is
+  now explicitly in scope** — so the earlier "not market sizing" reading is superseded. The cap is
+  still 1,750 characters.
+- ⚠️ **The URL this file cites has MOVED, and the assessment page it cited is GONE.** Both were checked
+  2026-11-07: `seedfund.nsf.gov/project-pitch/` now **redirects** to
+  `seedfund.nsf.gov/apply/project-pitch-information/`, and `seedfund.nsf.gov/apply/the-basics/` — the
+  page the suitability assessment was read from — returns **404**. The assessment now lives on the
+  project-pitch page itself, and it lists **six** numbered questions, not the seven recorded on
+  2026-10-12. **The substance is unchanged and now corroborated by NSF's own current page:** its
+  questions 2 (Risky, Unproven R&D) and 4 (Technological Defensibility) are exactly the two the
+  assessment flagged as binding "No"s on the product framing.
 - ✅ **Eligibility terms, from NSF's own Get Started page.** These are the *program's* criteria;
   whether Begg AI meets them remains the separate, unverified question this file already flags:
   - a small business (**fewer than 500 employees**) **located in the United States**;

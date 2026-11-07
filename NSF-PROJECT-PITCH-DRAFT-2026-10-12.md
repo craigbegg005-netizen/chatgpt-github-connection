@@ -43,6 +43,20 @@ any one of these questions, we're sorry your project is not a good fit for NSF f
 Sources, both fetched 2026-10-12: `seedfund.nsf.gov/apply/get-started/` (the "(Required)" label
 and the step order) and `seedfund.nsf.gov/apply/the-basics/` (the seven questions and the rule).
 
+⚠️ **Both citations re-checked 2026-11-07 and both are now stale.**
+`seedfund.nsf.gov/project-pitch/` **redirects** to `seedfund.nsf.gov/apply/project-pitch-information/`,
+and `seedfund.nsf.gov/apply/the-basics/` — the page the seven questions were read from — returns
+**404**. The assessment now lives on the project-pitch page, and it lists **six** numbered questions,
+not seven: the PI-role question recorded below as #7 is no longer part of it (it remains a program
+eligibility term, not a suitability question).
+
+**The conclusion is unchanged, and is now corroborated by NSF's own current page.** Its question 2
+(*"Will the proposed technology require substantial high-risk R&D to achieve practical implementation?"*)
+and question 4 (*"Is the proposed technology difficult to replicate, even by experts…?"*) are exactly
+the two this assessment flags as binding "No"s on the product framing. The rule is restated verbatim
+there: *"If you answer 'No' to any one of these questions, we're sorry your project is not a good fit
+for NSF funding."*
+
 **The seven questions, and the honest read.** The reasoning is the useful part — a bare verdict
 would leave the next reader to redo the work, and a "No" is only actionable if you can see which
 constraint produced it.
