@@ -16,21 +16,24 @@ surfaces at the worst possible moment: **the first time you try the phone.** Evi
 `oddfellow/evidence/MODEL-RETIRED-2026-11-07.md`.
 
 **The model fix needs your call** (it is a spend/quality decision). What is known about the options:
-- 🔴 **`letta/auto-fast` is NOT a viable fix right now — corrected 2026-11-07 12:0x UTC.** I wrote
-  here that the `letta/*` quota bucket was "empty until 12:00Z". **It is still `empty` after that
-  window rolled** (`letta usage` → `Bucket: empty (daily: empty)`, window end now 16:00Z). So a
-  `letta/*` handle fails for an exhausted bucket, not for a bad choice — and switching to one would
-  look like a model problem. **Do not pick a `letta/*` model until the bucket is non-empty.**
+- 🔴 **`letta/auto-fast` is NOT a viable fix right now — and this is not a one-window problem.**
+  Corrected twice on 2026-11-07: I first wrote the bucket was "empty until 12:00Z", then that it was
+  "still empty after that window rolled". **Re-checked at 16:00Z and it is still `empty`** — three
+  consecutive windows (`letta usage` → `Bucket: empty (daily: empty)`). The **daily** window resets at
+  **2026-11-08T00:00Z**, which is the next plausible moment to re-check. So a `letta/*` handle fails
+  for an exhausted bucket, not for a bad choice — and switching to one would look like a model problem.
+  **Do not pick a `letta/*` model until the bucket is non-empty.**
+- ✅ **The zero-spend option is a BYOK / external-provider model.** `letta usage` separates the two
+  pools: *"Usage Credits (non-BYOK models)"* versus *"Usage Quota (`letta/*` models)"*. Credits cover
+  **non-BYOK** models, so a BYOK model draws neither the quota nor the credits. **This agent already
+  runs on one** (`deepseek/deepseek-v4.1-flash`, provider type `openrouter`), which makes it the only
+  option here that is both known to work today and costs nothing from Letta's side.
 - **`letta/echo`** is probably free and I will not use it: it satisfies a "reply present" check
   *without producing a real reply* — the vacuous-check shape this codebase has been burned by twice.
-- **An external-provider model** is what this agent itself now runs on
-  (`deepseek/deepseek-v4.1-flash`, via openrouter), so that path is known to work today.
-
-**Tell me which you want and I will apply it.** The handle is hardcoded in four places across three
-files (`rehearsal.sh`, `rehearsal_watchdog.sh`, `fault_injection_check.py`), so a change has to move all
-of them together or the paths disagree — which is why they now read a single `ODDFELLOW_MODEL`
-environment variable instead, defaulting to the current value. **Applying your choice is then one
-setting, not four edits.**
+**Tell me which you want and I will apply it — it is now one setting, not four edits.** The handle was
+hardcoded in four places across three files (`rehearsal.sh`, `rehearsal_watchdog.sh`,
+`fault_injection_check.py`); all three now read a single **`ODDFELLOW_MODEL`** variable defaulting to the
+current value, so nothing has changed behaviourally yet and applying your choice is one line.
 
 ⚠️ **On billing:** the account now shows **12,763 credits** (agent memory recorded 0 on 2026-11-01).
 Credits cover **non-BYOK** models; `letta/*` models draw on the separate quota bucket instead — so a
