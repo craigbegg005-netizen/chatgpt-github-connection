@@ -29,11 +29,39 @@ REPO = os.path.dirname(os.path.dirname(HERE))
 ODDFELLOW = os.path.join(REPO, "oddfellow")
 
 # Files that configure the model a running process actually uses.
+#
+# The first version of this list held three files. It was too narrow: the Cloudflare
+# Worker carries the same handle in `wrangler.toml` `[vars]`, and it is a deploy target
+# this agent can drive end to end -- so it was a fourth site, unguarded, holding a
+# retired handle. A guard whose coverage is narrower than the defect class reports
+# green while the defect is live.
 RUNTIME_SITES = (
     os.path.join(ODDFELLOW, "rehearsal.sh"),
     os.path.join(ODDFELLOW, "rehearsal_watchdog.sh"),
     os.path.join(ODDFELLOW, "fault_injection_check.py"),
 )
+
+# Sites that cannot read an environment variable, because the handle is a static
+# config value (TOML `[vars]`). They must instead agree with the default the scripts
+# fall back to, or the Worker and the rehearsal would run different models.
+STATIC_CONFIG_SITES = (os.path.join(ODDFELLOW, "cloudflare", "wrangler.toml"),)
+
+
+def _toml_model(path: str):
+    m = re.search(r'(?m)^\s*LETTA_MODEL\s*=\s*"([^"]+)"', _read(path))
+    return m.group(1) if m else None
+
+
+def _script_defaults():
+    """The fallback handle each runtime site uses when ODDFELLOW_MODEL is unset."""
+    defaults = set()
+    for path in RUNTIME_SITES:
+        text = _read(path)
+        for m in re.finditer(r'ODDFELLOW_MODEL:-([A-Za-z0-9._/-]+)', text):
+            defaults.add(m.group(1))
+        for m in re.finditer(r'get\("ODDFELLOW_MODEL",\s*"([^"]+)"\)', text):
+            defaults.add(m.group(1))
+    return defaults
 
 
 def _read(path: str) -> str:
@@ -84,4 +112,28 @@ def test_the_default_is_still_present_so_nothing_changes_silently():
         assert re.search(r"ODDFELLOW_MODEL\s*:?-", text) or "get(" in text, (
             f"{os.path.basename(path)} reads ODDFELLOW_MODEL with no default. An unset "
             "variable must fall back to the previous value, not break the run."
+        )
+
+
+def test_static_config_sites_agree_with_the_script_default():
+    """wrangler.toml cannot read an env var, so it must match the scripts' default.
+
+    This is the check that was missing: the Worker's `[vars]` carried the same retired
+    handle as the scripts, and nothing compared them. If Craig's decision changes the
+    scripts but not the Worker, the two would silently run different models.
+    """
+    defaults = _script_defaults()
+    if not defaults:
+        pytest.skip("no ODDFELLOW_MODEL default found in the runtime sites")
+
+    for path in STATIC_CONFIG_SITES:
+        if not os.path.isfile(path):
+            continue
+        value = _toml_model(path)
+        assert value, f"{os.path.basename(path)} has no LETTA_MODEL in [vars]"
+        assert value in defaults, (
+            f"{os.path.basename(path)} sets LETTA_MODEL={value!r} but the runtime scripts "
+            f"default to {sorted(defaults)}. A static config site cannot read ODDFELLOW_MODEL, "
+            "so it has to be changed in the same edit -- otherwise the Worker and the rehearsal "
+            "run different models."
         )

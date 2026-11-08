@@ -33,10 +33,14 @@ surfaces at the worst possible moment: **the first time you try the phone.** Evi
   breakdown. **Treat every option as possibly billable until a breakdown says otherwise.**
 - **`letta/echo`** is probably free and I will not use it: it satisfies a "reply present" check
   *without producing a real reply* — the vacuous-check shape this codebase has been burned by twice.
-**Tell me which you want and I will apply it — it is now one setting, not four edits.** The handle was
-hardcoded in four places across three files (`rehearsal.sh`, `rehearsal_watchdog.sh`,
-`fault_injection_check.py`); all three now read a single **`ODDFELLOW_MODEL`** variable defaulting to the
-current value, so nothing has changed behaviourally yet and applying your choice is one line.
+**Tell me which you want and I will apply it.** The handle lives in **five places across four files**:
+`rehearsal.sh`, `rehearsal_watchdog.sh` and `fault_injection_check.py` now read a single
+**`ODDFELLOW_MODEL`** variable defaulting to the current value, so those three move together as one
+setting. **`cloudflare/wrangler.toml` is the exception** — a TOML `[vars]` block cannot read an
+environment variable, so it has to be edited in the same change; a guard now fails if it disagrees with
+the scripts' default. **The Cloudflare Worker is a deploy target this agent can drive end to end**
+(`oddfellow/CLOUDFLARE-WORKER-FINDING-2026-10-02.md`), so it is not a theoretical site — it would run
+the retired handle too.
 
 ⚠️ **On billing:** the balance was **12,763 credits** on 2026-11-07 and **12,055** the next midnight —
 so credits are being drawn, and I cannot yet say by which model (`letta usage` gives one balance and no
