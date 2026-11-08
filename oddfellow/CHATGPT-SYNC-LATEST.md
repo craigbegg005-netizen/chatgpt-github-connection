@@ -94,7 +94,9 @@ or was never true:
   unblocks it.
 - **Spreadshop** — no MCP server and **no integration-catalog entry**. The login form sits in a
   cross-origin iframe behind **reCAPTCHA**, so it cannot be automated past; it needs a human
-  sign-in in the sandbox browser.
+  sign-in. ⚠️ **CORRECTED 2026-11-08:** that sign-in must be in **Craig's own phone browser**, not
+  the sandbox browser — the sandbox viewer is not phone-doable. What is needed from it is the shop
+  URL (`SHOPNAME.myspreadshop.com`), which he can read off his own screen and paste.
 - **Print resolution** — source PNGs ≈1122×1402 px ≈ **3.74×4.67 in at 300dpi**. **GATED** for
   wall prints.
 

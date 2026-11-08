@@ -129,11 +129,23 @@ def test_card_and_runbook_agree_that_the_sandbox_is_the_client():
 # status told him to "sign in in sandbox browser" for Spreadshop (fixed 2026-11-07).
 # Both times the mobile-native alternative already existed somewhere else.
 
-# Documents that tell the owner what to do.
-OWNER_FACING = (
-    os.path.join(REPO, "oddfellow", "OWNER-ACTIONS.md"),
-    os.path.join(REPO, "oddfellow", "COORDINATION-STATUS.md"),
-)
+# Every Markdown document in the repo, not just the two obvious ones.
+#
+# The first version of this guard covered only OWNER-ACTIONS.md and COORDINATION-STATUS.md, and
+# that was too narrow: when it was added, the same impossible ask was live in five MORE documents
+# (the DB runbook, both commerce lane docs, and the ChatGPT sync file). A guard whose coverage is
+# narrower than the defect class is worse than no guard, because it reports green.
+#
+# Dated historical records (handoffs, cycle archives, evidence) are still scanned -- a reader can
+# act on them -- but a line that *records* the defect is excluded via CORRECTION_MARKERS below.
+def _owner_facing_docs():
+    docs = []
+    for root, dirs, files in os.walk(REPO):
+        dirs[:] = [d for d in dirs if d not in (".git", ".venv", "node_modules", "__pycache__")]
+        for name in files:
+            if name.endswith(".md"):
+                docs.append(os.path.join(root, name))
+    return sorted(docs)
 
 # Markers that mean a line is *recording* the defect rather than instructing it.
 CORRECTION_MARKERS = (
@@ -158,9 +170,7 @@ def test_no_owner_action_asks_for_the_sandbox_browser():
     asking for something he cannot do. A desktop-only step is allowed to exist --
     it just must not be written as an owner action.
     """
-    for path in OWNER_FACING:
-        if not os.path.isfile(path):
-            continue
+    for path in _owner_facing_docs():
         for lineno, line in enumerate(_read(path).splitlines(), 1):
             lowered = line.lower()
             if not any(phrase in lowered for phrase in IMPOSSIBLE_ASKS):

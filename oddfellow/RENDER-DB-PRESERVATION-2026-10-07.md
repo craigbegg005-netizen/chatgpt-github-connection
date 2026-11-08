@@ -199,8 +199,13 @@ Owner taps: **four.** No PC, no terminal on the phone, no credential in chat.
    from an earlier message.
 2. **On the phone, in the Render Dashboard:** `begg-ai-core-db` → **Info** → copy the
    **External Connection** string. Do not paste it into chat.
-3. **In this chat:** [Open computer](#letta-computer) → in the sandbox terminal, write the
-   connection string to a file without echoing it:
+3. ⚠️ **CORRECTED 2026-11-08 — the file route below needs a desktop and is NOT phone-doable.**
+   **Use the agent secret instead** (the paragraph after step 4 already allows it): set
+   `RENDER_DB_URL` from your phone and tell me it is in place. The sandbox-terminal route is kept
+   only for the record — do not ask for it. Original text:
+
+   ~~**In this chat:** [Open computer](#letta-computer) → in the sandbox terminal, write the
+   connection string to a file without echoing it:~~
    ```bash
    umask 077; cat > /root/.oddfellow-db-url
    # paste, press Enter, then Ctrl-D

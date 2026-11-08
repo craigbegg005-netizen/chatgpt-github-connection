@@ -20,8 +20,9 @@ the URL stays unverified until there is a real source for it.
 
 **Two ways to unblock, both zero-cost:**
 - **A —** Tell me the URL and I will verify it live (HTTP 200, products visible, correct shop).
-- **B —** Sign into the sandbox browser once (`[Open computer]`); I can then read the sales-channel
-  overview directly, which is the authoritative source the directive names.
+- ~~**B —** Sign into the sandbox browser once (`[Open computer]`)~~ ❌ **NOT phone-doable — do not
+  ask for it (corrected 2026-11-08).** Craig works from a phone and cannot drive the sandbox viewer.
+  **Path A is the one to use.**
 
 Spreadshop's own docs give the URL shape — `SHOPNAME.myspreadshop.com` — and say the shop name
 is shown **in the overview of your sales channels**. That is the field I need to read.

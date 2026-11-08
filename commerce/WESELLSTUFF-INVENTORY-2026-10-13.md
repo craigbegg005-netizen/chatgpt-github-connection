@@ -79,8 +79,9 @@ create a product design.** `brand_remove_background` (~$0.01/image, destroys the
 `brand_extract_assets` (metered gpt-image calls) are both excluded by the zero-spend rule.
 
 **Unblock requires one owner action** — either upload the three PNGs in the Fourthwall product
-designer (desktop browser, ~5–10 min, zero cost), or sign into the sandbox browser once so the
-agent can drive the upload (files already local).
+designer (desktop browser, ~5–10 min, zero cost). ⚠️ **CORRECTED 2026-11-08:** the alternative
+~~"sign into the sandbox browser once so the agent can drive the upload"~~ is **not phone-doable** —
+Craig works from a phone and cannot drive the sandbox viewer. It was never a real option.
 
 ## Not claimed
 

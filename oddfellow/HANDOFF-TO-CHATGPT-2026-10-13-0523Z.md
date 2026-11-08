@@ -92,8 +92,12 @@ get-media-library-images       hits=0
 The paid alternatives are excluded by zero-spend (`brand_remove_background` ~$0.01/image and
 destroys the background; `brand_extract_assets` is metered).
 
-**Unblock = one owner action:** upload the three PNGs in the Fourthwall product designer, or
-sign into the sandbox browser once so the agent drives it.
+**Unblock = one owner action:** upload the three PNGs in the Fourthwall product designer.
+
+> ⚠️ **CORRECTED 2026-11-08 (record kept as written):** this line also offered *"sign into the sandbox
+> browser once so the agent drives it"*. **That was never available** — Craig works from a phone and
+> cannot drive the sandbox viewer. The correction is added rather than the sentence rewritten, because
+> this is a dated handoff and the record of what was believed matters.
 
 ## 5. Spreadshop — no access, and this is a real limit
 

@@ -90,7 +90,9 @@ Fourthwall.
 desktop browser required). Products → Create New Product → Design Something New → choose the
 catalog product → Upload image. ~5–10 minutes total. Zero cost.
 
-**B — Owner signs into the sandbox browser once; the agent drives the upload.** The artwork
+~~**B — Owner signs into the sandbox browser once; the agent drives the upload.**~~ ❌ **NOT
+phone-doable — corrected 2026-11-08.** Craig works from a phone and cannot drive the sandbox viewer;
+this route was never available. **Path A is the only route.** The artwork
 files already sit locally in this sandbox, so no download step is needed. After sign-in the
 agent can create all three products, set prices, and publish. One owner action, then hands-off.
 
