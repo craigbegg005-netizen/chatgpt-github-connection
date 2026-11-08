@@ -42,9 +42,18 @@ live target.**
 | Award | **Up to $305,000** — inclusive of all direct and indirect costs, small-business fee, TABA funding, and optional I-Corps |
 | Duration | 6–18 months |
 | Equity | **None.** Standard grant; the company retains full ownership of its IP |
-| Current solicitation | NSF 26-510 |
+| Current solicitation | **NSF 26-510** — *"SBIR/STTR Phase I, Phase II, Fast-Track Programs: Developing Deep
+Technologies that Advance U.S. Competitiveness and Security."* **This is the relevant one for a
+software/AI pitch.** There is also **NSF 26-511**, a *pilot* with **"A Pilot Emphasis on Scientific
+Instrumentation"** — recorded 2026-11-08 because this file did not mention it and a reader choosing a
+solicitation needs to know both exist. Instrumentation is not Oddfellow's field, so 26-510 is the
+target; the pilot is noted so it is not mistaken for the general program. |
 | Gate | **A Project Pitch is mandatory.** No invitation, no proposal |
-| **Live status** | ✅ **OPEN** — verified against nsf.gov 2026-10-02 00:05 UTC |
+| **Live status** | ✅ **OPEN** — re-verified against nsf.gov **2026-11-08**. NSF's own pages carry **no
+closure or reauthorization notice** and list the submission deadlines normally, so the April/May 2026
+*"reopen the Project Pitch portal soon"* state (recorded in §2b) appears resolved. **Caveat kept
+honest:** the submission portal itself was not exercised, so this is "no closure notice found", not
+"a pitch was accepted". Original verification 2026-10-02 00:05 UTC. |
 | **Deadlines (VERIFIED)** | **July 27 2026** (passed) · **November 4 2026** (passed — was 3 days away when this file was written; it is now 2026-11-07) · **March 4 2027** · **July 7 2027** — all 5:00 p.m. submitter's local time |
 | **Next realistic target** | ⚠️ **March 4 2027** — *if the suitability gate can be cleared at all*, which is the open question below. The timing note below assumes the lane is live; the suitability finding says it probably is not. |
 
@@ -204,13 +213,15 @@ searches, federal-registration help, drafting *and* review, budget preparation, 
 university introductions, Lab2Launch, seminars, workshops, webinars, the Self-Assessment) is present
 there verbatim. **The old URL now 404s**, so cite the new one.
 
-**⚠️ A reauthorization risk worth knowing, from ASBTDC's own pages.** Their April 2026 and May 2026
-posts state that NSF was *"prepared to release a new solicitation and reopen the Project Pitch
-submission portal"* and that *"Project Pitch submissions are expected to reopen in the near future"* —
-i.e. the portal had been **closed pending SBIR reauthorization**. NSF's own page fetched 2026-11-07
-describes the pitch process and submission in the present tense, which suggests it is open again, but
-**this file's "Live status ✅ OPEN" row dates from 2026-10-02 and has not been re-confirmed against a
-submission-portal state.** Treat "the portal is accepting pitches today" as unverified.
+**✅ The reauthorization risk is now RESOLVED as far as it can be from outside — 2026-11-08.** ASBTDC's
+April and May 2026 posts said NSF was *"prepared to release a new solicitation and reopen the Project
+Pitch submission portal"* — i.e. it had been **closed pending SBIR reauthorization**. Re-checked against
+NSF's own pages today: `seedfund.nsf.gov/apply/get-started/`, `/apply/full-proposal/` and the site root
+all carry **no closure or reauthorization notice**, and the full-proposal page lists the deadlines
+normally (July 27 2026, November 4 2026, March 4 2027 — all confirmed). **So the closure appears to be
+over.** The honest limit: the submission portal itself was not exercised, so this is *"no closure notice
+found on NSF's own site"*, not *"a pitch was accepted"*. The earlier "treat it as unverified" line is
+superseded by that re-check.
 
 **🔑 The sequencing finding that matters most.** ASBTDC also runs an **SBIR/STTR Proposal Lab for
 NSF**, and its own page states the prerequisite plainly: *NSF requires an approved Project Pitch
