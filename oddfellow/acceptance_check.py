@@ -155,6 +155,49 @@ def call(url, method="GET", body=None, token=None, timeout=TIMEOUT):
         return status, raw[:400], time.time() - started
 
 
+def _error_hint(body, _depth=0):
+    """A short, safe description of why a call failed, for the failure detail.
+
+    Why this exists
+    ---------------
+    The retired-model failure (2026-11-07) surfaced in this harness as:
+
+        [FAIL] message: real reply   HTTP 502 in 0.8s | None
+
+    which says nothing about the cause. The real message -- "letta/auto is no longer
+    available. Select a hosted model using credits or connect an external provider."
+    -- was in the response body the whole time and was never printed, so diagnosing it
+    meant calling the endpoint by hand with the right header. A failure that cannot
+    name its cause costs the next person the same hour.
+
+    Walks the body for the DEEPEST error/detail/message string, because the outer ones
+    are wrappers: the real shape is
+        {"detail": {"error": "letta_message_failed",
+                    "detail": {"error": "letta/auto is no longer available...", ...}}}
+    Returns "" when there is nothing to say -- never invents a cause.
+    """
+    if _depth > 6:
+        return ""
+    if isinstance(body, dict):
+        best = ""
+        for key in ("error", "detail", "message", "reason"):
+            if key in body:
+                found = _error_hint(body[key], _depth + 1)
+                if len(found) > len(best):
+                    best = found
+        return best
+    if isinstance(body, str):
+        return body.strip()[:240]
+    if isinstance(body, list):
+        best = ""
+        for item in body:
+            found = _error_hint(item, _depth + 1)
+            if len(found) > len(best):
+                best = found
+        return best
+    return ""
+
+
 def _strings(value):
     """Yield every string inside a parsed JSON value, at any depth.
 
@@ -254,8 +297,15 @@ def gate1(base, token, r):
     status, body, secs = call(base + "/api/letta/message", "POST",
                               {"input": probe}, token=token, timeout=180)
     reply = body.get("reply") if isinstance(body, dict) else None
-    r.add(1, "message: real reply", bool(reply and status == 200),
-          "HTTP %s in %.1fs | %r" % (status, secs, reply))
+    _ok = bool(reply and status == 200)
+    _detail = "HTTP %s in %.1fs | %r" % (status, secs, reply)
+    if not _ok:
+        # Name the cause when the body carries one. Without this the detail reads
+        # "| None", which is how a retired model looked like a generic 502.
+        _hint = _error_hint(body)
+        if _hint:
+            _detail += " | cause: %s" % _hint
+    r.add(1, "message: real reply", _ok, _detail)
     conv = body.get("conversation_id") if isinstance(body, dict) else None
 
     # Memory, checked properly. The previous version read history only AFTER

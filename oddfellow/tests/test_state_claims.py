@@ -38,7 +38,7 @@ other fails here.
 import re
 from pathlib import Path
 
-EXPECTED_TEST_COUNT = 788
+EXPECTED_TEST_COUNT = 796
 
 
 def _claimed_count() -> int:
