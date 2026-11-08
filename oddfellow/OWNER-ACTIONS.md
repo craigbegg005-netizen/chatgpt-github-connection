@@ -122,6 +122,23 @@ proofread; I must not draft.**
 **Unblocks: the only non-dilutive funding lane that is open and costs nothing.** Time: ~2–3 h of your
 time for the Verizon courses; the EV proposal is a writing task of yours.
 
+## 11. Spreadshop URL — one line from your phone  🟡 unblocks the second storefront
+
+**Added 2026-11-07: this blocker was in `COORDINATION-STATUS.md` but not on this board**, and its owner
+action there was *"sign-in in sandbox browser"* — which you cannot do from a phone. That row is fixed.
+
+**What I need: your Spreadshop shop URL.** Open your Spreadshop sales-channel overview **in your phone
+browser** and paste the address here. The shape is `SHOPNAME.myspreadshop.com` (Spreadshop's own docs),
+and the shop name is shown in that overview. I will then verify it live — HTTP 200, correct shop,
+products visible — and the lane unblocks. Time: ~1 min.
+
+## 12. Four archives never received  🟡 artwork, PWA, addenda
+
+**Added 2026-11-07: also in `COORDINATION-STATUS.md` but not on this board.** Four archives were
+promised and never arrived, which blocks artwork, the PWA, and the addenda. Either **upload them to the
+shared Drive folder** (from your phone — the Drive app works) or attach them here. If they no longer
+exist or are superseded, say so and I will close the item rather than leave it standing. Time: varies.
+
 ---
 
 ## Verification of this queue — 2026-10-15 04:0x UTC

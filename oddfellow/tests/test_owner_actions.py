@@ -116,3 +116,68 @@ def test_card_and_runbook_agree_that_the_sandbox_is_the_client():
             "the sandbox route tells Craig to allowlist the phone's /32. The sandbox "
             "is the client on that route, so that combination cannot work."
         )
+
+
+# --- Owner actions must be phone-doable -------------------------------------
+#
+# Craig works from a mobile phone. The sandbox computer viewer is a remote desktop
+# with no touch affordances, so an instruction to drive it is not a hard task -- it
+# is an impossible one, and it moves the agent's work onto the owner.
+#
+# This was a real defect, twice: the DB card told him to allowlist his phone's /32
+# for a route where the sandbox was the client (2026-10-15), and the coordination
+# status told him to "sign in in sandbox browser" for Spreadshop (fixed 2026-11-07).
+# Both times the mobile-native alternative already existed somewhere else.
+
+# Documents that tell the owner what to do.
+OWNER_FACING = (
+    os.path.join(REPO, "oddfellow", "OWNER-ACTIONS.md"),
+    os.path.join(REPO, "oddfellow", "COORDINATION-STATUS.md"),
+)
+
+# Markers that mean a line is *recording* the defect rather than instructing it.
+CORRECTION_MARKERS = (
+    "\u274c", "not phone-doable", "was wrong", "corrected", "do not ask",
+    "cannot do", "impossible", "mobile-native", "phone browser",
+)
+
+# Phrases that ask the owner to drive a remote desktop.
+IMPOSSIBLE_ASKS = (
+    "sign-in in sandbox browser",
+    "sign in in sandbox browser",
+    "sign into the sandbox browser",
+    "open the sandbox browser",
+    "use the sandbox browser",
+)
+
+
+def test_no_owner_action_asks_for_the_sandbox_browser():
+    """An owner action must be doable with taps on a phone.
+
+    The sandbox computer viewer is a remote desktop; asking Craig to drive it is
+    asking for something he cannot do. A desktop-only step is allowed to exist --
+    it just must not be written as an owner action.
+    """
+    for path in OWNER_FACING:
+        if not os.path.isfile(path):
+            continue
+        for lineno, line in enumerate(_read(path).splitlines(), 1):
+            lowered = line.lower()
+            if not any(phrase in lowered for phrase in IMPOSSIBLE_ASKS):
+                continue
+            # A line that marks the phrase as wrong is a correction, not an
+            # instruction -- quoting a defect in order to record it must not fail
+            # the guard, or the guard gets deleted the first time it is useful.
+            if any(marker in lowered for marker in CORRECTION_MARKERS):
+                continue
+            raise AssertionError(
+                f"{os.path.basename(path)}:{lineno} asks the owner to drive the sandbox "
+                f"browser: {line.strip()[:120]!r}. Craig works from a phone and cannot do "
+                "that. Find a mobile-native path (a connection card, a file-upload card, or "
+                "reading a value off his own screen) or state plainly that it is desktop-only."
+            )
+
+
+def _read(path: str) -> str:
+    with open(path, encoding="utf-8") as fh:
+        return fh.read()

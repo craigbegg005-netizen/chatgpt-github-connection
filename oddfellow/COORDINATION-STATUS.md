@@ -19,8 +19,25 @@
 | 4 | **Gate A: two Render env vars unset** | set them in Render | production readiness |
 | ~~5~~ | **RESOLVED 2026-11-01 06:44 UTC — DB preservation complete; the DB was EMPTY.** Owner set `ODDFELLOW_DB_URL` and allowlisted the sandbox egress (`170.9.15.3/32` — note: egress changed from the old `170.9.4.232` with a sandbox cycle; always re-verify at action time). Full runbook path passed against the real server: recon → dump → verify (1,379 B, `pg_restore --list` parses) → restore-verify (row counts match exactly). **Contents: 0 user tables, 7,686 kB (virgin Postgres size) — nothing was ever stored; the "Command Center may use it" signal was a false alarm.** Artifacts: `/root/oddfellow-db-backups/begg-ai-core-db-20261101T064404Z.dump` (+ `.sql.gz`) + delivered to owner downloads. Owner may now delete/downgrade the DB — deletion is verified zero-loss. **Also settled:** the silent-close was the allowlist the whole time, not the expired plan — diagnosis probe: TLS handshake completes, startup message gets a clean close with no FATAL. | none — closed | data preservation |
 | 6 | **GitHub Pages disabled** (API 404, URL 404) | one repo toggle | store + PWA hosting |
-| 7 | **Spreadshop: no access path** | sign-in in sandbox browser | second storefront |
+| 7 | **Spreadshop: no access path** | **tell me your shop URL** (from your phone — see the note below) | second storefront |
 | 8 | **Gumroad delivered file unverifiable** | 2 min in seller view | closes 11-vs-12-page question |
+
+### 🔴 Blocker 7's owner action was wrong — corrected 2026-11-07
+
+It read *"sign-in in sandbox browser"*, which **Craig cannot do**: he works from a mobile phone, and a
+remote desktop has no touch affordances. That is a known hard constraint, and this row asked him to do
+the one thing it rules out.
+
+**The mobile-native path already existed in the lane's own doc** and was not carried here.
+`commerce/SPREADSHOP-STATE-2026-10-13.md` lists two ways to unblock, and only the second is impossible:
+
+- **A — tell me the URL.** Spreadshop's own docs give the shape `SHOPNAME.myspreadshop.com`, and the
+  shop name is shown in the sales-channel overview. **Craig can read that off his phone and paste it.**
+  This is the path to use.
+- **B — sign into the sandbox browser.** ❌ **Not phone-doable. Do not ask for it.**
+
+**The general rule, which this row violated:** before writing an owner action, ask *"can this be done on
+a phone with taps and no mouse?"* If not, find another path or say plainly that it is desktop-only.
 
 ### 🔴 Blocker 1 is the one that misleads people — read this
 
