@@ -155,7 +155,7 @@ Every Oklahoma reference previously in this file — OCAST, OK Catalyst, the Okl
 State, the three-sector rule — is **void** and has been removed. A file that names the wrong state
 is worse than an empty one, because every downstream action inherits the error.
 
-### 2a. AEDC SBIR Matching Grant — ✅ VERIFIED (AEDC's own site + Code of Arkansas Rules + Act 2017 No. 166)
+### 2a. AEDC SBIR/STTR Matching Grant — ✅ VERIFIED (AEDC's own site + rule summary, re-checked 2026-11-09)
 
 | | |
 |---|---|
@@ -165,8 +165,36 @@ is worse than an empty one, because every downstream action inherits the error.
 | Payment | **Reimbursable** — paid when invoices and financial reports are submitted, never in advance |
 | Targeted sectors | Advanced materials & manufacturing · agriculture/food/environmental · biotech/bioengineering/life sciences · **information technology** · transportation logistics · bio-based products |
 | Residency | Arkansas business; **≥51% of grant funds must be spent in Arkansas** |
-| Cap | No more than **three** matching grants per business |
+| Cap | 🔴 **NO LONGER TRUE — corrected 2026-11-09.** This row read *"No more than **three** matching grants
+per business"*. **Act 440 of 2025 removed the lifetime cap of three awards per business.** Source: AEDC's
+own rule executive summary (`arkansasedc.com/docs/…/sbir-rule-executive-summary---copy.pdf`, fetched
+2026-11-09): *"The Act further removed the lifetime cap of three awards per business, which is critical
+for the growth of high-performing technology businesses, several of which have already received three
+awards."* |
 | Contact | 501-682-5996 · info@arkansasedc.com · 1 Commerce Way, Ste. 601, Little Rock, AR 72202 |
+
+⚠️ **Re-verified 2026-11-09 — three claims were stale, and one was flatly wrong.**
+
+This section was verified 2026-10-01 against *Act 166 of 2017*. **Act 440 of 2025 amended that act**, and
+the amendments are in AEDC's own rule summary (fetched 2026-11-09):
+
+1. 🔴 **The three-award lifetime cap is GONE.** See the Cap row above. Anyone planning around a
+   three-grant ceiling would be planning around a repealed rule.
+2. **STTR is now included, not just SBIR.** The program was SBIR-only under Act 166; Act 440 brought it
+   into alignment with the federal SBIR/STTR pair. **The program name and this heading are corrected
+   accordingly.**
+3. **New eligibility condition, not previously recorded:** eligible business applicants must be **in good
+   standing with the Arkansas Secretary of State's office.** For a sole proprietorship that is a real
+   question, and it belongs in the same ASBTDC call that answers the entity gate.
+
+**Also changed administratively:** recommendation power moved from the Science and Technology Board to
+the **AEDC** itself. A public hearing on the amended rules was held **2026-08-26** with comment open to
+**2026-09-11**, so the rule text may have moved again since — **treat the rule details as of that date.**
+
+**What still holds** (AEDC's own page, fetched 2026-11-09): up to **50%** of the federal award, Phase I
+cap **$50,000**, Phase II cap **$100,000**, **reimbursable**, and **post-award only** — the applicant must
+already hold a federal award. Contact confirmed: 501-682-5996 · info@arkansasedc.com · 1 Commerce Way,
+Ste. 601, Little Rock, AR 72202.
 
 **Why this matters:** unlike the Oklahoma program it replaces, **information technology is a named
 eligible sector** — so Oddfellow does not have to be reframed into aerospace or biotech to fit. The
