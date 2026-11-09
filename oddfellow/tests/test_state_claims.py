@@ -38,7 +38,7 @@ other fails here.
 import re
 from pathlib import Path
 
-EXPECTED_TEST_COUNT = 797
+EXPECTED_TEST_COUNT = 798
 
 
 def _claimed_count() -> int:
@@ -150,4 +150,36 @@ def test_latest_cycle_heading_carries_no_date() -> None:
         "date in the heading can be bumped by a sweep while the body stays put, "
         "which is how this heading came to claim 2026-10-12 over 2026-10-07 "
         "content. Put the date in the body instead."
+    )
+
+
+# --- The coordination status carries the same claim, and was outside this guard ---
+#
+# It is described as "the single source for cross-AI state", so a stale count there
+# misleads every other AI reading it -- and it had drifted to 780 while the suite grew
+# to 797, because this guard only ever looked at CURRENT_STATE.md.
+#
+# That is the third instance of one flaw in this project's guards: coverage narrower
+# than the defect class. A guard that reports green over a file it never opens is worse
+# than no guard, because it says the claim is checked when it is not.
+
+
+def _coordination_status_count():
+    """The count in the coordination status's `Test suite` row."""
+    path = Path(__file__).resolve().parents[2] / "oddfellow" / "COORDINATION-STATUS.md"
+    if not path.is_file():
+        return None
+    text = path.read_text(encoding="utf-8")
+    m = re.search(r"\|\s*Test suite\s*\|\s*\*\*(\d[\d,]*)\s+passed", text)
+    return int(m.group(1).replace(",", "")) if m else None
+
+
+def test_coordination_status_count_matches_the_guard_constant():
+    claimed = _coordination_status_count()
+    if claimed is None:
+        return  # the row is absent in this checkout; nothing to contradict
+    assert claimed == EXPECTED_TEST_COUNT, (
+        f"COORDINATION-STATUS.md says {claimed} tests passed but the suite is "
+        f"{EXPECTED_TEST_COUNT}. That file is the cross-AI source of truth, so a stale "
+        "count there misleads every other reader. Update both in the same commit."
     )
