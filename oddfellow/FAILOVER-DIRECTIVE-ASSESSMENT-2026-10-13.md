@@ -40,12 +40,18 @@
 
 ## What FOURTH–EIGHTH need
 
-> ⚠️ **RE-CHECKED 2026-11-10 — most of FOURTH is already done, and this paragraph would have sent someone to redo it.**
-> The priority field, the checkpoint log, the failover driver on `FAILED_RETRYABLE`, and the claim lease
-> **all exist now, with tests** (see the corrected rows above). **The only item still open is the two
-> remaining universal-handoff fields: asset/GitHub references and next-executable-action.**
-> This paragraph is kept because it records what was believed on 2026-10-13; the correction sits beside it
-> rather than replacing it, so the drift is visible.
+> ⚠️ **RE-CHECKED 2026-11-10 — this paragraph is now fully superseded; nothing it lists is outstanding.**
+> **FOURTH is done:** the priority field, the checkpoint log, the failover driver on `FAILED_RETRYABLE`,
+> the claim lease, and (added 2026-11-10) the last two universal-handoff fields, `asset_refs` and
+> `next_action`.
+> **FIFTH–SEVENTH are done and the gap was narrower than this paragraph implies:** failover, resume and
+> verification all run end-to-end in `connector/tests/test_failover.py`, including a chain that fails over
+> and then ends VERIFIED by a provider other than the submitter. The one thing that *was* missing — the
+> end-to-end test stopped at COMPLETE and never exercised verification — is now covered.
+> **EIGHTH (integrate into workflow) remains post-Gate-A, and is the only part of this paragraph still
+> accurate.**
+> The original text is kept below because it records what was believed on 2026-10-13; the correction sits
+> beside it rather than replacing it, so the drift is visible.
 
 FOURTH (implement checkpoint/handoff/routing/recovery gaps) is code+tests, Gate-A-independent: priority field, checkpoint log, failover driver on FAILED_RETRYABLE, claim lease. FIFTH–SEVENTH (test failover, resume, verification) run through the rehearsal path — code-verifiable now, live-verifiable only after Gate A. EIGHTH (integrate into workflow) is post-Gate-A.
 

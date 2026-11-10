@@ -170,3 +170,53 @@ def test_receiver_resumes_and_completes_end_to_end():
         done = submitted[0] if isinstance(submitted, tuple) else submitted
         assert done.status is Status.COMPLETE
         assert [e["step"] for e in done.checkpoints] == ["half done"]
+
+
+def test_the_whole_chain_ends_verified_by_someone_other_than_the_submitter():
+    """FIFTH-SEVENTH of the directive: fail, fail over, resume, submit, AND verify.
+
+    The end-to-end test above stops at COMPLETE, and that is where the chain actually
+    continues: COMPLETE means a result was *submitted*, not that it is true. Verification
+    is a separate act by someone other than the submitter, and it is the step the
+    directive names that no end-to-end test exercised -- the unit tests cover
+    `verify_result` in isolation, which cannot show that independence survives a failover.
+
+    That is the property worth having: after a job moves provider, the *new* provider
+    must not be able to wave through its own work, and the trail from the original
+    attempt must still be there.
+    """
+    with Store() as store:
+        reg = registry(capable("grok"), capable("claude"), capable("gemini"))
+        jid = failed_job(store, provider="grok")
+        store.record_checkpoint(jid, "half done", actor="grok")
+        store.fail_job(jid, "still failed", actor="grok", retryable=True)
+
+        _, chosen = store.failover_to_next(jid, actor="oddfellow", registry=reg)
+        assert chosen and chosen != "grok"
+
+        store.claim_job(jid, provider=chosen, transport=Transport.HANDOFF, actor=chosen)
+        submitted = store.submit_result(jid, result={"ok": True}, provider=chosen, actor=chosen)
+        done = submitted[0] if isinstance(submitted, tuple) else submitted
+
+        assert done.status is Status.COMPLETE
+        assert done.verified is False, (
+            "COMPLETE was treated as VERIFIED. They are separate on purpose -- a system "
+            "that conflates them will act on an unverified claim as company state."
+        )
+
+        # The provider that did the work must not verify it, even though it is the one
+        # holding the job now.
+        with pytest.raises(ValueError):
+            store.verify_result(jid, verified_by=chosen, evidence="docs/plan.md")
+
+        # A bare assertion is not evidence.
+        verifier = next(p for p in ("claude", "gemini") if p != chosen)
+        with pytest.raises(ValueError):
+            store.verify_result(jid, verified_by=verifier, evidence="looks fine")
+
+        verified = store.verify_result(jid, verified_by=verifier, evidence="docs/plan.md")
+        assert verified.verified is True
+        assert verified.verified_by == verifier
+
+        # And the progress from the *original* attempt survived the whole chain.
+        assert [e["step"] for e in verified.checkpoints] == ["half done"]
