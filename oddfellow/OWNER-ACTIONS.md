@@ -8,6 +8,18 @@ Render dashboard → service **oddfellow-letta-backend-v0206** → Environment �
 - `ODDFELLOW_OWNER_TOKEN` (any long random string; must match what the app stores)
 Save → service redeploys (~2 min). Time: ~5 min.
 
+⚠️ **This is not just two variables — the redeploy also ships 701 commits.** Added 2026-11-10, after
+identifying the live build by content hash: the service is serving **`b1bf3c4` (2026-10-01)**, so it is
+about **six weeks behind the branch**. A Render env change rebuilds from the branch, so saving these
+secrets replaces a 6-week-old build with the current one, including **171 added lines in the backend**
+(`oddfellow_letta_backend.py`) — a new **approval gate** (`require_approval_if_elevated`) and new
+**routing** (`build_router`), plus ~5,100 added lines across the connector.
+
+**What that means for you:** the acceptance test that follows will be testing a *new* build, not the one
+that has been live. If the phone behaves differently from what you last saw, that is expected rather
+than a regression — and if you would rather see the two things separated, say so and I will find a way
+to deploy the current branch *first*, verify it, and only then treat Gate A as the last step.
+
 🔴 **Setting these two is NOT sufficient any more — do not expect the phone to work straight after.**
 Added 2026-11-07. The agent's configured model **`letta/auto` has been retired** (it is not among the
 89 handles the API returns), so the chat path fails with HTTP 502 the moment it is reached. Production
