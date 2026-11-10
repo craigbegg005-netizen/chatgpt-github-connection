@@ -92,7 +92,14 @@ dashboard does. Correcting this expectation saves the most owner time of anythin
 | Rehearsal | **LIVE but ephemeral** — dies with the sandbox | cycled again after the 00:02 UTC restore; restored `up`+keepalive 2026-11-07 02:03 UTC, tunnel answers 200 (`live:true, ready:true`), watchdog pid 1864, suite 780 re-verified this cycle |
 | Render `-v0206` | **LIVE, NOT READY** | `/livez` 200, `/healthz` `ok:false` |
 | Render census — **all 20 services documented** (owner screenshots 07:38 UTC + probes) | **14 LIVE · DB Available-but-verified-empty · 5 NOT SERVING** (cleanup candidates: `begg-ai-core`, `global-peace-human-security-framework`, old `oddfellow-letta-backend`, `oddfellow-personal-staging-v017`, `oddfellow-letta-poc`). **PgHero instance is wired to the rescued DB (401, auth-gated) — deleting the DB orphans it; delete both.** `oddfellow-personal-v019` proves "Failed deploy" can still serve (200). 3 Command Center variants, none match repo | dashboard + probes 2026-11-01 07:45 UTC; recovery doc addendum `a2115a6` on `letta/recovery-render-census-2026-11-01` |
-| Deployed SHA | **NOT VERIFIABLE** — no build endpoint | **lower bound `7c33404` (2026-09-30 04:21:57 UTC)** — see the note below |
+| Deployed SHA | ✅ **`b1bf3c4` (2026-10-01 20:39:59 UTC) — IDENTIFIED 2026-11-10 by content hash** | The served
+front end is **byte-identical** to that revision: `/` → `ccc019f6…`, `/command.html` → `1155220b…`, both matching
+`git show b1bf3c4:oddfellow/frontend/<file>`. This row said *"NOT VERIFIABLE — no build endpoint"*, which
+assumed the SHA needs a build endpoint. **It does not: static assets are content-addressable**, and two
+independent files agreeing at the same revision is not a coincidence. **The live build is ~6 weeks old.**
+⚠️ Precisely: this identifies the *served assets*. If the front end and backend were ever built separately
+they could differ, so read it as "the deploy is at least `b1bf3c4`" — a far tighter bound than the old
+`7c33404`, and no longer a guess. |
 | Persistent workforce | **NOT PROVISIONED — limit lifted, creation untested** | account upgraded to **Personal Pro 2026-11-01** (`letta usage`: plan `pro`); docs: **up to 20 stateful agents** (was 3); no new agents created — owner has not authorized any |
 | Test suite | **805 passed on canonical** | re-verified 2026-11-09; the count had drifted to 780 here while the suite grew, because this file was outside the count guard's coverage — now inside it |
 | **Revenue / orders / payouts** | **NONE, on every platform** | — |
