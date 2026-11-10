@@ -39,6 +39,27 @@ the one thing it rules out.
 **The general rule, which this row violated:** before writing an owner action, ask *"can this be done on
 a phone with taps and no mouse?"* If not, find another path or say plainly that it is desktop-only.
 
+### 🔴 Blocker 2 is HALF-RESOLVED — Gmail works again, Drive does not (2026-11-10)
+
+The blocker read *"Google Drive: 92 tools registered, calls fail 403 insufficient scopes (was 500)"* and
+the owner action was *"disconnect + reconnect Drive"*. **Re-probed 2026-11-10 and the two Google
+integrations have diverged:**
+
+- ✅ **Gmail is WORKING.** `GMAIL_GET_PROFILE` returned `successful: true` with real account data
+  (message and thread totals), and a malformed call returned a **400 validation error** — not the
+  `500 Managed MCP server configuration is unavailable` this file recorded. **The Gmail half of the
+  owner action is no longer needed.**
+- ⛔ **Drive is still broken**, and with the same cause as before: `403 ACCESS_TOKEN_SCOPE_INSUFFICIENT`
+  on `drive/v3/about`. **Reconnecting Drive is still the right action.**
+
+**Also corrected: the server name.** This file wrote `Google_Drive`; the server is registered as
+**`Google Drive`** (with a space), and its tools are double-prefixed
+(`mcp__Google_Drive__mcp__Google_Drive__GOOGLEDRIVE_*`). A call using the underscore form returns
+`server_not_found`, which reads like the server is missing when it is only misnamed. The tool count is
+**108**, not the 92 recorded here.
+
+**What this unblocks:** the comms failover chain was listed as blocked on Gmail. That half is now open.
+
 ### 🔴 Blocker 1 is the one that misleads people — read this
 
 **The Fourthwall launch is NOT blocked on artwork.** It is blocked on a **missing tool**.
@@ -60,7 +81,9 @@ dashboard does. Correcting this expectation saves the most owner time of anythin
 | ChatGPT GitHub read | ✅ **VERIFIED** | its own independent read-back of `5accc01f` |
 | ChatGPT GitHub write | ⛔ **403 — token scope** | its own diagnosis |
 | Work / Grok / Gemini / Claude write | **UNVERIFIED** | never tested |
-| **My MCP surface** | `Fourthwall` (126) · `BeggAi` (10) · `Gmail` (61, **non-functional**) · `Google_Drive` (92, **non-functional**) · `Sentry` (0) · `Cloudflare` (0) | `letta mcp list` |
+| **My MCP surface** | `Fourthwall` (126) · `BeggAi` (10) · **`Gmail` (61) — ✅ WORKING, re-verified
+2026-11-10** · `Google Drive` (108 tools, **still 403 insufficient scopes**) · `Sentry` (0) · `Cloudflare` (0) |
+`letta mcp list`; `GMAIL_GET_PROFILE` returned `successful: true` |
 | Fourthwall shop | **`LIVE`** — `lastLiveAt: 2026-10-14T14:55:02Z` (was `COMING_SOON`) | `get-current-shop` |
 | Fourthwall offers | **`totalElements: 55`** — **PUBLIC offers exist and are purchasable** (2026-10-21 sweeps counted 44 PUBLIC · 4 HIDDEN · 2 ARCHIVED; 2026-11-05 23:42 UTC added 3 HIDDEN candle offers — Grace/Joy/Faith Soy Wax Candle; **2026-11-06 00:20–00:24 UTC added 2 more HIDDEN offers — Trailforge Gildan Classic Hoodie + Heavy Blend Zip Hoodie — and repriced the Grace candle $23→$17.99 (00:25 UTC)** — implying 44 PUBLIC · 9 HIDDEN · 2 ARCHIVED; page 0 now leads with those 2 HIDDEN hoodies, then the 3 HIDDEN candles; `get-offers` still ignores `pageNumber` — do not generalize from any single page) | `get-offers`, `get-offers-by-ids` |
 | Fourthwall collections | **`items[7]`** — Norse/Nordic (1, first recorded 2026-10-22) · Mugs & Home (17) · Celtic (5) · Christian & Biblical (12) · Samurai & Japanese Art (8) · Trail Forge Outfitters Comfort Colors (17) + AS Colour (22) — all `PUBLIC` | `get-collections` |

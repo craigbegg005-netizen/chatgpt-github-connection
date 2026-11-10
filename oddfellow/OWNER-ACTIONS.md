@@ -86,8 +86,14 @@ Optional **decision**: a $4.99 test purchase of your own listing end-to-end (onl
 ## 4. Approve + post the promotion drafts  🟡 revenue-first
 Drafts ready: `oddfellow/promotion/DRAFTS-2026-10-14.md` (X post + Reddit-style post per listing, all factual). Review → post from your accounts when ready. **Update 2026-10-19: the drafts point at Gumroad; the Fourthwall storefront is now live with 44 public products — consider posting storefront links too (or instead).** Time: ~10 min.
 
-## 5. Reconnect BOTH Google integrations  🟡 blocks file verification + comms failover
-Letta chat → connections → reconnect **Google Drive** AND **Gmail** together (they share one broken provisioning path; both 500 "Managed MCP server configuration is unavailable" since 02:00 UTC). **Unblocks: Drive-based asset transfer + the comms failover chain.** (The Samurai hash loop CLOSED 2026-10-15 — hero verified locally against the manifest.) Time: ~2 min of taps.
+## 5. Reconnect **Google Drive** only — Gmail is working again  🟡 blocks file verification
+Letta chat → connections → reconnect **Google Drive**. **Do NOT bother with Gmail** — corrected
+2026-11-10: `GMAIL_GET_PROFILE` returned `successful: true` with real account data, and a malformed call
+returned a 400 validation error rather than the `500` this card used to describe. **Gmail works; only
+Drive is broken** (`403 ACCESS_TOKEN_SCOPE_INSUFFICIENT` on `drive/v3/about`, re-probed the same day).
+This card previously asked for both, on the theory that they shared one provisioning path — they no
+longer do. **Unblocks: Drive-based asset transfer.** (The comms failover chain was the other half and is
+now open, since it was Gmail that blocked it.) Time: ~1 min of taps.
 
 ## 6. Refresh the BeggAi (Stripe) token  🟡
 Same connections page → BeggAi → reconnect (refresh token invalid). Time: ~1 min.
