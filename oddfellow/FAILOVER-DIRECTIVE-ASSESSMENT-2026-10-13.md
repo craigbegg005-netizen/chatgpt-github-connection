@@ -20,10 +20,10 @@
 | Capability routing on VERIFIED only | **IMPLEMENTED+TESTED** | `providers.py`: declared ≠ verified; routing reads `verified` only |
 | Independent verification (executor ≠ verifier; evidence must be checkable) | **IMPLEMENTED+TESTED** | `verify_result` refuses same-provider verification AND refuses evidence that names no URL/path/identifier |
 | Handoff carries no secrets; returned results untrusted | **IMPLEMENTED+TESTED** | `handoff.py` |
-| **Universal handoff field set** (priority, completed/remaining steps, asset + GitHub refs, next action) | **PARTIAL** | job has kind/title/payload/risk/depends_on/assigned_department/origin_objective. **Missing as first-class fields: `priority`, required-capabilities, checkpoint log (completed/remaining steps), asset/GitHub references, next-executable-action** |
-| **Automatic failover trigger** | **MISSING** | `failover_order()` computes the ordered provider list (excludes failed, zero-spend aware, prefers polling providers) but **nothing calls it on failure** — it is a helper awaiting a driver |
-| **Checkpoint / resume of partial progress** | **MISSING** | no completed-steps record; a transferred job restarts from its payload, not from a checkpoint |
-| **Claim lease / expiry** | **NOT VERIFIED** | no lease field found in this read; a crashed provider's claim persists until explicit release (disconnect handles it; a silent crash does not) |
+| **Universal handoff field set** (priority, completed/remaining steps, asset + GitHub refs, next action) | 🟡 **PARTIAL — re-checked 2026-11-10** | **Now present:** `priority` (`schema.py`, separate from risk: *"risk gates, priority orders"*) and the checkpoint log, which the handoff renders. **Still not found as first-class fields: asset/GitHub references and next-executable-action** — a grep of `schema.py` and `handoff.py` finds neither. **This is the one genuinely open item** in this table. |
+| **Automatic failover trigger** | ✅ **IMPLEMENTED+TESTED — corrected 2026-11-10** | This row said *MISSING*: *"`failover_order()` … nothing calls it on failure — it is a helper awaiting a driver."* **The driver now exists**: `store.py` reassigns a `FAILED_RETRYABLE` job toward the next capable provider, and `connector/tests/test_failover.py` covers it (`test_only_failed_retryable_jobs_fail_over`, `test_approval_survives_failover`). **Do not re-implement this.** |
+| **Checkpoint / resume of partial progress** | ✅ **IMPLEMENTED+TESTED — corrected 2026-11-10** | `schema.py` carries an append-only `checkpoints` trail (written only through `Store.record_checkpoint`, so every entry lands in the audit log), `handoff.py` renders it, and `connector/tests/test_checkpoint.py` covers the failover-resume scenario. |
+| **Claim lease / expiry** | ✅ **IMPLEMENTED+TESTED — corrected 2026-11-10** | `schema.py` carries `claimed_at` and `lease_seconds` (default 3600), and `store.expire_stale_claims()` releases a claim that has gone un-renewed; `connector/tests/test_lease.py` covers renewal and expiry. The schema comment states the intent this row assumed was absent: *"a dead worker is indistinguishable from a slow one except by silence, so the lease is the detection mechanism."* |
 
 ## THIRD — provider connection status (honest labels)
 
@@ -39,6 +39,13 @@
 | Sentry / Cloudflare MCP | native MCP | **CONNECTED, 0 tools exposed** |
 
 ## What FOURTH–EIGHTH need
+
+> ⚠️ **RE-CHECKED 2026-11-10 — most of FOURTH is already done, and this paragraph would have sent someone to redo it.**
+> The priority field, the checkpoint log, the failover driver on `FAILED_RETRYABLE`, and the claim lease
+> **all exist now, with tests** (see the corrected rows above). **The only item still open is the two
+> remaining universal-handoff fields: asset/GitHub references and next-executable-action.**
+> This paragraph is kept because it records what was believed on 2026-10-13; the correction sits beside it
+> rather than replacing it, so the drift is visible.
 
 FOURTH (implement checkpoint/handoff/routing/recovery gaps) is code+tests, Gate-A-independent: priority field, checkpoint log, failover driver on FAILED_RETRYABLE, claim lease. FIFTH–SEVENTH (test failover, resume, verification) run through the rehearsal path — code-verifiable now, live-verifiable only after Gate A. EIGHTH (integrate into workflow) is post-Gate-A.
 
