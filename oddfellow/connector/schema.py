@@ -221,6 +221,16 @@ class Job:
     #: directive assumed existed: abandonment becomes *visible* instead of
     #: leaving a job RUNNING forever.
     lease_seconds: int = 3600
+    # --- Phase 4: the two universal-handoff fields that were still missing. ---
+    #: References to the assets this job produces or consumes -- file paths, URLs,
+    #: commit SHAs, artifact names. Free-form strings, because the directive asks
+    #: for "asset + GitHub references" without fixing a shape, and inventing one
+    #: would reject real references that do not match it.
+    asset_refs: tuple = ()
+    #: The single next executable action, so a handoff recipient does not have to
+    #: infer it. Deliberately ONE string, not a list: the directive asks for *the*
+    #: next action, and a list invites a plan where a next step is wanted.
+    next_action: str | None = None
     created_at: str | None = None
     updated_at: str | None = None
 
@@ -247,6 +257,7 @@ class Job:
         data["payload"] = canonical_json(self.payload)
         data["result"] = canonical_json(self.result) if self.result is not None else None
         data["checkpoints"] = canonical_json(list(self.checkpoints))
+        data["asset_refs"] = canonical_json(list(self.asset_refs))
         data["verified"] = 1 if self.verified else 0
         return data
 
@@ -283,6 +294,10 @@ class Job:
             checkpoints=tuple(json.loads(row.get("checkpoints") or "[]")),
             claimed_at=row.get("claimed_at"),
             lease_seconds=row.get("lease_seconds") or 3600,
+            # .get with defaults, like the Phase-3 fields above: a row written
+            # before this migration has neither key and must read as the defaults.
+            asset_refs=tuple(json.loads(row.get("asset_refs") or "[]")),
+            next_action=row.get("next_action"),
             created_at=row["created_at"],
             updated_at=row["updated_at"],
         )

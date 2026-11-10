@@ -147,6 +147,10 @@ _ADDED_COLUMNS = (
     # working unchanged -- and a NULL claimed_at must never read as expired.
     ("jobs", "claimed_at", "TEXT"),
     ("jobs", "lease_seconds", "INTEGER NOT NULL DEFAULT 3600"),
+    # Phase 4: the universal-handoff fields. NULL/empty for every existing row,
+    # which is the correct reading -- those jobs genuinely have neither.
+    ("jobs", "asset_refs", "TEXT"),
+    ("jobs", "next_action", "TEXT"),
 )
 
 #: Detail keys the audit log refuses to store verbatim. A payload that reaches the
@@ -422,12 +426,14 @@ class Store:
             "assigned_department, assigned_worker, requested_by, "
             "origin_objective, origin_job_id, verification_worker, "
             "priority, checkpoints, claimed_at, lease_seconds, "
+            "asset_refs, next_action, "
             "created_at, updated_at) VALUES (:job_id,:kind,:title,:payload,:risk,:status,"
             ":provider,:transport,:depends_on,:attempts,:max_attempts,:result,:result_hash,"
             ":error,:verified,:verified_by,:verification_evidence,"
             ":assigned_department,:assigned_worker,:requested_by,"
             ":origin_objective,:origin_job_id,:verification_worker,"
             ":priority,:checkpoints,:claimed_at,:lease_seconds,"
+            ":asset_refs,:next_action,"
             ":created_at,:updated_at)",
             row,
         )
@@ -467,6 +473,7 @@ class Store:
             "verification_worker=:verification_worker, "
             "priority=:priority, checkpoints=:checkpoints, "
             "claimed_at=:claimed_at, lease_seconds=:lease_seconds, "
+            "asset_refs=:asset_refs, next_action=:next_action, "
             "updated_at=:updated_at WHERE job_id=:job_id",
             row,
         )

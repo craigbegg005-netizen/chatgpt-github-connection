@@ -78,7 +78,28 @@ def render_handoff(store: Store, provider: str, limit: int = 20) -> str:
             f"- **kind:** {j.kind.value}",
             f"- **title:** {j.title}",
             f"- **risk:** {j.risk.value}",
+            # Priority was in the job schema but never rendered, so a recipient
+            # could not tell an urgent job from a routine one. The directive's
+            # universal field set asks for it explicitly.
+            f"- **priority:** {j.priority.value}",
             "",
+        ]
+        if j.asset_refs:
+            # The directive asks for "asset + GitHub references" so a recipient can
+            # find the material without asking. Rendered as a list because a job
+            # commonly has more than one, and a comma-joined line is unparseable
+            # when a reference itself contains a comma.
+            lines += ["**Assets:**", ""]
+            lines += [f"- `{ref}`" for ref in j.asset_refs]
+            lines += [""]
+        if j.next_action:
+            lines += [
+                # Rendered before the input, and labelled as the next step, because
+                # it is the one thing a recipient should read first.
+                f"**Next action:** {j.next_action}",
+                "",
+            ]
+        lines += [
             "**Input:**",
             "",
             "```json",
