@@ -82,6 +82,26 @@ rate the balance lasts about a week. I cannot say what is drawing them — `lett
 with no per-model breakdown — **but the obvious candidate is this agent's own scheduled activity**: five
 schedules at roughly 78 turns a day is ~14 credits a turn at the observed rate.
 
+**Here is what is actually spending them** — enumerated 2026-11-11 rather than estimated:
+
+| Schedule | Cron | Turns/day | Fires at |
+|---|---|---|---|
+| Oddfellow lane sweep | `0 */4 * * *` | 6 | `:00` every 4h |
+| Oddfellow rehearsal health check | `0 */1 * * *` | 24 | `:00` **every hour** |
+| odd-hourly-continuation | `0 * * * *` | 24 | `:00` **every hour** |
+| BSI coordination status refresh | `0 */2 * * *` | 12 | `:00` every 2h |
+| **Total** | | **66** | |
+
+**Two things stand out.** First, **every schedule fires at `:00`**, so the hourly pair collides every
+hour and the four-way collision happens six times a day — the turns are not spread, they stack. Second,
+**the arithmetic matches the observed burn**: 66 turns × ~14 credits ≈ **920/day**, against ~1,000/day
+measured. That is not proof — I still cannot attribute credits per model — but it is the first
+explanation that fits the number.
+
+**The obvious lever, if you want one:** the two hourly schedules overlap in purpose (one checks the
+rehearsal, one runs a general continuation sweep). Merging them would remove **24 turns a day** — about a
+third of the burn — without losing either function. I have not done it: they are your standing order.
+
 **Two things follow, and both are yours to decide:** whether the schedule frequency should come down, and
 whether the credit balance needs topping up. **I am not changing the schedules on my own initiative** —
 they are your standing order — but I would rather flag the trend now than report a zero later.**
