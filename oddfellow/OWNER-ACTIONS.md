@@ -2,10 +2,20 @@
 
 Everything currently blocked on Craig, one card per action, phone-first. Each card: what, where to tap, time, what it unblocks. Nothing here spends money except the two items marked **decision** — plus one caution: since the 2026-11-01 Letta Pro upgrade, card 1's `LETTA_API_KEY` may enable credit-billing API calls (see card 1).
 
-## 1. Gate A — two Render secrets  🔴 blocks Oddfellow v0.20 acceptance
+## 1. Gate A — **THREE** Render variables, not two  🔴 blocks Oddfellow v0.20 acceptance
+
+🔴 **CORRECTED 2026-11-11 — this card said "two secrets", and that is now wrong.** I booted the current
+branch locally and it reported `checks_failed: ["LETTA_MODEL"]` with the other two set. **The branch you
+are about to deploy requires a third variable**, and without it the service stays fail-closed — so
+setting only the two below would produce a deploy that still does not work.
+
 Render dashboard → service **oddfellow-letta-backend-v0206** → Environment → add:
 - `LETTA_API_KEY` (from letta.com dashboard → API keys)
 - `ODDFELLOW_OWNER_TOKEN` (any long random string; must match what the app stores)
+- **`LETTA_MODEL`** — 🔴 **required, and it must be a `letta/*` handle.** The backend refuses anything
+  else: *"Zero-spend doctrine blocks paid models. Set `ODDFELLOW_ALLOW_PAID_MODEL=true` only with the
+  owner's explicit approval."* See the model note below — this is the variable with no good value
+  available today.
 Save → service redeploys (~2 min). Time: ~5 min.
 
 ⚠️ **This is not just two variables — the redeploy also ships 701 commits.** Added 2026-11-10, after
@@ -36,7 +46,12 @@ surfaces at the worst possible moment: **the first time you try the phone.** Evi
   **A daily reset did not refill it, so this is not a "wait for the window" problem.** So a `letta/*` handle fails
   for an exhausted bucket, not for a bad choice — and switching to one would look like a model problem.
   **Do not pick a `letta/*` model until the bucket is non-empty.**
-- ⚠️ **I WAS WRONG ABOUT THE "ZERO-SPEND" OPTION — corrected 2026-11-08 00:0x UTC.** I wrote here that
+- 🔴 **MY EARLIER RECOMMENDATION IS REFUSED BY THE BACKEND — corrected 2026-11-11.** I suggested an
+  external-provider model (the one this agent runs on). **The backend rejects it**: `LETTA_MODEL` must
+  start with `letta/`, or `ODDFELLOW_ALLOW_PAID_MODEL=true` must be set — and the code's own message says
+  to set that *"only with the owner's explicit approval."* **So that route needs your explicit approval
+  as a paid model, and I should not have offered it as the free option.**
+- ⚠️ **And I was wrong about the "zero-spend" framing — corrected 2026-11-08.** I wrote that
   a BYOK/external-provider model "draws neither the quota nor the credits", and recommended the one this
   agent runs on. **The credits balance then fell from 12,763 to 12,055 in about four hours**, so
   something non-BYOK *is* drawing credits — and this agent's own model is the obvious candidate. **So the

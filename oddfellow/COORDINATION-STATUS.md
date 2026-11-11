@@ -16,7 +16,12 @@
 | 1 | **Fourthwall media-library MCP tools not exposed** | upload artwork in the dashboard | the **entire** Phase-1 launch |
 | 2 | **Google Drive: 92 tools registered, calls fail 403 insufficient scopes** (was 500) | disconnect + reconnect Drive | artwork transfer |
 | 3 | **Four archives never received** | upload to Drive, or attach here | artwork, PWA, addenda |
-| 4 | **Gate A: two Render env vars unset** | set them in Render | production readiness |
+| 4 | 🔴 **Gate A: THREE Render env vars needed — corrected 2026-11-11.** The current branch requires
+`LETTA_API_KEY`, `ODDFELLOW_OWNER_TOKEN` **and `LETTA_MODEL`**; booted locally, it reports
+`checks_failed: ["LETTA_MODEL"]` with the other two set. `LETTA_MODEL` must be a `letta/*` handle —
+the backend refuses anything else without `ODDFELLOW_ALLOW_PAID_MODEL=true`, which needs the owner's
+explicit approval. **And the live build is 6 weeks old, so this deploy also ships 701 commits.**
+| set all three in Render | production readiness |
 | ~~5~~ | **RESOLVED 2026-11-01 06:44 UTC — DB preservation complete; the DB was EMPTY.** Owner set `ODDFELLOW_DB_URL` and allowlisted the sandbox egress (`170.9.15.3/32` — note: egress changed from the old `170.9.4.232` with a sandbox cycle; always re-verify at action time). Full runbook path passed against the real server: recon → dump → verify (1,379 B, `pg_restore --list` parses) → restore-verify (row counts match exactly). **Contents: 0 user tables, 7,686 kB (virgin Postgres size) — nothing was ever stored; the "Command Center may use it" signal was a false alarm.** Artifacts: `/root/oddfellow-db-backups/begg-ai-core-db-20261101T064404Z.dump` (+ `.sql.gz`) + delivered to owner downloads. Owner may now delete/downgrade the DB — deletion is verified zero-loss. **Also settled:** the silent-close was the allowlist the whole time, not the expired plan — diagnosis probe: TLS handshake completes, startup message gets a clean close with no FATAL. | none — closed | data preservation |
 | 6 | **GitHub Pages disabled** (API 404, URL 404) | one repo toggle | store + PWA hosting |
 | 7 | **Spreadshop: no access path** | **tell me your shop URL** (from your phone — see the note below) | second storefront |
