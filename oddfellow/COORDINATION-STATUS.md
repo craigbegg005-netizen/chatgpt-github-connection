@@ -9,6 +9,28 @@
 
 ---
 
+## 🔴 If this agent goes quiet, read this first — added 2026-11-11
+
+**The most likely cause is exhausted Letta credits, and it is foreseeable rather than hypothetical.** The
+balance is falling ~966/day and stood at **7,984** on 2026-11-11 16:00 UTC — roughly **8 days**. There is
+no free fallback: the `letta/*` quota bucket has been **empty** for days.
+
+**How to tell it apart from other failures:**
+
+| Symptom | Reading |
+|---|---|
+| No sweeps, no commits, no handoffs — but the repo and memory are intact and unchanged | **credits exhausted.** Nothing is broken; the agent cannot run. |
+| Commits stop *and* the last one is an error or a partial write | something else — investigate |
+| The Render service answers `/livez` 200 while sweeps have stopped | credits, not the service: they are independent |
+
+**What to do:** check `letta usage` — a zero or near-zero balance confirms it. Topping up restores the
+agent; the schedules will resume on their own, and the repo plus MemFS are the durable state, so nothing
+is lost by the gap. **No work needs re-doing to recover.**
+
+**What is NOT the cause, so nobody chases it:** the Render service (independent, and currently answering),
+the rehearsal (ephemeral by design and expected to be absent after a sandbox cycle), and the repo or
+memory (both git-tracked and pushed).
+
 ## 1. WHAT IS BLOCKED, AND ON WHOM — the only list that matters
 
 | # | Blocker | Owner action | Blocks |
