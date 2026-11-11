@@ -28,6 +28,22 @@ Nothing printing at all means the process is not running, not that it is broken.
 2026-11-10, so it is not stable across sandbox cycles either — which is the reason not to build tooling
 that depends on it.
 
+## Addendum — the backgrounded form also HANGS, and the mechanism is not fully explained
+
+Recorded after the fact, when the delayed result of one of those attempts arrived: the
+`nohup ... &` form did not merely fail to answer, it **hung until the harness killed it at its
+300-second timeout**. The loop finished (15 polls, no answer), the final `curl` returned empty,
+and the command then sat there until it was timed out.
+
+**A plausible mechanism, offered as a hypothesis and not as a finding:** a backgrounded process
+inherits the command's output pipe, so the harness waits for that pipe to close even after the
+script itself is done. That would explain the hang.
+
+**It does not explain the empty log or the unanswered `/livez`**, and I am not going to pretend
+it does. A process that is running serves; a process that fails to import prints a traceback.
+Neither happened. So the mechanism is **unexplained**, and the practical conclusion is unchanged
+and does not depend on it: **do not build tooling that needs a backgrounded server here.**
+
 ## Why this is recorded rather than just fixed
 
 **The script's failure mode was a confident false negative about the product.** It did not say "I could
