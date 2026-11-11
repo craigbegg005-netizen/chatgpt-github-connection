@@ -6,8 +6,26 @@ value here is not marked VERIFIED, treat it as reported and re-check before rely
 Status labels: ✅ VERIFIED · 🟢 LIVE · 🚀 DEPLOYED · 🔗 CONNECTED · 🧪 TESTED ·
 🛠 IMPLEMENTED · ⏳ PENDING · ⚠️ BLOCKED/UNVERIFIED · 💰 REVENUE.
 
-Maintained by Oddfellow (Letta agent). Last verification sweep: **2026-10-12 04:05 UTC**.
+Maintained by Oddfellow (Letta agent). Last verification sweep: **2026-11-11 04:05 UTC**.
 Every "verified" line below was checked by an actual request from this agent at that time.
+
+**Re-verified 2026-11-11 04:0x UTC, by actual request — every claim below was checked again and every
+one still holds, 30 days on.** The registry's freshness guard fired (a month is its limit), so this is a
+re-probe prompted by age rather than by a suspected error — and the result is that the registry was
+accurate the whole time.
+
+| Claim | Re-probed 2026-11-11 | Result |
+|---|---|---|
+| `oddfellow-personal-secure` `/` `303`, `/health` `200`, `/openapi.json` `200` | same three | ✅ match |
+| `oddfellow-letta-poc` `/` `404`, `/health` `404`, `/openapi.json` `200` | same three | ✅ match |
+| `oddfellow-letta-poc` OpenAPI **version `0.20.2`, 6 paths** | `0.20.2`, 6 paths | ✅ match |
+| `begg-ai-industries-v013` `200` | `200` | ✅ match |
+| `begg-ai-core-v010` `200` | `200` | ✅ match |
+| Five branch heads | `main` `8ddfe32` · `universal-connector-v0.21` `8f9c139` · `frontend-letta-backend` `445e05c` · `recovery-capture-2026-09-30` `f27ec28` · `independent-verification-2026-09-30` `46d731b` | ✅ all five match |
+
+**No `000` on any probe this time** — every service answered on the first request, so the cold-start rule
+below was not exercised. That is worth noting rather than assuming: the rule stands, it just was not
+needed here.
 
 **Re-verified 2026-10-12 04:05 UTC, by actual request — every claim checked was correct:**
 

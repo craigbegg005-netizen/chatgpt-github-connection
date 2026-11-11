@@ -69,10 +69,22 @@ the scripts' default. **The Cloudflare Worker is a deploy target this agent can 
 (`oddfellow/CLOUDFLARE-WORKER-FINDING-2026-10-02.md`), so it is not a theoretical site — it would run
 the retired handle too.
 
-⚠️ **On billing:** the balance was **12,763 credits** on 2026-11-07 and **12,055** the next midnight —
-so credits are being drawn, and I cannot yet say by which model (`letta usage` gives one balance and no
-breakdown). `letta/*` models draw on the separate quota bucket instead, which has been empty for four
-consecutive windows. **Neither pool is a safe assumption of "free".**
+⚠️ **On billing — and this is now a TREND, not a single reading.** Measured across four days:
+
+| Date | Credits | `letta/*` quota bucket |
+|---|---|---|
+| 2026-11-07 | 12,763 | empty |
+| 2026-11-08 | 12,055 | empty |
+| 2026-11-11 | **8,467** | **still empty** |
+
+**Credits are falling by roughly 1,000 a day, and the `letta/*` bucket has been empty for days.** At this
+rate the balance lasts about a week. I cannot say what is drawing them — `letta usage` reports one balance
+with no per-model breakdown — **but the obvious candidate is this agent's own scheduled activity**: five
+schedules at roughly 78 turns a day is ~14 credits a turn at the observed rate.
+
+**Two things follow, and both are yours to decide:** whether the schedule frequency should come down, and
+whether the credit balance needs topping up. **I am not changing the schedules on my own initiative** —
+they are your standing order — but I would rather flag the trend now than report a zero later.**
 
 ## 2. Render DB preservation — ✅ RESOLVED 2026-11-01 06:44 UTC: the database was EMPTY
 
