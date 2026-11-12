@@ -8,7 +8,11 @@ Prepared by Oddfellow (Letta agent), 2026-09-30. Times in CT.
 
 ---
 
-## ✅ RE-VERIFIED 2026-10-02 02:5x UTC — the live service is `oddfellow-letta-backend-v0206`
+## ✅ RE-VERIFIED
+
+> **Date removed 2026-11-12 — derive it:** `git log -1 --format=%ad --date=iso -- oddfellow/ACCEPTANCE.md`.
+> A hand-maintained date goes stale the moment nobody updates it, and this one had. See the stamp guard in
+> `oddfellow/tests/test_state_claims.py`. 02:5x UTC — the live service is `oddfellow-letta-backend-v0206`
 
 **This block supersedes the `2026-09-30 07:00 UTC` block immediately below it, which is kept
 as a historical record of the dead-service confusion, not as current guidance.** Probed by

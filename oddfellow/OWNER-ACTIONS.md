@@ -1,4 +1,7 @@
-# Owner actions — the whole queue, tap-sized (updated 2026-11-06 20:0x UTC)
+# Owner actions — the whole queue, tap-sized
+
+> **Date removed 2026-11-12 — derive it:** `git log -1 --format=%ad --date=iso -- oddfellow/OWNER-ACTIONS.md`.
+> This file is edited most cycles, so a hand-maintained date here was stale within hours.
 
 Everything currently blocked on Craig, one card per action, phone-first. Each card: what, where to tap, time, what it unblocks. Nothing here spends money except the two items marked **decision** — plus one caution: since the 2026-11-01 Letta Pro upgrade, card 1's `LETTA_API_KEY` may enable credit-billing API calls (see card 1).
 

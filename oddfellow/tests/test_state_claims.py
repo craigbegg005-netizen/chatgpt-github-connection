@@ -38,7 +38,7 @@ other fails here.
 import re
 from pathlib import Path
 
-EXPECTED_TEST_COUNT = 806
+EXPECTED_TEST_COUNT = 807
 
 
 def _claimed_count() -> int:
@@ -205,8 +205,20 @@ def test_coordination_status_count_matches_the_guard_constant():
 # record, not a claim about now. A file with no date in its name is a living document,
 # and a stamp in it will drift the moment nobody updates it.
 
+# Two forms, because the first version of this guard only caught one and the README
+# slipped through: its stale date was in a HEADING ("## Current state - re-verified
+# 2026-10-02"), not in a bold field. A guard that catches one form of the defect and
+# not the other reports green over the case that actually occurred.
 _STAMP_FIELD = re.compile(
     r"(?m)^\*\*(Date|Last verified|Last updated|Updated|As of):\*\*"
+)
+# Narrowed after the first widening: a heading like "## Branch map (verified 2026-10-01)"
+# LABELS A SNAPSHOT and is legitimate -- the date is a fact about the record. A heading
+# like "## Current state -- re-verified 2026-10-02" CLAIMS CURRENTNESS and will drift.
+# The wording is what separates them, so the guard keys on the freshness words.
+_HEADING_DATE = re.compile(
+    r"(?m)^#{1,4}\s.*\b(?:current|re-verified|last updated|updated)\b.*\d{4}-\d{2}-\d{2}",
+    re.IGNORECASE,
 )
 _DATED_FILENAME = re.compile(r"\d{4}-\d{2}-\d{2}")
 
@@ -226,9 +238,9 @@ def test_living_documents_do_not_carry_hand_maintained_date_stamps():
     offenders = []
     for path in _living_markdown_files():
         text = path.read_text(encoding="utf-8", errors="replace")
-        m = _STAMP_FIELD.search(text)
+        m = _STAMP_FIELD.search(text) or _HEADING_DATE.search(text)
         if m:
-            offenders.append(f"{path.name}: {m.group(0)}")
+            offenders.append(f"{path.name}: {m.group(0).strip()[:90]}")
 
     assert not offenders, (
         "these documents are meant to stay current but carry a hand-maintained date "
@@ -238,4 +250,35 @@ def test_living_documents_do_not_carry_hand_maintained_date_stamps():
         "`git log -1 --format=%ad --date=iso -- <file>`), or put the date in the "
         "filename and let the document be a dated snapshot. Do not leave a stamp that "
         "nothing updates."
+    )
+
+
+# --- The README carries the count too, and was outside this guard ---------------
+#
+# It called itself "the front door for every branch" and claimed 232 tests against a suite
+# of 806 -- six weeks of drift, in the first document a cold reader opens. The count guard
+# read CURRENT_STATE.md and the coordination status; the front door was never checked.
+#
+# That is the fourth time coverage has been narrower than the class in this repo's guards,
+# so it is worth naming: a guard that reports green over a file it never opens is worse
+# than no guard, because it says the claim is checked when it is not.
+
+
+def _readme_count():
+    path = Path(__file__).resolve().parents[2] / "README.md"
+    if not path.is_file():
+        return None
+    text = path.read_text(encoding="utf-8")
+    m = re.search(r"\|\s*Tests\s*\|\s*\*\*(\d[\d,]*)\s+passed", text)
+    return int(m.group(1).replace(",", "")) if m else None
+
+
+def test_readme_count_matches_the_guard_constant():
+    claimed = _readme_count()
+    if claimed is None:
+        return  # no such row in this checkout; nothing to contradict
+    assert claimed == EXPECTED_TEST_COUNT, (
+        f"README.md says {claimed} tests passed but the suite is {EXPECTED_TEST_COUNT}. "
+        "The README is the front door for every branch, so a stale count there misleads a "
+        "cold reader before they open anything else. Update both in the same commit."
     )

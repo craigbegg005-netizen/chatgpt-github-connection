@@ -13,31 +13,47 @@ and must never be described as such.
 
 ---
 
-## Current state — re-verified 2026-10-02 02:5x UTC
+## Current state
 
-> **Corrected 2026-10-02:** this heading read `2026-09-30 06:10 UTC` while the table below it
-> had already been updated to the 2026-10-01/02 values — a stale date over current content.
-> The date now matches the content, and every value below was re-probed or re-run this cycle.
+> **No date stamp here — corrected 2026-11-12.** This heading carried `re-verified 2026-10-02` while the
+> table below it was **six weeks stale**: it claimed *232 tests* against a suite of **806**, and described
+> the service as returning *no HTTP response* when `/livez` answers **200**. **A hand-maintained date is a
+> claim that goes stale the moment nobody updates it** — the same defect fixed in `CURRENT_STATE.md`, the
+> coordination status and the DB card. **Derive freshness instead:**
+> `git log -1 --format=%ad --date=iso -- README.md`
+>
+> **Every value below was re-probed or re-run on 2026-11-12.**
 
 | Thing | Value |
 |---|---|
 | Canonical deploy branch | `letta/combined-single-service-v0.20.4` — **re-derive, do not trust this line:** `git ls-remote --heads origin letta/combined-single-service-v0.20.4` |
 | Backend version the code reports | **`0.20.6`** |
-| Tests | **109 backend + 123 connector = 232 passed** · fault injection **39/39 passed** |
+| Tests | **807 passed** (both roots, from the repo root) — the canonical invocation collects `oddfellow/tests` and `oddfellow/connector/tests`; a run scoped to one root silently skips the count guard |
 | **Deploy target — THE LIVE ONE** | **`oddfellow-letta-backend-v0206`** — `https://oddfellow-letta-backend-v0206.onrender.com` |
-| Deploy status | ⚠️ **`WAITING_CREDENTIAL`** — serving, but `ready:false` on `LETTA_API_KEY` + `ODDFELLOW_OWNER_TOKEN` |
+| Deploy status | ⚠️ **`WAITING_CREDENTIAL`** — serving (`/livez` **200**, `/healthz` **503**), `ready:false`. **The live build is `b1bf3c4` (2026-10-01)** — identified by content hash, so it is ~6 weeks behind the branch. **The branch now needs THREE variables, not two** — see below. |
 | ⚠️ `oddfellow-letta-backend` (no `-v0206`) | 🔴 **DEAD. Do not act on it, do not watch it.** It is what `render.yaml` defines and it is *not* the live service. |
 
-### ⚠️ The one blocker
+### ⚠️ The one blocker — and it is THREE variables, not two
 
-`LETTA_API_KEY` and `ODDFELLOW_OWNER_TOKEN` must be entered by the owner **directly in the
+**Corrected 2026-11-12:** this section named two variables. **The current branch requires a third,
+`LETTA_MODEL`** — booted locally, it reports `checks_failed: ["LETTA_MODEL"]` with the other two set. And
+`LETTA_MODEL` must be a `letta/*` handle, because the backend refuses anything else without
+`ODDFELLOW_ALLOW_PAID_MODEL=true`, which needs the owner's explicit approval.
+
+`LETTA_API_KEY`, `ODDFELLOW_OWNER_TOKEN` and `LETTA_MODEL` must be entered by the owner **directly in the
 Render dashboard** (service → Environment). **Never ask the owner to paste them into chat.**
 
 Render's own evidence for the last deploy: build completed, application started, the startup
 configuration check reported **both secrets missing**, `/healthz` returned **503**, and Render
 therefore marked the deploy **`update_failed`**. That confirms the credential blocker, **not** a
-build failure. Independently confirmed from outside: `/livez`, `/healthz` and `/` all return no
-HTTP response at a 60s and a 120s timeout.
+build failure.
+
+> 🔴 **CORRECTED 2026-11-12 — the sentence that followed was false.** It read *"Independently confirmed
+> from outside: `/livez`, `/healthz` and `/` all return no HTTP response at a 60s and a 120s timeout."*
+> **`/livez` returns 200**, and has for weeks. The claim was true when written (the service was not
+> serving) and became false when it started — and nothing re-checked it, so the front door told every
+> cold reader that the service was unreachable. **A stale negative is worse than a stale positive**: it
+> sends people to investigate an outage that is not happening.
 
 **Deploy ownership: Claude deploys this service.** One AI deploys at a time. Do not redeploy or
 change env vars on it until the owner confirms the secrets are saved.

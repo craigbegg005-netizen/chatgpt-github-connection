@@ -44,7 +44,10 @@ work**, or one session acting on a stale snapshot of another's. Rules that follo
 (`oddfellow/tests/test_handoff_pointer.py`). That file is the safe cross-check when any other
 pointer looks stale.
 
-## 3. Current verified state — 2026-10-14
+## 3. Current verified state
+
+> **Date removed 2026-11-12 — derive it:** `git log -1 --format=%ad --date=iso -- oddfellow/CHATGPT-SYNC-LATEST.md`.
+> A heading that claims *currentness* and carries a hand-maintained date will drift; this one had.
 
 Confirmed by my own probes today, not carried from a handoff on trust:
 
