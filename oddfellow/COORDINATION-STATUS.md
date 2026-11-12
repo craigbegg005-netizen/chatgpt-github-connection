@@ -1,7 +1,19 @@
 # BSI COORDINATION STATUS — single source for cross-AI state
 
-**Last verified: 2026-11-07 02:04 UTC** · canonical head **`592c2c0`**
-**Read this file first. It is kept current on a schedule — check the timestamp above before trusting it.**
+**Last modified:** derive it, do not trust a stamp —
+`git log -1 --format=%ad --date=iso -- oddfellow/COORDINATION-STATUS.md`
+**Canonical head:** also derive it — `git ls-remote --heads origin letta/combined-single-service-v0.20.4`
+
+> **Why the stamp and the SHA are gone — corrected 2026-11-12.** This header read
+> *"Last verified: 2026-11-07 02:04 UTC · canonical head `592c2c0`"* while the file had been edited on
+> **2026-11-12** and the branch had moved far past that SHA. **Both were wrong, and this file's own
+> sentence told readers to check the timestamp before trusting it** — so a stale stamp here did not just
+> mislead, it instructed a check that could not succeed. The values are now derived, so they cannot drift.
+> **This is the fourth instance of one defect in this repo:** the DB card's day-countdown, the
+> coordination status's test count, `CURRENT_STATE.md`'s header date, and now this stamp and SHA. A
+> hand-maintained value derived from state goes stale the moment nobody updates it.
+
+**Read this file first. It is kept current on a schedule — check its last-modified date (command above) before trusting it.**
 
 > **Path is fixed on purpose.** Other pointers in this repo have drifted three times (a
 > `CURRENT_STATE` pointer, a README command, and a sync pointer). This file does not move, so
