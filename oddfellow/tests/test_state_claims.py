@@ -38,7 +38,7 @@ other fails here.
 import re
 from pathlib import Path
 
-EXPECTED_TEST_COUNT = 805
+EXPECTED_TEST_COUNT = 806
 
 
 def _claimed_count() -> int:
@@ -182,4 +182,60 @@ def test_coordination_status_count_matches_the_guard_constant():
         f"COORDINATION-STATUS.md says {claimed} tests passed but the suite is "
         f"{EXPECTED_TEST_COUNT}. That file is the cross-AI source of truth, so a stale "
         "count there misleads every other reader. Update both in the same commit."
+    )
+
+
+# --- The hand-maintained-value class -----------------------------------------
+#
+# Four separate documents in this repo carried a value derived from state that was
+# maintained by hand, and every one of them went stale:
+#
+#   1. the DB card's day-countdown ("13 days")            -> an absolute timestamp
+#   2. the coordination status's test count (780 vs 805)  -> guarded by the count guard
+#   3. CURRENT_STATE.md's header date (5 weeks stale)     -> derived from git
+#   4. the coordination status's stamp AND canonical SHA  -> derived from git
+#
+# Finding them one at a time cost four cycles. The rule that covers all four is:
+# **a value derived from state must be derived, or not written.** This guard covers the
+# one form that is mechanically detectable -- a bold date stamp in a document that is
+# meant to stay current.
+#
+# Dated SNAPSHOT documents are exempt, and the filename is what says so: a file called
+# `...-2026-10-13.md` is a record of that day, and a date inside it is a fact about the
+# record, not a claim about now. A file with no date in its name is a living document,
+# and a stamp in it will drift the moment nobody updates it.
+
+_STAMP_FIELD = re.compile(
+    r"(?m)^\*\*(Date|Last verified|Last updated|Updated|As of):\*\*"
+)
+_DATED_FILENAME = re.compile(r"\d{4}-\d{2}-\d{2}")
+
+
+def _living_markdown_files():
+    root = Path(__file__).resolve().parents[2]
+    for path in root.rglob("*.md"):
+        parts = set(path.parts)
+        if parts & {".git", ".venv", "node_modules", "__pycache__"}:
+            continue
+        if _DATED_FILENAME.search(path.name):
+            continue  # a dated snapshot; a date inside it is not a claim about now
+        yield path
+
+
+def test_living_documents_do_not_carry_hand_maintained_date_stamps():
+    offenders = []
+    for path in _living_markdown_files():
+        text = path.read_text(encoding="utf-8", errors="replace")
+        m = _STAMP_FIELD.search(text)
+        if m:
+            offenders.append(f"{path.name}: {m.group(0)}")
+
+    assert not offenders, (
+        "these documents are meant to stay current but carry a hand-maintained date "
+        "stamp, which goes stale the moment nobody updates it:\n  "
+        + "\n  ".join(offenders)
+        + "\n\nFix it one of two ways: derive the value (e.g. "
+        "`git log -1 --format=%ad --date=iso -- <file>`), or put the date in the "
+        "filename and let the document be a dated snapshot. Do not leave a stamp that "
+        "nothing updates."
     )

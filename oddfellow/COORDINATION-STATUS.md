@@ -149,7 +149,7 @@ treat any single rate as a schedule.** The `letta/*` quota bucket is **empty** a
 arithmetic fits this agent's own schedules: **66 turns/day** (4 schedules, all firing at `:00`).
 **Owner decision, not mine:** reduce schedule frequency and/or top up. Recorded here so each refresh
 extends the series instead of re-deriving it. | `letta usage` |
-| Test suite | **805 passed on canonical** | re-verified 2026-11-09; the count had drifted to 780 here while the suite grew, because this file was outside the count guard's coverage — now inside it |
+| Test suite | **806 passed on canonical** | re-verified 2026-11-09; the count had drifted to 780 here while the suite grew, because this file was outside the count guard's coverage — now inside it |
 | **Revenue / orders / payouts** | **NONE, on every platform** | — |
 
 ### 🟢 Plan change 2026-11-01 — Letta account upgraded to Personal Pro
