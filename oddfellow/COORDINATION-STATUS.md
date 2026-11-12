@@ -128,13 +128,15 @@ independent files agreeing at the same revision is not a coincidence. **The live
 they could differ, so read it as "the deploy is at least `b1bf3c4`" — a far tighter bound than the old
 `7c33404`, and no longer a guess. |
 | Persistent workforce | **NOT PROVISIONED — limit lifted, creation untested** | account upgraded to **Personal Pro 2026-11-01** (`letta usage`: plan `pro`); docs: **up to 20 stateful agents** (was 3); no new agents created — owner has not authorized any |
-| **Letta credits** | 🔴 **7,984 — falling ~966/day.** Series: **12,763** (11-07) → 12,055 (11-08) → 8,467
-(11-11 04:00) → **7,984** (11-11 16:00). At this rate the balance lasts **~8 days**. The `letta/*` quota
-bucket is **empty** and has been for days. **Cause not attributable** — `letta usage` gives one balance
-and no per-model breakdown — but the arithmetic fits this agent's own schedules: **66 turns/day**
-(4 schedules, all firing at `:00`) × ~14 credits ≈ 920/day. **Owner decision, not mine:** reduce
-schedule frequency and/or top up. Recorded here so each refresh extends the series instead of
-re-deriving it. | `letta usage` |
+| **Letta credits** | 🔴 **7,233 — and the RATE IS VARIABLE, which corrects my own estimate.** Series:
+**12,763** (11-07) → 12,055 (11-08) → 8,467 (11-11 04:00) → 7,984 (11-11 16:00) → **7,233** (11-12 00:00).
+**Two intervals, two very different rates:** 483 over 12h ≈ **966/day**, then 751 over 8h ≈ **2,253/day**.
+So the runway is **3–8 days**, not the flat "~8 days" I wrote earlier from a single interval — **do not
+treat any single rate as a schedule.** The `letta/*` quota bucket is **empty** and has been for days.
+**Cause not attributable** — `letta usage` gives one balance and no per-model breakdown — but the
+arithmetic fits this agent's own schedules: **66 turns/day** (4 schedules, all firing at `:00`).
+**Owner decision, not mine:** reduce schedule frequency and/or top up. Recorded here so each refresh
+extends the series instead of re-deriving it. | `letta usage` |
 | Test suite | **805 passed on canonical** | re-verified 2026-11-09; the count had drifted to 780 here while the suite grew, because this file was outside the count guard's coverage — now inside it |
 | **Revenue / orders / payouts** | **NONE, on every platform** | — |
 
