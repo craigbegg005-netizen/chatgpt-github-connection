@@ -70,7 +70,7 @@ branch name is historical; the served version is authoritative.
 | If you want… | Read |
 |---|---|
 | **The chronological cross-AI correlation** | [`oddfellow/CORRELATION-2026-09-30.md`](oddfellow/CORRELATION-2026-09-30.md) — what each AI did, when, and how the simultaneous workstreams relate |
-| The latest cross-AI handoff | **Newest is `oddfellow/HANDOFF-UNIVERSAL-2026-10-13-1800Z.md` — re-derive it, do not trust this line.** ⚠️ **Do NOT use `ls oddfellow/ \| grep HANDOFF \| sort \| tail -1`** (this row said that until 2026-10-13): plain `sort` is alphabetical, so it returns the **2026-10-01 `HANDOFF-VOICE-V1-…`** because `V` sorts after `U` — and stripping `HANDOFF-` does not fix it. **Sort the timestamp, not the name:** `ls -1 oddfellow/HANDOFF-*.md \| while read -r f; do echo "$(basename "$f" \| grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{4}Z') $f"; done \| sort \| tail -1`. (`test_handoff_pointer.py` already enforces that `CURRENT_STATE.md` names the newest handoff, so that file is the safe cross-check.) |
+| The latest cross-AI handoff | **Re-derive it, do not trust a name written here** — this row named `2026-10-13-1800Z` for four weeks after the newest had moved on. **Corrected 2026-11-12.** ⚠️ **Do NOT use `ls oddfellow/ \| grep HANDOFF \| sort \| tail -1`** (this row said that until 2026-10-13): plain `sort` is alphabetical, so it returns the **2026-10-01 `HANDOFF-VOICE-V1-…`** because `V` sorts after `U` — and stripping `HANDOFF-` does not fix it. **Sort the timestamp, not the name:** `ls -1 oddfellow/HANDOFF-*.md \| while read -r f; do echo "$(basename "$f" \| grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{4}Z') $f"; done \| sort \| tail -1`. (`test_handoff_pointer.py` already enforces that `CURRENT_STATE.md` names the newest handoff, so that file is the safe cross-check.) |
 | **Working alongside another AI** | [`oddfellow/CHATGPT-SYNC-LATEST.md`](oddfellow/CHATGPT-SYNC-LATEST.md) — the coordination lane: current state, one-writer-per-resource, and what each AI owns |
 | Every resource, service ID and URL | [`RESOURCES.md`](RESOURCES.md) |
 | The deploy steps | [`oddfellow/SINGLE-SERVICE.md`](oddfellow/SINGLE-SERVICE.md) |
@@ -82,7 +82,7 @@ branch name is historical; the served version is authoritative.
 
 | Branch | What it is |
 |---|---|
-| **`letta/combined-single-service-v0.20.4`** | **The deploy candidate.** Backend **plus** front end served from one service: page, API and PWA on one origin, so CORS does not apply at all. v0.20.6, **109 backend + 123 connector = 232 tests**. |
+| **`letta/combined-single-service-v0.20.4`** | **The deploy candidate.** Backend **plus** front end served from one service: page, API and PWA on one origin, so CORS does not apply at all. v0.20.6, **807 tests** (both roots). |
 | `letta/frontend-letta-backend` | The front end as a **separate** static service. Kept in sync with the combined branch. |
 | `letta/recovery-capture-2026-09-30` | A read-only capture of every live Begg/Oddfellow service, fingerprinted — the only surviving record of what is actually deployed. |
 | `letta/continuity-2026-09-30` | Earlier continuity notes and current-state documents. |

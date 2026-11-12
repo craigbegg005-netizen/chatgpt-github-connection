@@ -264,21 +264,37 @@ def test_living_documents_do_not_carry_hand_maintained_date_stamps():
 # than no guard, because it says the claim is checked when it is not.
 
 
-def _readme_count():
+def _readme_counts():
+    """Every test-count claim in a README TABLE ROW.
+
+    The first version matched only the `| Tests |` row, and the README carried a SECOND
+    stale count in the Branches table ("109 backend + 123 connector = 232 tests") that it
+    never saw. Same coverage mistake, in the same file, one row apart.
+
+    Scoped to table rows on purpose: prose may legitimately quote an OLD count when
+    recording a correction, and a guard that fails on honest prose gets deleted.
+    """
     path = Path(__file__).resolve().parents[2] / "README.md"
     if not path.is_file():
-        return None
-    text = path.read_text(encoding="utf-8")
-    m = re.search(r"\|\s*Tests\s*\|\s*\*\*(\d[\d,]*)\s+passed", text)
-    return int(m.group(1).replace(",", "")) if m else None
+        return []
+    found = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if not line.lstrip().startswith("|"):
+            continue
+        for m in re.finditer(r"(\d[\d,]*)\s+tests?\b", line, re.IGNORECASE):
+            found.append((int(m.group(1).replace(",", "")), line.strip()[:80]))
+    return found
 
 
-def test_readme_count_matches_the_guard_constant():
-    claimed = _readme_count()
-    if claimed is None:
-        return  # no such row in this checkout; nothing to contradict
-    assert claimed == EXPECTED_TEST_COUNT, (
-        f"README.md says {claimed} tests passed but the suite is {EXPECTED_TEST_COUNT}. "
-        "The README is the front door for every branch, so a stale count there misleads a "
-        "cold reader before they open anything else. Update both in the same commit."
+def test_every_readme_table_count_matches_the_guard_constant():
+    offenders = [
+        (n, where) for n, where in _readme_counts() if n != EXPECTED_TEST_COUNT
+    ]
+    assert not offenders, (
+        "README.md carries test counts that disagree with the suite "
+        f"({EXPECTED_TEST_COUNT}):\n  "
+        + "\n  ".join(f"{n} tests -- {where}" for n, where in offenders)
+        + "\n\nThe README is the front door for every branch, so a stale count there "
+        "misleads a cold reader before they open anything else. Update every occurrence "
+        "in the same commit."
     )
