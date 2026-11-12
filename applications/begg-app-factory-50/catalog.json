@@ -1,0 +1,326 @@
+[
+  {
+    "slug": "daily-three",
+    "name": "Daily Three",
+    "kind": "list",
+    "tagline": "Pick the three things that matter today."
+  },
+  {
+    "slug": "water-check",
+    "name": "Water Check",
+    "kind": "counter",
+    "tagline": "A simple daily hydration tally."
+  },
+  {
+    "slug": "quick-budget",
+    "name": "Quick Budget",
+    "kind": "calculator",
+    "tagline": "Fast income-minus-expense math."
+  },
+  {
+    "slug": "grocery-snap",
+    "name": "Grocery Snap",
+    "kind": "list",
+    "tagline": "A clean grocery checklist that stays on your device."
+  },
+  {
+    "slug": "pantry-ping",
+    "name": "Pantry Ping",
+    "kind": "list",
+    "tagline": "Keep a lightweight pantry inventory."
+  },
+  {
+    "slug": "chore-wheel",
+    "name": "Chore Wheel",
+    "kind": "randomizer",
+    "tagline": "Add chores and let the app pick one."
+  },
+  {
+    "slug": "focus-sprint",
+    "name": "Focus Sprint",
+    "kind": "timer",
+    "tagline": "A no-friction 25-minute focus timer."
+  },
+  {
+    "slug": "sleep-notes",
+    "name": "Sleep Notes",
+    "kind": "list",
+    "tagline": "Keep short private sleep notes locally."
+  },
+  {
+    "slug": "mood-dot",
+    "name": "Mood Dot",
+    "kind": "counter",
+    "tagline": "A tiny personal daily check-in counter."
+  },
+  {
+    "slug": "bill-board",
+    "name": "Bill Board",
+    "kind": "list",
+    "tagline": "Track bills as a simple monthly checklist."
+  },
+  {
+    "slug": "car-care",
+    "name": "Car Care",
+    "kind": "list",
+    "tagline": "Remember routine vehicle maintenance tasks."
+  },
+  {
+    "slug": "pet-care",
+    "name": "Pet Care",
+    "kind": "list",
+    "tagline": "A lightweight pet-care task list."
+  },
+  {
+    "slug": "home-fix",
+    "name": "Home Fix",
+    "kind": "list",
+    "tagline": "Capture repairs and home maintenance jobs."
+  },
+  {
+    "slug": "trip-pack",
+    "name": "Trip Pack",
+    "kind": "list",
+    "tagline": "Build a reusable packing checklist."
+  },
+  {
+    "slug": "gift-list",
+    "name": "Gift List",
+    "kind": "list",
+    "tagline": "Keep gift ideas organized on-device."
+  },
+  {
+    "slug": "meal-map",
+    "name": "Meal Map",
+    "kind": "list",
+    "tagline": "Sketch out simple meal ideas for the week."
+  },
+  {
+    "slug": "clean-15",
+    "name": "Clean 15",
+    "kind": "timer",
+    "tagline": "A 15-minute cleaning sprint timer."
+  },
+  {
+    "slug": "goal-streak",
+    "name": "Goal Streak",
+    "kind": "counter",
+    "tagline": "Count small wins toward one goal."
+  },
+  {
+    "slug": "study-sprint",
+    "name": "Study Sprint",
+    "kind": "timer",
+    "tagline": "A focused study-session timer."
+  },
+  {
+    "slug": "shift-notes",
+    "name": "Shift Notes",
+    "kind": "list",
+    "tagline": "Keep quick work-shift notes locally."
+  },
+  {
+    "slug": "decision-dice",
+    "name": "Decision Dice",
+    "kind": "randomizer",
+    "tagline": "Enter options and pick one at random."
+  },
+  {
+    "slug": "tap-rush",
+    "name": "Tap Rush",
+    "kind": "game_tap",
+    "tagline": "Score as many taps as you can in ten seconds."
+  },
+  {
+    "slug": "number-dash",
+    "name": "Number Dash",
+    "kind": "game_number",
+    "tagline": "Hit the target number before time runs out."
+  },
+  {
+    "slug": "memory-tiles",
+    "name": "Memory Tiles",
+    "kind": "game_memory",
+    "tagline": "Match simple symbol pairs."
+  },
+  {
+    "slug": "word-scramble",
+    "name": "Word Scramble",
+    "kind": "game_word",
+    "tagline": "Unscramble a rotating set of everyday words."
+  },
+  {
+    "slug": "tip-split",
+    "name": "Tip Split",
+    "kind": "tip",
+    "tagline": "Calculate a tip and split the total in seconds."
+  },
+  {
+    "slug": "percent-change",
+    "name": "Percent Change",
+    "kind": "percent",
+    "tagline": "See the percentage increase or decrease between two values."
+  },
+  {
+    "slug": "recipe-scale",
+    "name": "Recipe Scale",
+    "kind": "scale",
+    "tagline": "Scale one ingredient amount for a different serving count."
+  },
+  {
+    "slug": "fuel-cost",
+    "name": "Fuel Cost",
+    "kind": "fuel",
+    "tagline": "Estimate trip fuel use and cost from distance and mileage."
+  },
+  {
+    "slug": "savings-target",
+    "name": "Savings Target",
+    "kind": "savings",
+    "tagline": "Turn a savings goal into a simple weekly or monthly target."
+  },
+  {
+    "slug": "loan-snapshot",
+    "name": "Loan Snapshot",
+    "kind": "loan",
+    "tagline": "Estimate a fixed monthly payment from amount, rate, and term."
+  },
+  {
+    "slug": "days-between",
+    "name": "Days Between",
+    "kind": "date_diff",
+    "tagline": "Count the days between any two dates."
+  },
+  {
+    "slug": "date-countdown",
+    "name": "Date Countdown",
+    "kind": "countdown",
+    "tagline": "Keep a simple countdown to an important date."
+  },
+  {
+    "slug": "text-counter",
+    "name": "Text Counter",
+    "kind": "text_stats",
+    "tagline": "Count words, characters, lines, and reading time locally."
+  },
+  {
+    "slug": "case-switch",
+    "name": "Case Switch",
+    "kind": "text_case",
+    "tagline": "Convert text to upper, lower, title, or sentence case."
+  },
+  {
+    "slug": "habit-seven",
+    "name": "Habit Seven",
+    "kind": "habit",
+    "tagline": "Track one habit across a simple seven-day grid."
+  },
+  {
+    "slug": "expense-split",
+    "name": "Expense Split",
+    "kind": "split",
+    "tagline": "Split a shared bill evenly across a group."
+  },
+  {
+    "slug": "time-blocks",
+    "name": "Time Blocks",
+    "kind": "list",
+    "tagline": "Capture today\u2019s time blocks in one quick local list."
+  },
+  {
+    "slug": "passphrase-maker",
+    "name": "Passphrase Maker",
+    "kind": "passphrase",
+    "tagline": "Generate a local random passphrase without sending data anywhere."
+  },
+  {
+    "slug": "unit-quick",
+    "name": "Unit Quick",
+    "kind": "unit",
+    "tagline": "Convert common distance, weight, and temperature units."
+  },
+  {
+    "slug": "reaction-light",
+    "name": "Reaction Light",
+    "kind": "game_reaction",
+    "tagline": "Wait for green, then tap as fast as you can."
+  },
+  {
+    "slug": "rps-arena",
+    "name": "RPS Arena",
+    "kind": "game_rps",
+    "tagline": "Play quick rock-paper-scissors rounds against the device."
+  },
+  {
+    "slug": "tic-tac-toe",
+    "name": "Tic Tac Toe",
+    "kind": "game_ttt",
+    "tagline": "Classic two-player tic-tac-toe on one screen."
+  },
+  {
+    "slug": "math-blitz",
+    "name": "Math Blitz",
+    "kind": "game_math",
+    "tagline": "Solve rapid-fire arithmetic and build a score."
+  },
+  {
+    "slug": "color-clash",
+    "name": "Color Clash",
+    "kind": "game_color",
+    "tagline": "Decide whether the word matches its displayed color."
+  },
+  {
+    "slug": "whack-dot",
+    "name": "Whack Dot",
+    "kind": "game_whack",
+    "tagline": "Tap the moving target before time runs out."
+  },
+  {
+    "slug": "high-low",
+    "name": "High Low",
+    "kind": "game_highlow",
+    "tagline": "Guess whether the next card number will be higher or lower."
+  },
+  {
+    "slug": "sequence-pop",
+    "name": "Sequence Pop",
+    "kind": "game_sequence",
+    "tagline": "Repeat an expanding light sequence from memory."
+  },
+  {
+    "slug": "hangman-lite",
+    "name": "Hangman Lite",
+    "kind": "game_hangman",
+    "tagline": "Guess the everyday word before your misses run out."
+  },
+  {
+    "slug": "snake-pocket",
+    "name": "Snake Pocket",
+    "kind": "game_snake",
+    "tagline": "A compact keyboard-and-button snake game."
+  },
+  {
+    "slug": "future-letter",
+    "name": "Future Letter",
+    "kind": "time_capsule",
+    "tagline": "Seal a note to open on a chosen date."
+  },
+  {
+    "slug": "rhythm-lab",
+    "name": "Rhythm Lab",
+    "kind": "rhythm_lab",
+    "tagline": "Make an eight-step beat in your browser."
+  },
+  {
+    "slug": "tiny-museum",
+    "name": "Tiny Museum",
+    "kind": "tiny_museum",
+    "tagline": "Keep a personal collection of meaningful moments."
+  },
+  {
+    "slug": "story-splice",
+    "name": "Story Splice",
+    "kind": "story_splice",
+    "tagline": "Turn an idea into a creative writing challenge."
+  }
+]
