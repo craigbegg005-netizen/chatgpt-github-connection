@@ -1,6 +1,15 @@
 # CURRENT_STATE
 
-**Date:** 2026-10-05 12:00 UTC
+**Last modified:** read it, do not trust a stamp —
+`git log -1 --format=%ad --date=iso -- CURRENT_STATE.md`
+
+> **Why there is no date stamp here any more — corrected 2026-11-12.** This header carried
+> `Date: 2026-10-05 12:00 UTC` while the file was last modified **2026-11-10** — five weeks of drift, and
+> its own warning below said that a stale stamp means the file has drifted. **A hand-maintained date is a
+> claim that goes stale the moment nobody updates it**, which is the same defect as the day-count removed
+> from the DB card and the test count that drifted in the coordination status. The date is now *derived*
+> from git, so it cannot be wrong.
+
 **Author:** Oddfellow (Letta agent, `agent-a9a8eb2c-2fed-4554-9998-aa4783c7efc4`)
 **Rule:** every line below is either evidenced in this repository or marked unverified. Nothing here is carried over from a handoff on trust.
 
@@ -9,9 +18,9 @@
 > handoffs from 2026-10-01 — while the newest handoff on the branch was
 > `oddfellow/HANDOFF-UNIVERSAL-2026-10-03-1530Z.md`, which it did not mention at all.
 > A note in agent memory asserted this file "points to the newest dated handoff". It
-> did not. **If you are reading this and the newest handoff is newer than the date
-> above, this file has drifted again** — read the handoff directory directly rather
-> than trusting the pointer here.
+> did not. **If you are reading this and the newest handoff is newer than the file's
+> last-modified date (see the command at the top), this file has drifted again** — read
+> the handoff directory directly rather than trusting the pointer here.
 
 ## Status vocabulary
 
