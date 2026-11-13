@@ -84,3 +84,26 @@ pattern match ran against binary. Re-fetching with `--compressed` gave the real 
 from a tool is a fact about the tool until proven otherwise.** Here the tell was the body size — 25 KB of
 "nothing" is not nothing — and the fix was one flag. A 200 with content that greps empty should send you
 to look at the bytes, not to write down a finding.
+
+---
+
+## Third instance, 2026-11-13: a 404 from a GUESSED path is a fact about the guess
+
+Checking the live PWA, I probed `/icon-192.png`, `/icon-512.png` and `/favicon.ico` — all **404**. The
+reading that suggests itself is "the PWA icons are missing".
+
+They are not. The manifest declares them under **`/icons/`**, and all three return **200** with real PNG
+data. My paths were invented; the manifest's are authoritative.
+
+**That is the third time in three days that a tool result said something about the tool and I nearly
+wrote it down as a finding about the product:**
+
+| What I ran | What it looked like | What was true |
+|---|---|---|
+| a backgrounded server | "the branch does not start" | backgrounded processes do not survive here |
+| `curl` without `--compressed` | "the shop is live but empty" | the body was gzipped |
+| guessed icon paths | "the PWA icons are missing" | the manifest declares different paths |
+
+**The rule, now stated three ways: an empty or negative result from a tool is a fact about the tool until
+proven otherwise.** The acceptance harness already gets this right — its gate 2 probes the icons the
+manifest *declares* rather than a list someone typed. **When a check can read its own targets, it should.**

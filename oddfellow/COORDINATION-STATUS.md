@@ -134,6 +134,11 @@ that a stranger can reach it. | `curl --compressed` |
 | Fourthwall payouts | API says **ACTIVE** — PUBLIC offers now live; still zero sales | `get-payout-info` |
 | Gumroad | **3 live listings**, all HTTP 200 | public probe |
 | Rehearsal | **LIVE but ephemeral** — dies with the sandbox | cycled again after the 00:02 UTC restore; restored `up`+keepalive 2026-11-07 02:03 UTC, tunnel answers 200 (`live:true, ready:true`), watchdog pid 1864, suite 780 re-verified this cycle |
+| **Live PWA assets** | ✅ **intact, verified 2026-11-13** — `/manifest.json` **200** (`start_url: /`,
+`display: standalone`), `/sw.js` **200**, and **all three icons the manifest declares** → **200** with real
+PNG data (`/icons/icon-192.png` 19 KB · `/icons/icon-512.png` 66 KB · `/icons/icon-maskable-512.png`
+48 KB). **This is the phone path**, and it is checked by probing the manifest's own `src` values —
+not by guessing paths. | `curl` |
 | Render `-v0206` | **LIVE, NOT READY** | `/livez` 200, `/healthz` `ok:false` |
 | Render census — **all 20 services documented** (owner screenshots 07:38 UTC + probes) | **14 LIVE · DB Available-but-verified-empty · 5 NOT SERVING** (cleanup candidates: `begg-ai-core`, `global-peace-human-security-framework`, old `oddfellow-letta-backend`, `oddfellow-personal-staging-v017`, `oddfellow-letta-poc`). **PgHero instance is wired to the rescued DB (401, auth-gated) — deleting the DB orphans it; delete both.** `oddfellow-personal-v019` proves "Failed deploy" can still serve (200). 3 Command Center variants, none match repo | dashboard + probes 2026-11-01 07:45 UTC; recovery doc addendum `a2115a6` on `letta/recovery-render-census-2026-11-01` |
 | Deployed SHA | ✅ **`b1bf3c4` (2026-10-01 20:39:59 UTC) — IDENTIFIED 2026-11-10 by content hash** | The served
