@@ -126,6 +126,11 @@ dashboard does. Correcting this expectation saves the most owner time of anythin
 | Fourthwall shop | **`LIVE`** — `lastLiveAt: 2026-10-14T14:55:02Z` (was `COMING_SOON`) | `get-current-shop` |
 | Fourthwall offers | **`totalElements: 55`** — **PUBLIC offers exist and are purchasable** (2026-10-21 sweeps counted 44 PUBLIC · 4 HIDDEN · 2 ARCHIVED; 2026-11-05 23:42 UTC added 3 HIDDEN candle offers — Grace/Joy/Faith Soy Wax Candle; **2026-11-06 00:20–00:24 UTC added 2 more HIDDEN offers — Trailforge Gildan Classic Hoodie + Heavy Blend Zip Hoodie — and repriced the Grace candle $23→$17.99 (00:25 UTC)** — implying 44 PUBLIC · 9 HIDDEN · 2 ARCHIVED; page 0 now leads with those 2 HIDDEN hoodies, then the 3 HIDDEN candles; `get-offers` still ignores `pageNumber` — do not generalize from any single page) | `get-offers`, `get-offers-by-ids` |
 | Fourthwall collections | **`items[7]`** — Norse/Nordic (1, first recorded 2026-10-22) · Mugs & Home (17) · Celtic (5) · Christian & Biblical (12) · Samurai & Japanese Art (8) · Trail Forge Outfitters Comfort Colors (17) + AS Colour (22) — all `PUBLIC` | `get-collections` |
+| **Fourthwall public storefront** | ✅ **LIVE and serving, verified 2026-11-13 from a CUSTOMER's side** — not
+the API. `wesellstuff-ymn-shop.fourthwall.com` → **200**, title *"Wesellstuff"*, product links present;
+two product pages → **200** with real prices (`$13.95` / `$15.95` / `$16.95`). **This is the check the
+sweeps do not do:** they read `get-offers`/`get-collections`, which proves the catalog exists but not
+that a stranger can reach it. | `curl --compressed` |
 | Fourthwall payouts | API says **ACTIVE** — PUBLIC offers now live; still zero sales | `get-payout-info` |
 | Gumroad | **3 live listings**, all HTTP 200 | public probe |
 | Rehearsal | **LIVE but ephemeral** — dies with the sandbox | cycled again after the 00:02 UTC restore; restored `up`+keepalive 2026-11-07 02:03 UTC, tunnel answers 200 (`live:true, ready:true`), watchdog pid 1864, suite 780 re-verified this cycle |

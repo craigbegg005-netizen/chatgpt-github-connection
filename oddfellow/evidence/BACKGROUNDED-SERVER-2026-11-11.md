@@ -67,3 +67,20 @@ the cost of believing it would have been a false "do not deploy" on the eve of a
   cycle's finding and stands.
 - **The reliable way to check a boot in this sandbox is the foreground form**, with `timeout` to bound it.
   A start-and-probe script cannot be relied on here, so none is committed.
+
+---
+
+## Related, 2026-11-13: a fetch that does not decompress looks like an empty page
+
+Checking the Fourthwall storefront from a customer's side, the first fetch returned **200 with 25 KB of
+body** — and grepping it for a title or product links found **nothing**. The obvious reading was "the shop
+is live but empty".
+
+It was not. The body was **gzip-compressed** and `curl` had not been asked to decompress it, so every
+pattern match ran against binary. Re-fetching with `--compressed` gave the real page: title
+`Wesellstuff`, product links, and product pages with prices.
+
+**The rule is the same one as the backgrounded server, and it is worth stating twice: an empty result
+from a tool is a fact about the tool until proven otherwise.** Here the tell was the body size — 25 KB of
+"nothing" is not nothing — and the fix was one flag. A 200 with content that greps empty should send you
+to look at the bytes, not to write down a finding.
