@@ -31,9 +31,15 @@ actual request this cycle:
 | Live backend (older) | `oddfellow-letta-poc` — 🟢 LIVE, v0.20.2 (`/livez` → 404, route absent), ⚠️ **unconfigured** |
 | Live front end **with** PWA icons and backend wiring | `oddfellow-letta-ui-v020-pwa` — 🟢 LIVE (reported; not re-probed this cycle) |
 
-**The single owner action, corrected:** Render → **`oddfellow-letta-backend-v0206`** →
-Environment → set `LETTA_API_KEY` and `ODDFELLOW_OWNER_TOKEN` → Save. Do **not** enter them on
-`oddfellow-letta-backend`; that service is dead and is not the deploy target.
+**The single owner action, corrected 2026-11-13:** Render → **`oddfellow-letta-backend-v0206`** →
+Environment → set **`LETTA_API_KEY`**, **`ODDFELLOW_OWNER_TOKEN`** and **`LETTA_MODEL`** → Save.
+Do **not** enter them on `oddfellow-letta-backend`; that service is dead and is not the deploy target.
+
+> 🔴 **This line named TWO variables until 2026-11-13.** The current branch requires **three** — booted
+> locally it reports `checks_failed: ["LETTA_MODEL"]` with the other two set — so an acceptance run
+> following this checklist would have set two and still found the service fail-closed. `LETTA_MODEL`
+> must be a `letta/*` handle; the backend refuses anything else without `ODDFELLOW_ALLOW_PAID_MODEL=true`,
+> which needs the owner's explicit approval.
 
 **Run the harness rather than reading tables:** `python oddfellow/acceptance_check.py
 <url> --owner-token "$ODDFELLOW_OWNER_TOKEN"`. It automates GATE 2, and it **backs off and

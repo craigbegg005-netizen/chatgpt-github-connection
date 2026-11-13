@@ -206,8 +206,11 @@ everyone watching the wrong hostname. Corrected 2026-10-01 19:16 UTC.
    cadence, **re-derive the identifier rather than trusting the one in the watch.**
 
 **Blocker: `WAITING_CREDENTIAL` — on `oddfellow-letta-backend-v0206`, the live service.**
-`LETTA_API_KEY` and `ODDFELLOW_OWNER_TOKEN` must be entered by the owner directly in the Render
-dashboard. The service **builds, starts and serves**; it is fail-closed on exactly these two.
+`LETTA_API_KEY`, `ODDFELLOW_OWNER_TOKEN` and **`LETTA_MODEL`** must be entered by the owner directly
+in the Render dashboard. The service **builds, starts and serves**. **Three variables, not two —
+corrected 2026-11-13:** the *deployed* build is fail-closed on the first two, but the branch that would
+replace it also requires `LETTA_MODEL`, and booted locally it reports `checks_failed: ["LETTA_MODEL"]`
+with the other two set.
 Render's own evidence for the earlier failed deploy: build completed, app started, startup
 config check reported both secrets missing, `/healthz` → **503**, deploy marked
 **`update_failed`**. That confirms the credential blocker, **not** a build failure.

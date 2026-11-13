@@ -38,7 +38,7 @@ other fails here.
 import re
 from pathlib import Path
 
-EXPECTED_TEST_COUNT = 807
+EXPECTED_TEST_COUNT = 808
 
 
 def _claimed_count() -> int:
@@ -330,4 +330,46 @@ def test_every_readme_table_count_matches_the_guard_constant():
         + "\n\nThe README is the front door for every branch, so a stale count there "
         "misleads a cold reader before they open anything else. Update every occurrence "
         "in the same commit."
+    )
+
+
+# --- The Gate A requirement must not be stated as two variables ----------------
+#
+# FIVE documents described the Gate A owner action as "two secrets" or "the two variables":
+# the owner card, the coordination status, the README, the deploy doc and the acceptance
+# checklist. The branch requires THREE -- LETTA_MODEL is the third -- so every one of them
+# would have sent the owner to set two variables and still find the service fail-closed.
+#
+# Found one document per cycle for five cycles, which is the same lesson as the stamp guard:
+# fix the pattern, not the instance. This flags a line that names both of the older two
+# variables, names no LETTA_MODEL, and reads as an INSTRUCTION.
+#
+# Two deliberate exclusions, because both occur legitimately:
+#   * a line carrying a date is a historical record ("on 2026-09-30 the missing pair was ...")
+#   * a line quoting live output is describing the DEPLOYED build, which genuinely needs two
+_REQUIREMENT_VERB = re.compile(r"\b(?:set|add|enter|must|need|require)\b", re.IGNORECASE)
+_HAS_DATE = re.compile(r"\d{4}-\d{2}-\d{2}")
+
+
+def test_no_living_doc_states_gate_a_as_two_variables():
+    offenders = []
+    for path in _living_markdown_files():
+        text = path.read_text(encoding="utf-8", errors="replace")
+        for line in text.splitlines():
+            if "LETTA_API_KEY" not in line or "ODDFELLOW_OWNER_TOKEN" not in line:
+                continue
+            if "LETTA_MODEL" in line:
+                continue
+            if _HAS_DATE.search(line):
+                continue  # a dated record, not an instruction
+            if "checks_failed" in line or "livez" in line.lower():
+                continue  # quoting the deployed build, which does need only two
+            if not _REQUIREMENT_VERB.search(line):
+                continue
+            offenders.append(f"{path.name}: {line.strip()[:100]}")
+
+    assert not offenders, (
+        "these lines tell a reader to set only LETTA_API_KEY and ODDFELLOW_OWNER_TOKEN, but "
+        "the branch requires LETTA_MODEL as well:\n  " + "\n  ".join(offenders)
+        + "\n\nAdd LETTA_MODEL, or mark the line as a dated historical record."
     )

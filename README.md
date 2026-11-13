@@ -28,7 +28,7 @@ and must never be described as such.
 |---|---|
 | Canonical deploy branch | `letta/combined-single-service-v0.20.4` — **re-derive, do not trust this line:** `git ls-remote --heads origin letta/combined-single-service-v0.20.4` |
 | Backend version the code reports | **`0.20.6`** |
-| Tests | **807 passed** (both roots, from the repo root) — the canonical invocation collects `oddfellow/tests` and `oddfellow/connector/tests`; a run scoped to one root silently skips the count guard |
+| Tests | **808 passed** (both roots, from the repo root) — the canonical invocation collects `oddfellow/tests` and `oddfellow/connector/tests`; a run scoped to one root silently skips the count guard |
 | **Deploy target — THE LIVE ONE** | **`oddfellow-letta-backend-v0206`** — `https://oddfellow-letta-backend-v0206.onrender.com` |
 | Deploy status | ⚠️ **`WAITING_CREDENTIAL`** — serving (`/livez` **200**, `/healthz` **503**), `ready:false`. **The live build is `b1bf3c4` (2026-10-01)** — identified by content hash, so it is ~6 weeks behind the branch. **The branch now needs THREE variables, not two** — see below. |
 | ⚠️ `oddfellow-letta-backend` (no `-v0206`) | 🔴 **DEAD. Do not act on it, do not watch it.** It is what `render.yaml` defines and it is *not* the live service. |
@@ -82,7 +82,7 @@ branch name is historical; the served version is authoritative.
 
 | Branch | What it is |
 |---|---|
-| **`letta/combined-single-service-v0.20.4`** | **The deploy candidate.** Backend **plus** front end served from one service: page, API and PWA on one origin, so CORS does not apply at all. v0.20.6, **807 tests** (both roots). |
+| **`letta/combined-single-service-v0.20.4`** | **The deploy candidate.** Backend **plus** front end served from one service: page, API and PWA on one origin, so CORS does not apply at all. v0.20.6, **808 tests** (both roots). |
 | `letta/frontend-letta-backend` | The front end as a **separate** static service. Kept in sync with the combined branch. |
 | `letta/recovery-capture-2026-09-30` | A read-only capture of every live Begg/Oddfellow service, fingerprinted — the only surviving record of what is actually deployed. |
 | `letta/continuity-2026-09-30` | Earlier continuity notes and current-state documents. |

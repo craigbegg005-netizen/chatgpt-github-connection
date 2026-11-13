@@ -93,9 +93,10 @@ fail-closed behaviour working.
 
 ⚠️ **The service already exists.** The live single-service deploy is
 **`oddfellow-letta-backend-v0206`** (`https://oddfellow-letta-backend-v0206.onrender.com`),
-not a service to be created. Set `LETTA_API_KEY` and `ODDFELLOW_OWNER_TOKEN` on *that*
-service in the Render dashboard (service → Environment → Save); Render restarts on an env
-change, so no separate deploy click is needed. Then:
+not a service to be created. Set `LETTA_API_KEY`, `ODDFELLOW_OWNER_TOKEN` and **`LETTA_MODEL`**
+on *that* service in the Render dashboard (service → Environment → Save); Render restarts on an
+env change, so no separate deploy click is needed. **Three variables, not two — corrected
+2026-11-13.** Then:
 
 ```
 curl -s https://oddfellow-letta-backend-v0206.onrender.com/healthz

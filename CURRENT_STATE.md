@@ -194,7 +194,7 @@ of the live one caused a 20-hour blind spot on 2026-10-01.
 
 ## Where the branch actually is
 
-- `letta/combined-single-service-v0.20.4` — the head moves hourly, so read the newest `oddfellow/HANDOFF-*.md` for where it is. (A SHA was written here and went stale for three days: it still named a 2026-10-08 commit while the branch had moved ~100 commits.) **807 tests collected** (upgrade branch, 2026-10-16; collection is not a passing result; see `oddfellow/UPGRADE-REVIEW-2026-10-16.md`) — run `pytest` from the repo root; the canonical invocation collects both `oddfellow/tests` and `oddfellow/connector/tests`, and a run scoped to one root silently skips the count guard. Recent additions: the Cognitive Capability Profile (`oddfellow/cognition/`), a durable open-goal register (`GOALS.json`), and the tool-invocation audit corpus.
+- `letta/combined-single-service-v0.20.4` — the head moves hourly, so read the newest `oddfellow/HANDOFF-*.md` for where it is. (A SHA was written here and went stale for three days: it still named a 2026-10-08 commit while the branch had moved ~100 commits.) **808 tests collected** (upgrade branch, 2026-10-16; collection is not a passing result; see `oddfellow/UPGRADE-REVIEW-2026-10-16.md`) — run `pytest` from the repo root; the canonical invocation collects both `oddfellow/tests` and `oddfellow/connector/tests`, and a run scoped to one root silently skips the count guard. Recent additions: the Cognitive Capability Profile (`oddfellow/cognition/`), a durable open-goal register (`GOALS.json`), and the tool-invocation audit corpus.
 
 ## ⚠️ NEW P0 — Render DB `begg-ai-core-db` expires 2026-10-27T23:21:01Z
 
@@ -364,9 +364,11 @@ uncommitted edits are served too.
 ### Unchanged
 
 **Gate A.** `oddfellow-letta-backend-v0206` is 🟢 LIVE on the current build with
-`ready:false`, because `LETTA_API_KEY` and `ODDFELLOW_OWNER_TOKEN` are not set. That
-is the only thing between the owner and an authenticated Oddfellow, and it is the
-only thing between the owner and running the post-Gate-A script for real.
+`ready:false`. **The deployed build reports `LETTA_API_KEY` and `ODDFELLOW_OWNER_TOKEN` as missing;
+the branch that would replace it needs `LETTA_MODEL` as well** — so the owner action is three
+variables, not two (corrected 2026-11-13). That is the only thing between the owner and an
+authenticated Oddfellow, and it is the only thing between the owner and running the post-Gate-A
+script for real.
 
 💰 **Verified revenue: $0.** Nothing submitted, sent, charged, or deployed.
 
@@ -431,7 +433,7 @@ Note the handoff labelled `-v0206` "🟢 LIVE". **`/livez` → 200 with `ready:f
 
 ## The single owner action
 
-Render → **`oddfellow-letta-backend-v0206`** → Environment → set `LETTA_API_KEY` and `ODDFELLOW_OWNER_TOKEN` → Save. Render restarts the service on an env change, so this step needs no separate deploy click.
+Render → **`oddfellow-letta-backend-v0206`** → Environment → set `LETTA_API_KEY`, `ODDFELLOW_OWNER_TOKEN` and **`LETTA_MODEL`** → Save. Render restarts the service on an env change, so this step needs no separate deploy click. **Three variables, not two — corrected 2026-11-13.**
 
 ⚠️ **Token-matching risk:** the value typed must equal the vault `ODDFELLOW_OWNER_TOKEN`, or phone access fails with a clean `401` after everything else works.
 
