@@ -213,6 +213,25 @@ exist or are superseded, say so and I will close the item rather than leave it s
 
 ---
 
+## Verification of this queue — 2026-11-13 16:0x UTC
+
+Re-checked a week after the previous pass, because a stale item costs Craig a tap. **All four checkable
+claims still hold:**
+
+| Item | Claim | Checked | Result |
+|---|---|---|---|
+| 3 | Three Gumroad listings at $7.00 / $4.99 / $5.00 | each public listing | ✅ **$7.00 / $4.99 / $5.00** exactly |
+| 5 | Google Drive still fails | `GOOGLEDRIVE_GET_ABOUT` | ✅ `403 insufficient authentication scopes` |
+| 6 | BeggAi (Stripe) refresh token invalid | `list_available_accounts_or_orgs` | ✅ `Invalid refresh token` |
+| 9 | GitHub Pages disabled | Pages API | ✅ 404 |
+
+**And one item changed since the last pass, already corrected above:** card 5 used to ask for **both**
+Google integrations; **Gmail now works** (verified 2026-11-10), so it asks for Drive only.
+
+**What this pass does NOT cover, stated so the table is not read as more than it is:** cards 1, 2, 4, 7,
+8, 10, 11 and 12 are owner actions whose completion cannot be checked from here — the table above is the
+subset that can.
+
 ## Verification of this queue — 2026-10-15 04:0x UTC
 
 Every claim here that can be checked from outside was re-checked, because a stale item costs Craig a
