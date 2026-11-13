@@ -2,7 +2,9 @@
 
 Status: 🚀 **DEPLOYED** (as `oddfellow-letta-backend-v0206`) · 🧪 TESTED · ⚠️ NOT READY
 Branch: `letta/combined-single-service-v0.20.4`
-Verified by: Oddfellow (Letta agent), 2026-09-30 01:40–01:45 UTC
+Verified by: Oddfellow (Letta agent) — **date derived, not stamped:**
+`git log -1 --format=%ad --date=iso -- oddfellow/SINGLE-SERVICE.md`
+(this line carried *2026-09-30* while the file was last edited **2026-10-02** — corrected 2026-11-13)
 
 > **Updated 2026-10-02 02:5x UTC.** The status line above previously read
 > "🛠 IMPLEMENTED · 🧪 TESTED LOCALLY · ⚠️ NOT DEPLOYED". **That is no longer true:** this
@@ -10,8 +12,15 @@ Verified by: Oddfellow (Letta agent), 2026-09-30 01:40–01:45 UTC
 > API + PWA on one origin (`/livez` → 200, version 0.20.6). It is ⚠️ **NOT READY** only because
 > `LETTA_API_KEY` and `ODDFELLOW_OWNER_TOKEN` are unset (`/healthz` → 503). The "Deploying it"
 > section below still describes how to create the service; note that **the service already
-> exists under the name `-v0206`**, so the correct next step is to set the two secrets on it,
+> exists under the name `-v0206`**, so the correct next step is to set the secrets on it,
 > not to create a new one.
+>
+> 🔴 **CORRECTED 2026-11-13 — it is THREE variables, not two.** This note said *"the two secrets"*.
+> **The current branch also requires `LETTA_MODEL`**, and booted locally it reports
+> `checks_failed: ["LETTA_MODEL"]` with the other two set — so following this document as written
+> would set two variables and still leave the service fail-closed. `LETTA_MODEL` must be a
+> `letta/*` handle; the backend refuses anything else without `ODDFELLOW_ALLOW_PAID_MODEL=true`,
+> which needs the owner's explicit approval. **See `OWNER-ACTIONS.md` card 1 for the current list.**
 
 ## Why this exists
 

@@ -224,8 +224,18 @@ _STAMP_FIELD = re.compile(
 # covers the class is the one a human applies -- derive the value, or do not write it --
 # and the guard exists to catch the cases where that rule was forgotten in a form I have
 # already seen. Do not read a green run as "no hand-maintained dates anywhere".
+# Fourth form, found the same way: "Verified by: Oddfellow, 2026-09-30" in the deploy doc.
+# Each widening has found a real case, which is why the net is worth keeping -- and why
+# the honest claim about it stays "catches the forms seen", not "catches the class".
+# Lines that record a defect rather than asserting one.
+_CORRECTION_MARKERS = (
+    "corrected", "read \"", "this header read", "this line carried", "removed",
+    "no date stamp", "derive it", "do not trust", "was wrong", "used to read",
+)
+
 _INLINE_DATE = re.compile(
-    r"(?i)\b(?:last updated|last verified|last checked)\b[^\n]{0,20}\*\*\d{4}-\d{2}-\d{2}"
+    r"(?i)\b(?:last updated|last verified|last checked|verified by)\b[^\n]{0,40}"
+    r"(?:\*\*)?\d{4}-\d{2}-\d{2}"
 )
 _HEADING_DATE = re.compile(
     r"(?m)^#{1,4}\s.*\b(?:current|re-verified|last updated|updated)\b.*\d{4}-\d{2}-\d{2}",
@@ -249,9 +259,20 @@ def test_living_documents_do_not_carry_hand_maintained_date_stamps():
     offenders = []
     for path in _living_markdown_files():
         text = path.read_text(encoding="utf-8", errors="replace")
-        m = (_STAMP_FIELD.search(text) or _HEADING_DATE.search(text)
-             or _INLINE_DATE.search(text))
-        if m:
+        for m in list(_STAMP_FIELD.finditer(text)) + list(_HEADING_DATE.finditer(text)) \
+                + list(_INLINE_DATE.finditer(text)):
+            # A line that RECORDS the defect is not the defect. Correction notes quote the
+            # old stamp ("this header read 'Last verified: 2026-11-07'"), and a guard that
+            # fails on those gets deleted the first time it is useful -- the same
+            # instructions-vs-mentions distinction the phone guard needed.
+            line = text[:m.start()].rsplit("\n", 1)[-1]
+            if line.lstrip().startswith(">"):
+                # Correction notes are blockquotes by convention in this repo, and the
+                # marker word is often on the PREVIOUS line of the same note -- which is
+                # why the per-line marker check alone missed this one.
+                continue
+            if any(marker in line.lower() for marker in _CORRECTION_MARKERS):
+                continue
             offenders.append(f"{path.name}: {m.group(0).strip()[:90]}")
 
     assert not offenders, (
