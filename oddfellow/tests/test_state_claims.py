@@ -216,6 +216,17 @@ _STAMP_FIELD = re.compile(
 # LABELS A SNAPSHOT and is legitimate -- the date is a fact about the record. A heading
 # like "## Current state -- re-verified 2026-10-02" CLAIMS CURRENTNESS and will drift.
 # The wording is what separates them, so the guard keys on the freshness words.
+# Third form, found the same way as the second: this one was inline prose --
+# "Last updated **2026-10-14**" -- which is neither a bold field nor a heading.
+#
+# THREE widenings, each finding real cases, is the honest signal here: **this guard is a
+# net, not a proof.** It catches the forms that have occurred. The rule that actually
+# covers the class is the one a human applies -- derive the value, or do not write it --
+# and the guard exists to catch the cases where that rule was forgotten in a form I have
+# already seen. Do not read a green run as "no hand-maintained dates anywhere".
+_INLINE_DATE = re.compile(
+    r"(?i)\b(?:last updated|last verified|last checked)\b[^\n]{0,20}\*\*\d{4}-\d{2}-\d{2}"
+)
 _HEADING_DATE = re.compile(
     r"(?m)^#{1,4}\s.*\b(?:current|re-verified|last updated|updated)\b.*\d{4}-\d{2}-\d{2}",
     re.IGNORECASE,
@@ -238,7 +249,8 @@ def test_living_documents_do_not_carry_hand_maintained_date_stamps():
     offenders = []
     for path in _living_markdown_files():
         text = path.read_text(encoding="utf-8", errors="replace")
-        m = _STAMP_FIELD.search(text) or _HEADING_DATE.search(text)
+        m = (_STAMP_FIELD.search(text) or _HEADING_DATE.search(text)
+             or _INLINE_DATE.search(text))
         if m:
             offenders.append(f"{path.name}: {m.group(0).strip()[:90]}")
 

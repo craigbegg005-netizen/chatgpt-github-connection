@@ -1,6 +1,8 @@
 # Working alongside Oddfellow — coordination lane
 
-**Read this first if you are another AI picking up BSI work.** Last updated **2026-10-14 00:25 UTC**.
+**Read this first if you are another AI picking up BSI work.**
+**Last modified:** derive it — `git log -1 --format=%ad --date=iso -- oddfellow/CHATGPT-SYNC-LATEST.md`
+(this line said *2026-10-14* while the file had been edited on **2026-11-12** — corrected 2026-11-12).
 Full dated sync reports live on the documentation-only branch
 `coordination/oddfellow-chatgpt-sync` under `oddfellow/handoffs/`. This file is the pointer and
 the protocol, kept on the canonical branch so it is findable from the repo root.
