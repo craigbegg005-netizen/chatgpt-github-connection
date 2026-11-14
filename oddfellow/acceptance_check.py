@@ -34,6 +34,7 @@ The owner token may also come from the ODDFELLOW_OWNER_TOKEN environment
 variable. It is never printed.
 """
 
+import hashlib
 import json
 import os
 import sys
@@ -219,6 +220,88 @@ def _strings(value):
 
 # --------------------------------------------------------------------------- #
 
+# The static files the service serves, paired with the repo paths they come from.
+# Both are committed, so a hash comparison is meaningful; a generated file would not be.
+_SERVED_STATIC = (
+    ("/", "oddfellow/frontend/index.html"),
+    ("/command.html", "oddfellow/frontend/command.html"),
+)
+
+
+def _repo_root():
+    """The checkout this harness lives in, or None if it is not in one."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    root = os.path.dirname(here)
+    return root if os.path.isdir(os.path.join(root, ".git")) else None
+
+
+def _fetch_raw(url):
+    """The FULL body as text. `call()` truncates non-JSON to 400 chars, which is
+    fine for an error message and useless for hashing."""
+    req = urllib.request.Request(url)
+    req.add_header("Accept", "*/*")
+    req.add_header("Accept-Encoding", "identity")
+    try:
+        with urllib.request.urlopen(req, timeout=TIMEOUT) as resp:
+            return resp.status, resp.read().decode("utf-8", "replace")
+    except urllib.error.HTTPError as exc:
+        return exc.code, exc.read().decode("utf-8", "replace")
+    except Exception as exc:
+        return None, "transport error: %s" % exc
+
+
+def revision_row(base, r):
+    """Does the SERVED front end match this checkout?
+
+    Added 2026-11-14, because the version-string row cannot answer this. That row
+    PASSED against a build six weeks old -- `b1bf3c4` reports `0.20.6` exactly as
+    HEAD does -- and a version string that never changes cannot detect a stale
+    build. Static files are content-addressable, so a hash comparison answers the
+    question directly.
+
+    Skipped, not failed, when there is no checkout to compare against: the harness
+    is meant to run against any URL from anywhere, including a phone-adjacent
+    laptop with nothing set up.
+    """
+    root = _repo_root()
+    if not root:
+        r.add(0, "served front end matches this checkout", True,
+              "skipped: this harness is not inside a git checkout, so there is "
+              "nothing to compare against")
+        return
+
+    mismatches, compared = [], 0
+    for url_path, repo_path in _SERVED_STATIC:
+        local = os.path.join(root, repo_path)
+        if not os.path.isfile(local):
+            continue
+        # Count the file as compared BEFORE fetching. The first version incremented
+        # only on a successful fetch, so a service that 404s every static file left
+        # `compared == 0` and the row reported "nothing to compare" -- a skip -- when
+        # the honest answer is that the served front end is missing. The test caught
+        # it; without the test the row would have stayed quietly useless.
+        compared += 1
+        status, body = _fetch_raw(base + url_path)
+        if status != 200 or not isinstance(body, str):
+            mismatches.append("%s -> HTTP %s" % (url_path, status))
+            continue
+        with open(local, "rb") as fh:
+            want = hashlib.sha256(fh.read()).hexdigest()
+        got = hashlib.sha256(body.encode("utf-8", "replace")).hexdigest()
+        if got != want:
+            mismatches.append("%s differs from %s" % (url_path, repo_path))
+
+    if not compared:
+        r.add(0, "served front end matches this checkout", True,
+              "skipped: none of the compared files are present in this checkout")
+        return
+
+    r.add(0, "served front end matches this checkout", not mismatches,
+          ("%d file(s) byte-identical to this checkout" % compared) if not mismatches
+          else ("STALE DEPLOY: " + "; ".join(mismatches)
+                + " -- run oddfellow/identify_deployed_sha.sh to name the revision"))
+
+
 def gate0(base, r):
     # Liveness first. Render's healthCheckPath points at /livez, and a non-200
     # health check is a FAILED DEPLOY -- so if this endpoint is missing or not
@@ -283,6 +366,9 @@ def gate0(base, r):
         r.add(0, "message schema takes 'input'", "input" in props, "props=%s" % sorted(props))
     else:
         r.add(0, "openapi reachable", False, "HTTP %s %s" % (status, body))
+
+    # The version string above cannot detect a stale build; this can.
+    revision_row(base, r)
     return ok
 
 

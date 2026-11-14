@@ -133,3 +133,72 @@ def test_harness_output_names_the_cause_of_a_retired_model_failure(stub_service)
         "the harness named a cause but not the real one; it should surface the inner "
         f"error string, not the 'letta_message_failed' wrapper.\n--- output ---\n{out}"
     )
+
+
+# --- The revision row: a version string cannot detect a stale build ------------
+#
+# Added 2026-11-14. The harness's "deployed build is current" row compares the
+# OpenAPI version STRING, and it PASSED against a build six weeks old because that
+# build reports the same version as HEAD. These tests hold the row that actually
+# answers the question: does the SERVED front end match this checkout?
+
+
+def test_revision_row_fails_when_the_served_front_end_differs(stub_service):
+    """A stub serving a front end that is not this checkout must FAIL that row."""
+    proc = subprocess.run(
+        [sys.executable, HARNESS, stub_service, "--owner-token", "dummy-token"],
+        capture_output=True, text=True, timeout=180,
+    )
+    out = proc.stdout + proc.stderr
+    assert "served front end matches this checkout" in out, (
+        "the revision row did not run at all.\n" + out
+    )
+    assert "STALE DEPLOY" in out, (
+        "the stub serves a front end that is not this checkout, so the revision row "
+        "must report STALE DEPLOY -- otherwise it cannot detect a stale build, which "
+        "is the whole reason it exists.\n" + out
+    )
+
+
+def test_revision_row_passes_when_the_served_front_end_matches():
+    """The other direction: serving the real files must PASS.
+
+    Without this, a row that always failed would look like a working check -- the
+    same vacuous-control shape, inverted.
+    """
+    import http.server
+    import socket
+    import threading
+
+    repo = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    frontend = os.path.join(repo, "oddfellow", "frontend")
+    if not os.path.isdir(frontend):
+        pytest.skip("no frontend directory in this checkout")
+
+    class _Static(http.server.SimpleHTTPRequestHandler):
+        def __init__(self, *a, **kw):
+            super().__init__(*a, directory=frontend, **kw)
+
+        def log_message(self, *a):
+            pass
+
+    with socket.socket() as probe:
+        probe.bind(("127.0.0.1", 0))
+        port = probe.getsockname()[1]
+    server = http.server.ThreadingHTTPServer(("127.0.0.1", port), _Static)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        proc = subprocess.run(
+            [sys.executable, HARNESS, "http://127.0.0.1:%d" % port,
+             "--owner-token", "dummy-token"],
+            capture_output=True, text=True, timeout=180,
+        )
+    finally:
+        server.shutdown()
+        server.server_close()
+
+    out = proc.stdout + proc.stderr
+    assert "byte-identical to this checkout" in out, (
+        "serving the checkout's own front end must PASS the revision row.\n" + out
+    )
