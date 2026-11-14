@@ -145,6 +145,18 @@ there, so the database would still refuse it. This card said "your phone's /32" 
 Gumroad dashboard → Products → for each of the 3 listings: open → Content → confirm the delivery file is attached and looks right; check price matches ($7.00 / $4.99 / $5.00). Full checklist: `oddfellow/commerce/DELIVERY-VERIFICATION-BSI-COMMERCE-002.md`. Time: ~15 min.
 Optional **decision**: a $4.99 test purchase of your own listing end-to-end (only spend on this list, your call).
 
+**Narrowed 2026-11-14 — only ONE listing makes a page-count claim, so that is the one to check closely.**
+I read all three public descriptions:
+
+| Listing | Price | Page-count claim in the copy |
+|---|---|---|
+| The 7-Day Reset Planner | $4.99 | **"An 11-page printable planner"** ← the 11-vs-12 question is about this one |
+| Paycheck Budget Starter Bundle | $7.00 | none — describes an editable workbook |
+| Job Search Starter Bundle | $5.00 | none — describes templates and a guide |
+
+**So the copy side is verified: the planner says 11 pages.** What remains is the *delivered file*, which only
+the seller view can show — and that is the only listing where a mismatch is possible.
+
 ## 4. Approve + post the promotion drafts  🟡 revenue-first
 Drafts ready: `oddfellow/promotion/DRAFTS-2026-10-14.md` (X post + Reddit-style post per listing, all factual). Review → post from your accounts when ready. **Update 2026-10-19: the drafts point at Gumroad; the Fourthwall storefront is now live with 44 public products — consider posting storefront links too (or instead).** Time: ~10 min.
 
