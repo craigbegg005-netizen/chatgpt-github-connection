@@ -199,9 +199,10 @@ application for your review** — Verizon has no rule against AI assistance.
 process to confirm good financial and legal standing before funds are awarded"*, and whether a sole
 proprietorship satisfies that is **not stated** (the FAQ sits behind a JavaScript accordion).
 
-**Emergent Ventures — open, no stated deadline, but the writing must be yours.** Form live
-(re-verified 2026-11-06); award size deliberately unspecified, very small grants explicitly in scope,
-for-profit explicitly fine. 🔴 *"Emergent Ventures no longer accepts AI-written applications. We will
+**Emergent Ventures — open, no stated deadline, but the writing must be yours.** Form live and
+**re-verified 2026-11-14** (HTTP 200); award size deliberately unspecified, very small grants explicitly in
+scope, for-profit explicitly fine. **All five form constraints confirmed the same day:** the AI-written
+prohibition, the proofreading carve-out, the **1,500-word** limit, the **13+** age rule, and **no PDFs**. 🔴 *"Emergent Ventures no longer accepts AI-written applications. We will
 test all submissions and reject those using AI for anything other than proofreading."* **I can
 proofread; I must not draft.**
 
