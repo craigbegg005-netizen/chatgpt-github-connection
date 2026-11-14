@@ -252,10 +252,20 @@ def gate0(base, r):
     if status == 200 and isinstance(body, dict):
         routes = sorted(body.get("paths", {}).keys())
         # This row used to be hard-coded True: it PRINTED the version but could
-        # never fail, so a stale deploy passed silently. "Which build is live?"
-        # has been the single most expensive question in this project, so it is
-        # now an assertion. Pass --allow-older to accept a build older than
-        # EXPECTED_VERSION deliberately.
+        # never fail, so a stale deploy passed silently. It is now an assertion.
+        # Pass --allow-older to accept a build older than EXPECTED_VERSION.
+        #
+        # ⚠️ WHAT THIS ACTUALLY CHECKS, corrected 2026-11-14: the OpenAPI
+        # `info.version` STRING, not the deployed revision. Those are different
+        # questions, and on 2026-11-14 they gave different answers -- this row
+        # PASSED against a build that was six weeks old, because `b1bf3c4` reports
+        # `0.20.6` just as HEAD does. **A version string that never changes cannot
+        # detect a stale build.**
+        #
+        # So do not read this PASS as "the live build is current". It means "the
+        # live build reports the version we expect". The revision question is
+        # answered by `oddfellow/identify_deployed_sha.sh`, which hashes the served
+        # static files against the repo -- and that is what identified `b1bf3c4`.
         info = body.get("info", {}) or {}
         deployed = str(info.get("version") or "")
         current = _version_tuple(deployed) >= _version_tuple(EXPECTED_VERSION)
