@@ -187,7 +187,9 @@ GitHub repo → Settings → Pages → enable on canonical branch (turns the sto
 `GRANTS-NON-DILUTIVE-PIPELINE-2026-10-01.md` and the company file, but no card here mentioned it — so a
 live $10,000 opportunity with a closing window was not on your queue.
 
-**Verizon Small Business Digital Ready — $10,000.** Re-verified 2026-11-06 against Verizon's own page.
+**Verizon Small Business Digital Ready — $10,000.** Re-verified **2026-11-14** against Verizon's own page
+— every claim below still holds, and the page now also says **"Now accepting applications"** (which was
+absent from the 2026-11-06 fetch, so it is confirmed rather than assumed).
 The window closes with the **December 2026** round: *"Applications will be reviewed monthly from June
 through December 2026. Each month, 10 small businesses will be selected."* The unlock is free and it is
 yours: *"Register and complete any combination of two free courses or events anytime in 2026 to unlock
