@@ -3,6 +3,16 @@
 **Purpose:** A durable, verified record of what Oddfellow has built, shipped, or verified.
 **Rule:** Nothing appears here without evidence. An idea is not an artifact. A draft is not shipped.
 
+> ⚠️ **Every entry below is a DATED RECORD, and so is every number in it — added 2026-11-14.**
+> The sections are headed by date, and a test count inside one ("490 total", "194 tests in the §29
+> suite") was true **on that date**. It is not a claim about the suite now — which is **808**.
+> **Do not read a count here as current**, and do not "correct" one: changing a dated record destroys
+> the evidence that the suite grew. The current count lives in `README.md`, `CURRENT_STATE.md` and
+> `COORDINATION-STATUS.md`, all of which are guarded.
+>
+> This note exists because I nearly edited these numbers as stale. They are not stale; they are
+> historical, and the difference is the section heading.
+
 ---
 
 ## 2026-09-29 — Oddfellow Letta Backend v0.20.0
