@@ -133,7 +133,12 @@ sweeps do not do:** they read `get-offers`/`get-collections`, which proves the c
 that a stranger can reach it. | `curl --compressed` |
 | Fourthwall payouts | API says **ACTIVE** — PUBLIC offers now live; still zero sales | `get-payout-info` |
 | Gumroad | **3 live listings**, all HTTP 200 | public probe |
-| Rehearsal | **LIVE but ephemeral** — dies with the sandbox | cycled again after the 00:02 UTC restore; restored `up`+keepalive 2026-11-07 02:03 UTC, tunnel answers 200 (`live:true, ready:true`), watchdog pid 1864, suite 780 re-verified this cycle |
+| Rehearsal | **LIVE but ephemeral** — dies with the sandbox | restored `up`+keepalive 2026-11-07 02:03 UTC, tunnel
+answers 200 (`live:true, ready:true`). **⚠️ It lives in a SEPARATE conversation's sandbox — corrected
+2026-11-15.** The hourly health check targets `conv-c1fd6f6a…`, not this conversation, so **its absence
+from the current sandbox is expected and is not a failed restore.** Verified by reading the schedule's
+own run history: `letta cron runs --id 9e58d396…` shows `status: success` with `sent_at` timestamps every
+hour. **Do not conclude the rehearsal is broken from `/root/.oddfellow` being absent here.** | `letta cron runs` |
 | **Live PWA assets** | ✅ **intact, verified 2026-11-13** — `/manifest.json` **200** (`start_url: /`,
 `display: standalone`), `/sw.js` **200**, and **all three icons the manifest declares** → **200** with real
 PNG data (`/icons/icon-192.png` 19 KB · `/icons/icon-512.png` 66 KB · `/icons/icon-maskable-512.png`
