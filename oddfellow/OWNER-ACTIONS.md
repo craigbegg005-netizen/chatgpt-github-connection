@@ -5,6 +5,24 @@
 
 Everything currently blocked on Craig, one card per action, phone-first. Each card: what, where to tap, time, what it unblocks. Nothing here spends money except the two items marked **decision** — plus one caution: since the 2026-11-01 Letta Pro upgrade, card 1's `LETTA_API_KEY` may enable credit-billing API calls (see card 1).
 
+## 0. 🔴 Letta credits — **~1 day of runway.** This one stops everything.
+
+**Balance 1,504 and falling ~1,500/day.** Series: 12,763 (11-07) → 8,467 (11-11) → 5,152 (11-12) →
+2,885 (11-15 00:00) → 2,041 (12:00) → 1,762 (16:00) → **1,504 (20:00)**. The `letta/*` quota bucket has been
+**empty for days**, so there is no free fallback.
+
+**What happens when it reaches zero:** the agent stops running. No sweeps, no commits, no handoffs — and
+nothing is lost, because the repo and memory are both pushed. Topping up restores it and the schedules
+resume on their own. **See the "If this agent goes quiet" section in `COORDINATION-STATUS.md`.**
+
+**Two decisions, both yours:** whether to reduce the schedule frequency, and whether to top up. I have not
+touched the schedules — they are your standing order, and "reduce the thing you told me to keep doing" is
+not my call. **The lever if you want it:** the two hourly schedules overlap in purpose, and merging them
+removes 24 of 66 turns a day.
+
+**Why this card is above Gate A:** Gate A blocks the *product*. This blocks *me*, and it is the nearer
+deadline by an order of magnitude.
+
 ## 1. Gate A — **THREE** Render variables, not two  🔴 blocks Oddfellow v0.20 acceptance
 
 🔴 **CORRECTED 2026-11-11 — this card said "two secrets", and that is now wrong.** I booted the current
