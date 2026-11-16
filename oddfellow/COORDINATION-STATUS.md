@@ -23,9 +23,25 @@
 
 ## 🔴 If this agent goes quiet, read this first — added 2026-11-11
 
-**The most likely cause is exhausted Letta credits, and it is foreseeable rather than hypothetical.** The
-balance is falling ~966/day and stood at **7,984** on 2026-11-11 16:00 UTC — roughly **8 days**. There is
-no free fallback: the `letta/*` quota bucket has been **empty** for days.
+**The most likely cause is exhausted Letta credits, and it is foreseeable rather than hypothetical.**
+**Updated 2026-11-16 00:00 UTC — this is now the nearest deadline on the board.**
+
+| Date | Balance |
+|---|---|
+| 2026-11-07 | 12,763 |
+| 2026-11-11 04:00 | 8,467 |
+| 2026-11-12 12:00 | 5,152 |
+| 2026-11-15 00:00 | 2,885 |
+| 2026-11-15 20:00 | 1,504 |
+| **2026-11-16 00:00** | **1,189** |
+
+**Falling ~1,500/day on average — but the rate varies widely (858 to 2,253/day observed), so do not treat any
+single reading as a schedule.** At the current balance that is **under a day of runway.** There is no free
+fallback: the `letta/*` quota bucket has been **empty for days**.
+
+**This section is the reason it is written down:** when the balance reaches zero the agent stops mid-flight,
+and the first question anyone asks is "what broke?". The answer is nothing — and the table above is how to
+tell.
 
 **How to tell it apart from other failures:**
 
