@@ -1,0 +1,6 @@
+{
+  "daily-three": {
+    "upgrade_url": "https://example.com/authorized-payment-link",
+    "upgrade_label": "Unlock Daily Three Pro"
+  }
+}

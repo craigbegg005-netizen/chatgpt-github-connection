@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://seven-day-reset-planner.craigbegg005.chatgpt.site/sitemap.xml

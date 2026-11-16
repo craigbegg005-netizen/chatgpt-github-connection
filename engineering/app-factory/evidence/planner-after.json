@@ -1,0 +1,26 @@
+[
+  {
+    "profile": "desktop",
+    "checks": [
+      "daily stale-tab rejection",
+      "daily reload persistence",
+      "worksheet stale-tab rejection",
+      "corrupt worksheet preservation",
+      "corrupt daily preservation",
+      "quota feedback and memory retention"
+    ],
+    "passed": true
+  },
+  {
+    "profile": "mobile",
+    "checks": [
+      "daily stale-tab rejection",
+      "daily reload persistence",
+      "worksheet stale-tab rejection",
+      "corrupt worksheet preservation",
+      "corrupt daily preservation",
+      "quota feedback and memory retention"
+    ],
+    "passed": true
+  }
+]

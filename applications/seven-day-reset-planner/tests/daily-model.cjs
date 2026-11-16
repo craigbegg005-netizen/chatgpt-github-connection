@@ -1,0 +1,12 @@
+const a=require('node:assert/strict'),M=require('../dist/planner-model.js');
+let s=M.empty();s.days['2026-10-23']={priorities:'Keep me',reflection:'Saved'};
+let c=M.create(s,{id:'ctest',name:'Read',goal:'Make time',duration:2,tasks:['Read'],kind:'custom',started:'2026-10-23'});c.checks['1:0']=true;
+M.transition(c,'pause');M.transition(c,'next');a.equal(c.day,1);a.equal(c.status,'paused');a.equal(c.checks['1:0'],true);M.transition(c,'resume');M.transition(c,'next');M.transition(c,'complete');a.equal(c.status,'completed');a.equal(c.checks['1:0'],true);
+s.showReset=true;s.showReset=false;a.equal(s.days['2026-10-23'].priorities,'Keep me');a.equal(s.challenges.length,1);
+const incoming=JSON.parse(JSON.stringify(s));incoming.days['2026-10-23'].priorities='Overwrite';incoming.days['2026-10-24']={priorities:'New'};
+const merged=M.merge(s,incoming);a.equal(merged.days['2026-10-23'].priorities,'Keep me');a.equal(merged.days['2026-10-24'].priorities,'New');a.equal(merged.challenges.length,1);a.deepEqual(M.validate(JSON.parse(JSON.stringify(s))),s);
+a.throws(()=>M.validate({...s,days:{'2026-02-30':{}}}));a.throws(()=>M.validate({...s,challenges:[{...c,duration:0}]}));a.throws(()=>M.validate({...s,challenges:[{...c,checks:{'3:0':true}}]}));a.throws(()=>M.validate(JSON.parse('{"version":2,"showReset":false,"days":{"__proto__":{}},"challenges":[]}')));
+console.log('Daily planner: preservation, pause/resume, completion, backup merging, malformed data checks passed');
+a.deepEqual(JSON.parse(M.mergeLegacy('{"week_intention":"Keep"}','{"week_intention":"Replace","d1_schedule":"Add"}')),{week_intention:'Keep',d1_schedule:'Add'});
+a.throws(()=>M.mergeLegacy('{broken','{}'));a.throws(()=>M.mergeLegacy('{}','{"__proto__":"bad"}'));a.equal(M.mergeLegacy(null,null),'{}');
+console.log('Original worksheet backup merge and overwrite protection passed');
